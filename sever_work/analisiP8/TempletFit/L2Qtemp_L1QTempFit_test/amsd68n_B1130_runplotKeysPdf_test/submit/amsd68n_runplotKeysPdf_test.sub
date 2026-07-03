@@ -1,0 +1,78 @@
+executable	= protest_cKeysPdf5.sh
+output		= output/$(file).out
+error		= error/$(file).err
+log		= log/$(file).log
+MY.WantOS = "el7"
+
+initialdir = /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test
+
++JobFlavour = "testmatch"
+
+file=R0_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R1_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R2_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R3_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R4_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R5_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R6_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R7_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R8_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R9_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R10_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R11_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R12_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R13_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R14_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R15_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R16_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R17_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R18_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R19_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R20_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R21_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)
+
+file=R22_amsd68n_runplotKeysPdf_test
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/amsd68n_B1130_runplotKeysPdf_test/submit/arg/$(file)

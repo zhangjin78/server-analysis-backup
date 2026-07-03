@@ -1,0 +1,33 @@
+unsetenv DEBUGFLAG 
+setenv GDBMAN 1
+setenv GDBINFO 1
+setenv VERBOSE 1
+setenv LANGUAGE US
+setenv LANG C
+setenv LC_ALL en_US
+
+# Get the release version of RedHat Linux
+set RedHatRelease = `cat /etc/redhat-release|awk '{print $4}'|cut -c1`
+if $RedHatRelease == "S" then # Scientific Linux CERN
+    set RedHatRelease = `cat /etc/redhat-release|awk '{print $6}'|cut -c1`
+endif
+
+# Choose the correct version of gcc
+if $RedHatRelease == "7" then
+    set os=cc7
+else
+    set os=slc6
+endif
+source /cvmfs/sft.cern.ch/lcg/contrib/gcc/4.9.3/x86_64-$os/setup.csh  /afs/cern.ch/sw/lcg/external
+
+setenv ROOTSYS $Offline/root/Linux/root6-14-04-icc19
+source $ROOTSYS/bin/thisroot.csh
+setenv INTELSW /cvmfs/projects.cern.ch
+source $INTELSW/intelsw/psxe/linux/all-setup.csh
+source $INTELSW/intelsw/psxe/linux/x86_64/2019/compilers_and_libraries/linux/bin/compilervars.csh   intel64
+setenv INTELDIR $INTELSW/intelsw/psxe/linux/x86_64/2019
+source $INTELDIR/vtune_amplifier_2019.0.2.570779/amplxe-vars.csh
+setenv INTELVER compilers_and_libraries_2019.0.117
+setenv INTELVER compilers_and_libraries_2019.3.199
+setenv PATH /afs/cern.ch/sw/lcg/external/gdb/7.8/x86_64-slc6-gcc48-opt/bin:$PATH
+setenv GENFIT 1

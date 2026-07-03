@@ -1,0 +1,70 @@
+#!/bin/tcsh
+
+source amsvarcc534_2.csh
+setenv AMSSRC $AMSWD
+
+setenv CLEAN ""
+if ( "$1" == "clean" )  then
+setenv CLEAN $1
+endif
+
+set EXEAPP
+
+#----SRC
+#setenv SRC analysis_amsd64n
+setenv SRC alignment_tree
+#----APP
+#set EXEAPP=V8
+#set EXEAPP=V2
+#set EXEAPP=V2
+set EXEAPP=V3
+#set EXEAPP=V6
+#set EXEAPP=V4
+#set EXEAPP=V9N
+#set EXEAPP=V7
+
+#----
+setenv USEPRHEION 1
+unsetenv USEEVENTORDER
+unsetenv USEPRL1
+unsetenv USEHEL1
+unsetenv USEHEINNER
+unsetenv USENEWL1L9G
+unsetenv USEMCTKRAW
+unsetenv USEONEEV
+unsetenv USEADDTKHIT
+unsetenv USESAVENEG
+unsetenv USENOLINEARCOR
+unsetenv USECALIB
+#-------
+#setenv USEIONINNER 1
+#setenv USENOLINEARCOR 1
+#setenv USECALIB 1
+#setenv USEMCTKRAW 1
+#setenv USEONEEV 1
+#setenv USEADDTKHIT 1
+#setenv USEHEL1 1
+setenv USEHEINNER 1
+setenv USESAVENEG 1
+setenv USEPRL1 1
+#echo
+#echo "build Pass4..."
+#echo
+#unsetenv USEPASS7
+#make -f Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN
+
+echo
+echo "build Pass7ORD..."
+echo
+setenv  USEEVENTORDER 1
+setenv  USEPASS7 1
+make -f Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN
+
+exit
+
+echo
+echo "build Pass7..."
+echo
+unsetenv USEEVENTORDER
+setenv   USEPASS7 1
+make -f Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN

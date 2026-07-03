@@ -1,0 +1,44 @@
+//  $Id: Tofsim02.h,v 1.13 2023/12/20 14:53:44 qyan Exp $
+// Author Qi Yan. 2010.05.01.
+#ifndef __NEWAMSTOF2SIM__
+#define __NEWAMSTOF2SIM__
+#include "upool.h"
+#include "apool.h"
+#include "link.h"
+#include "typedefs.h"
+#include "tofdbc02.h"
+#include "Tofdbc.h"
+#include <stdlib.h>
+#include <time.h>
+#include <map>
+#include "TH1F.h"
+//===========================================================================
+class TOF2TovtN: public AMSlink{
+public:
+#ifndef __PPC64
+    static    map<integer, TH1F*> *phmap;//photon number map for bar
+#pragma omp threadprivate (phmap)
+#else
+    static    map<integer, TH1F*> *phmap[65];
+#endif    
+    TOF2TovtN(){};
+//
+ ~TOF2TovtN(){};
+ static number ftdclw();/// <ftdc total length
+ static number ftdcbw();/// <ftdc bin with
+ static int    ftdcnb();/// <ftdc nbin ideal
+ TOF2TovtN * next(){return (TOF2TovtN*)_next;}
+ static void covtoph(integer idsoft, geant vect[], geant edep,geant tofg, geant tofdt,geant stepl,integer parentid);
+ static void build();
+ static geant pmsatur(const geant am,int ilay,int ibar,int is,int ipm=0);
+// static void totovtn(integer id, geant edep, geant tslice1[][TOF2GC::SCTBMX+1]);
+ static void totovtn(integer id, geant edep, geant tslice1[][TOFCSN::FLTDCBM+1]);
+//flash_ADC_array->Tovt
+//
+protected:
+ void _printEl(ostream &stream){stream <<"TOF2TovtN: "<<endl;}
+ void _writeEl(){};
+ void _copyEl(){};
+};
+//=========================================================================== 
+#endif

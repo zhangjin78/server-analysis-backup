@@ -1,0 +1,341 @@
+#  $Id: Makefile.linux,v 1.59 2024/01/04 08:19:06 qyan Exp $
+# P.Zuccon june 2005
+# General clean up and reorganization
+# F.Barao: gcc version numbering changed (Oct, 2010)
+#
+
+#   Architecture linux g++
+#
+# List of SLC6 changes
+#
+#[ae-2012.08.02] - ORBIT2DIR=/opt/Orbit2 changed to /afs/ams.cern.ch/opt/Orbit2 
+#[ae-2012.08.02] - change local /usr/X11R6 to afs location
+ifndef 
+  IMPORTS_X11R6= $(AMSDEPLIB)/X11R6
+endif
+#
+
+
+VER          := $(shell $(ROOTSYS)/bin/root-config --version | grep 5.14)
+
+#GCC_VER_MAJOR=$(shell gcc --version | grep gcc | cut -b11 )
+#GCC_VER_MIDDLE=$(shell gcc --version | grep gcc |cut -b13 )
+#GCC_VER_MINOR=$(shell gcc --version | grep gcc |cut -b15 )
+GCC_VER_MAJOR=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c1 )
+GCC_VER_MIDDLE=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c3 )
+GCC_VER_MINOR=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c5 )
+
+ifeq ($(GCC_VER_MAJOR),4) 
+VERGCC :=1
+ifeq ($(GCC_VER_MIDDLE),4) 
+VERGCCHi := 1
+else ifeq ($(GCC_VER_MIDDLE),5)
+VERGCCH := 1
+else ifeq ($(GCC_VER_MIDDLE),6)
+VERGCCH := 1
+else ifeq ($(GCC_VER_MIDDLE),7)
+VERGCCH := 1
+else ifeq ($(GCC_VER_MIDDLE),8)
+VERGCCH := 1
+endif
+endif 
+
+ifeq ($(GCC_VER_MAJOR),5)
+VERGCC := 1
+VERGCCH := 1
+endif
+
+ifdef VER
+NEW = 
+else
+NEW = _new
+endif
+
+
+ifneq "$(wildcard /etc/redhat-release)" ""
+ RH_Version := $(shell cat /etc/redhat-release|awk '{print $$4}'|cut -c1)
+ ifeq ("$(RH_Version)", "S")
+  RH_Version := $(shell cat /etc/redhat-release|awk '{print $$6}'|cut -c1)
+ endif
+ ifeq ("$(RH_Version)", "6")
+  SLC6system := $(RH_Version)
+ else ifeq ("$(RH_Version)", "7")
+  SLC6system := $(RH_Version)
+ endif
+endif
+
+SLC4system=1
+RH9=1
+RH9add=
+ifdef RH9
+ RH9add=-pthread -lnsl /usr/lib/nsswitch.o -Wl,--start-group -lnss_files -lnss_dns -lresolv -Wl,--end-group  
+endif
+
+RH9add=-pthread 
+
+
+########################################################################
+#Compilers
+########################################################################
+ifneq "$(origin CC )" "environment" 
+  CC  = gcc -m32 
+endif
+ifneq "$(origin CXX)" "environment" 
+  CXX = g++ -m32
+endif
+ifdef VERGCC 
+ifneq "$(origin FF )" "environment" 
+  FF  = gfortran -m32 
+endif
+  FORTRAN_LIBS= -lg2c -lgfortran 
+else  
+ifneq "$(origin FF )" "environment" 
+  FF  = g77 -m32 
+endif
+  FORTRAN_LIBS=-lg2c 
+endif
+  FFOLD=$(FF)
+ifneq "$(origin LD )" "environment" 
+  LD  = g++ -m32
+endif
+  FORTRAN2_LIBS=
+ifdef VERGCCH
+  FORTRAN_LIBS=  -lgfortran 
+endif
+
+ORBIT2DIR=$(AMSDEPLIB)/Orbit2
+IDL=$(ORBIT2DIR)/bin/orbit-idl-2
+IDLCPP=$(ORBIT2DIR)/bin/orbit-idl-2 -l cpp --backenddir=$(ORBIT2DIR)/lib/orbit-2.0/idl-backends
+
+
+
+########################################################################
+# CERN & AMS Libraries
+########################################################################
+Offline = /cvmfs/ams.cern.ch/Offline
+CERNLIBS= -lgeant321 -lpacklib_noshift -lmathlib -lkernlib_noshift
+
+ifndef SLC6system
+  ifndef CERN_LEVEL
+    CERN_LEVEL = pro
+  endif
+
+  ifndef CERNDIR
+    CERNDIR = /cern/$(CERN_LEVEL)
+    CERNSRCDIR = /cern/$(CERN_LEVEL)
+  else
+    CERNSRCDIR = $(CERNDIR)
+  endif
+  CERNDIRLIB = $(CERNDIR)/lib
+else
+  ifndef CERN_LEVEL
+    CERN_LEVEL = 2005
+  endif
+
+  ifndef CERNDIR
+    acerndir =$(Offline)/CERN
+    CERNDIR = $(acerndir)/$(CERN_LEVEL)
+    CERNSRCDIR = $(acerndir)/$(CERN_LEVEL)
+    # no includes here
+    CERNDIRLIB = $(acerndir)/2006.gcc32.43/lib
+  else
+    CERNSRCDIR = $(CERNDIR)
+    CERNDIRLIB = $(CERNDIR)/lib
+  endif
+endif
+
+ifndef AMSLIB
+  AMSLIB =  $(Offline)/lib/linux
+  ifdef VERGCC
+    ifndef SLC6system
+      AMSLIB =  $(Offline)/lib/linux/gcc4
+    else
+      AMSLIB =  $(Offline)/lib/linux/gcc32.43
+    endif
+  endif
+endif
+
+NAGLIB = -lnag
+ifndef NAGDIR
+  ifndef SLC6system
+    NAGDIR = /afs/cern.ch/sw/lhcxx/specific/i386_redhat51/Nag_Fortran/mark18/lib
+  else
+    NAGDIR = $(Offline)/CERN/NagLib
+	NAGLIB = -lnaggfortran32
+  endif
+endif
+
+
+########################################################################
+# Compilers FLAGS
+########################################################################
+
+ifdef AMSDEBUG
+DEFINES+=  -D__AMSDEBUG__
+endif
+
+ifdef WEBACCESS
+DEFINES+=  -D_WEBACCESS_
+endif
+
+ifdef TFADBW
+DEFINES+=  -D__TFADBW__
+endif
+
+
+ifdef TFAPEDC
+DEFINES+=  -D__TFAPEDC__
+endif
+
+ifdef VERGCCH
+DEFINES+=  -D__LINUXNEW__
+endif
+
+#CFLAGSB= -Winit-self -Wmissing-braces -Wparentheses -Wreturn-type  -Wstrict-aliasing  -Wfloat-equal -Wshadow -Wsign-compare -Winline -Wno-deprecated  -march=i686 
+#CFLAGSB=  -Wall -Wno-unused -Wfloat-equal -Wshadow -Wsign-compare -Wno-deprecated  -march=i686 
+CFLAGSB=  -Wno-deprecated -Wno-write-strings -march=i686 
+DEFINES+= -D__LINUXGNU__  -D__root_$(NEW) 
+
+ifdef AMSPROFILE
+  CFLAGSB+=-pg
+endif
+
+CFLAGS=       $(CFLAGSB)   
+CFLAGSTOFSIM= $(CFLAGSB) 
+CFLAGSn=      $(CFLAGSB)
+CFLAGSDAQ=    $(CFLAGSB) 
+
+FFLAGS=       -fno-automatic 
+FFLAGSn=      -fno-automatic 
+
+
+ifdef AMSPROFILE 
+  FFLAGS+=-pg
+  FFLAGSn+=-pg
+endif
+
+ifdef DEBUGFLAG
+    DB= -ftrap-fpe=invalid,zero,overflow -fbacktrace -g    
+    CFLAGS       += -g
+    CFLAGSTOFSIM += -g
+    CFLAGSn      += -g
+    CFLAGSDAQ    += -g
+    FFLAGS       += -g
+    FFLAGSn      += -g
+else
+    CFLAGS       += -O3      
+    CFLAGSTOFSIM += -O1
+    CFLAGSn      += -O2    
+    CFLAGSDAQ    += -O2 
+    FFLAGS       += -O3    
+    FFLAGSn      += -O2  
+endif
+FFLAGSUS3=$(FFLAGS)
+FFLAGSUS3+= -fno-underscoring
+
+SOFLAGS = -shared
+
+
+ifdef SLC4system
+ifdef VER
+else
+# SOFLAGS+=$(shell root-config --libs ) 
+ SOFLAGS+=   -L$(ROOTLIBDIR) -lRIO -lTree -lThread -lGpad   -lNet -lHist -lMinuit -lHistPainter -lGraf -lMatrix   -lTMVA -lMLP -lXMLIO -lTreePlayer -lPhysics
+# -L$(CERNDIR)/lib -lmathlib -lgeant -lpacklib -lgfortran
+ifndef NO_NAG
+ SOFLAGS+=  -L$(NAGDIR) $(NAGLIB) $(FORTRAN_LIBS)
+endif
+ifndef NOXROOTD
+SOFLAGS += -lNetx
+endif
+#ifndef NORFIOD
+#SOFLAGS += -lRFIO
+#endif
+ifdef MINUIT2
+ SOFLAGS+= -lMinuit2
+endif
+ifdef GENFIT
+SOFLAGS += -lGeom -lEG -lPhysics
+endif
+endif
+endif
+
+SHLDFLAGS=   
+
+########################################################################
+# Output dirs
+########################################################################
+
+#----------------------------------------------------
+
+
+# Library list 
+TIMEL=
+F11ADD=
+
+ifdef VERGCCH 
+F11ADD= -ltinfo
+endif 
+
+LDFLAGSI=    -static $(G4LIBS)  $(FORTRAN2_LIBS) \
+-L$(NAGDIR) $(NAGLIB) \
+-L$(AMSLIB) -lamsut \
+-L$(CERNDIRLIB) $(CERNLIBS) -lpawlib -llapack3 -lblas -lgraflib  -lgrafX11 $(CERNLIBS)  \
+-L$(ROOTLIBDIR) -lRoot -lfreetype\
+-L$(IMPORTS_X11R6)/lib  -lXmu -lXt -lXext -lX11 \
+-lcrypt -lcrypto -lncurses $(F11ADD) -ldl -lpcre   \
+$(FORTRAN2_LIBS) $(FORTRAN_LIBS) $(RH9add)
+
+
+LDFLAGS= $(G4LIBS)   $(FORTRAN2_LIBS) \
+-L$(NAGDIR) $(NAGLIB) \
+-L$(AMSLIB)  -lamsut   \
+-L$(CERNDIRLIB) $(CERNLIBS) \
+-L$(ROOTLIBDIR) -lRoot -lcrypt -lcrypto -lfreetype  -lncurses $(F11ADD) -ldl -lpcre\
+$(FORTRAN2_LIBS) $(FORTRAN_LIBS)  $(PFLAGS) 
+
+ifdef AMSPROFILE
+  LDFLAGS+=-pg
+endif
+
+ifdef WEBACCESS
+  LDFLAGS+= -lcurl
+LDFLAGSSTATIC:=    $(LDFLAGS) -pthread 
+else
+LDFLAGSSTATIC:= -static   $(LDFLAGS) $(RH9add)
+endif
+
+
+
+#--------------------------------------------------------------------------------------------------
+#------- Client/server ORbIt/CORBA part
+#--------------------------------------------------------------------------------------------------
+
+TIMEL=
+
+ifndef SLC6system
+  LDFLAGSIDL= -L$(ORBIT2DIR)/lib -L/lib -pthread -lORBit-2-cpp 
+else
+  LDFLAGSIDL= -L$(ORBIT2DIR)/lib -pthread -lORBit-2-cpp 
+endif
+
+LDFLAGSSTATICIDL= -static $(LDFLAGSIDL) -lORBit-2  -lgobject-2.0 -lgthread-2.0 \
+-lgmodule-2.0 -ldl  -lglib-2.0 -lORBit-imodule-2  -lrt 
+
+CXX_ORBIT=$(CXX) -Wno-deprecated -mcpu=i686 -fpermissive -I/$(ORBIT2DIR)/include/orbitcpp-2.0 -I/usr/include/glib-2.0  -I/usr/lib/glib-2.0/include  -I/$(ORBIT2DIR)/include/orbit-2.0 -I$(BIN)
+CC_ORBIT=$(CC) -I$(ORBIT2DIR)/include/orbitcpp-2.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I$(ORBIT2DIR)/include/orbit-2.0 -I$(BIN)
+
+ifdef DEBUGFLAG
+CXX_ORBIT+= -g
+CCC_ORBIT+= -g
+else
+CXX_ORBIT+= -O3
+CCC_ORBIT+= -O3
+endif
+
+
+#endif
+
+# end of Linux case
+
+#########################################################

@@ -1,0 +1,176 @@
+#!/bin/sh
+sqlplus amsdes/@@@@@amsdb  <<!
+set echo on
+drop table mods;
+create  table mods (
+tabname varchar2(63),
+modtime date
+)
+/
+insert into mods values('jobs', '24-oct-05');
+insert into mods values('runs', '25-oct-05');
+insert into mods values('dataruns', '25-oct-05');
+insert into mods values('datasets','25-oct-05');
+insert into mods values('datafiles','25-oct-05');
+insert into mods values('ntuples','25-oct-05');
+insert into mods values('fs','25-oct-05'); 
+create or replace trigger jobs_biu
+before insert or update on jobs
+for each row
+begin
+update mods set modtime=sysdate where tabname='jobs';
+end ;
+/
+show errors
+
+create or replace trigger jobs_bidr
+before insert or update on dataruns
+for each row
+begin
+update mods set modtime=sysdate where tabname='dataruns';
+end ;
+/
+show errors
+
+
+create or replace trigger runs_biu
+before insert or update on runs
+for each row
+begin
+update mods set modtime=sysdate where tabname='runs';
+end ;
+/
+show errors
+
+create or replace trigger jobs_bd
+before delete on jobs
+for each row
+begin
+delete from runs where jid=:OLD.jid;
+delete from dataruns where jid=:OLD.jid;
+end ;
+/
+show errors
+
+create or replace trigger datafiles_biu
+after insert or update on datafiles
+for each row
+begin
+update mods set modtime=sysdate where tabname='datafiles';
+end ;
+/
+show errors
+
+create or replace trigger ntuples_biu
+after insert or update on ntuples
+for each row
+begin
+update mods set modtime=sysdate where tabname='ntuples';
+end ;
+/
+show errors
+
+create or replace trigger datasets_biu
+after insert or update on datasets
+for each row
+begin
+update mods set modtime=sysdate where tabname='datasets';
+end ;
+/
+show errors
+
+create or replace trigger fs_biu
+after insert or update on filesystems 
+for each row
+begin
+update mods set modtime=sysdate where tabname='fs';
+end ;
+/
+show errors
+
+
+CREATE OR REPLACE
+    FUNCTION date_to_unixts(oracle_date IN DATE) RETURN PLS_INTEGER IS
+        /**
+         * Converts an Oracle DATE to a UNIX timestamp
+         */
+        unix_epoch DATE := TO_DATE('19700101000000','YYYYMMDDHH24MISS');
+        max_date DATE := TO_DATE('20380101000000','YYYYMMDDHH24MISS');
+        min_date DATE := TO_DATE('19030101000000','YYYYMMDDHH24MISS');
+        unix_ts PLS_INTEGER;
+        
+        BEGIN
+            
+            IF oracle_date > max_date THEN
+                RAISE_APPLICATION_ERROR( -20902,'Date too large for 32bit UNIX timestamp' );
+            ELSIF oracle_date < min_date THEN
+                RAISE_APPLICATION_ERROR( -20902,'Date too small for 32bit UNIX timestamp' );
+            ELSE
+                unix_ts := (oracle_date - unix_epoch) / (1/86400);
+            END IF;
+            
+            RETURN (unix_ts);
+        
+        END;
+/
+   show errors
+
+
+CREATE OR REPLACE
+    FUNCTION calcevents (timeleft IN pls_integer, triggers in pls_integer) RETURN pls_integer IS
+        /**
+         *  funny function to calculate  events number
+         */
+        factor NUMBER ;
+        days NUMBER ;
+        eventsleft PLS_INTEGER;
+        
+        BEGIN
+            days := timeleft/86400.;            
+            IF days > 14 THEN
+                eventsleft := 0;
+            ELSIF days <0 THEN
+                eventsleft := 0;
+            ELSE
+                factor := exp(-days);
+                eventsleft := triggers*factor;
+                 IF eventsleft < 100 THEN 
+                  eventsleft := 0;
+                 END IF; 
+            END IF;
+            
+            RETURN (triggers-eventsleft);
+        
+        END;
+/
+   show errors
+!
+
+ create or replace function split
+(
+    p_list varchar2,
+    p_del varchar2 := '.'
+) return varchar2
+is
+    l_idx    pls_integer;
+    l_list    varchar2(32767) := p_list;
+    l_value    varchar2(32767);
+begin
+    loop
+        l_idx := instr(l_list,p_del);
+        if l_idx > 0 then
+            l_list := substr(l_list,l_idx+length(p_del));
+            l_idx := instr(l_list,p_del);
+            if l_idx > 0 then
+               l_list := substr(l_list,l_idx+length(p_del));
+               return (l_list);
+            else
+               return (l_list);
+            end if;
+        else
+            return (l_list);
+        end if;
+    end loop;
+end split;
+/
+show errors;

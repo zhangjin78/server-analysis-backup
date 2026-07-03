@@ -1,0 +1,48 @@
+#!/bin/tcsh
+if ( "$1" != "" )  then
+setenv AMSWD $1
+endif
+
+unsetenv SLC6system
+setenv CXXVERS `g++ -dumpversion | tr -d "."`
+
+if ( "$2" != "" )  then
+setenv ADDBUILDNO 1
+else
+unsetenv ADDBUILDNO
+endif
+setenv PREFIX /Offline/vdev/install
+setenv TESTFLAG
+
+source $PREFIX/amsvar$TESTFLAG.icc64
+setenv ARCH linuxx8664icc
+echo
+echo "******* Loading $ARCH *******"
+echo
+root -b -q rootlogon.C
+
+source $PREFIX/amsvar$TESTFLAG.gcc64
+setenv ARCH linuxx8664gcc
+echo
+echo "******* Loading $ARCH *******"
+echo
+root -b -q rootlogon.C
+
+if ( "$CXXVERS" < "430" ) then
+#source $PREFIX/amsvar$TESTFLAG.icc32
+#setenv ARCH linuxicc
+#echo
+#echo "******* Loading $ARCH *******"
+#echo
+root -b -q rootlogon.C
+
+#source $PREFIX/amsvar$TESTFLAG.gcc32
+#setenv ARCH linux
+#echo
+#echo "******* Loading $ARCH ******* "
+#echo
+root -b -q rootlogon.C
+endif
+
+unsetenv ARCH
+

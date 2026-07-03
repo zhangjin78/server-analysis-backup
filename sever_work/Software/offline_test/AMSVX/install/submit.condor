@@ -1,0 +1,14 @@
+executable            = $(exec)
+output                = $(logf).out
+error                 = $(logf).err
+log                   = $(logf).log
+send_credential       = True
+getenv                =True
+environment           ="CONDOR_ID=$(ClusterId).$(ProcId)"
++MaxRuntime = $(sec)
+#arguments             = $(ClusterId) $(ProcId)
+arguments = $(args) -H$(hostname),$(ClusterId),$(ProcId)
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+RequestCpus   =$(n)
+queue

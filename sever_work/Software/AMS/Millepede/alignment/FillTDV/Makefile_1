@@ -1,0 +1,29 @@
+
+MARCH:=`root-config --arch`
+CXX:=`root-config --cxx`
+
+
+#SRC_U=tkalignwrite
+SRC_U=tkdyalignwrite
+
+OBJS_U=$(SRC_U:%.C=%.o)
+
+CPPFLAGS=-D_PGTRACK_ -D__ROOTSHAREDLIBRARY__ -I. -Ilib -I$(AMSSRC)/include -I$(ROOTSYS)/include
+CXXFLAGS= -O3 -Wno-write-strings -openmp -lifcore -lifcoremt $(CPPFLAGS) -static-libstdc++ 
+
+main: static
+#main: shared
+static: $(SRC_U)_3
+shared: $(SRC_U)_shared
+
+$(SRC_U)_3:  $(SRC_U).C
+	$(CXX) -o $@ $(CXXFLAGS) $^  -L$(AMSWD)/lib/$(MARCH)5.34/ -lntuple_slc6_PG `root-config --libs` -lRFIO -lMinuit -lNetx -lGeom -lMathMore -lEG -lProof -lXMLIO -lTMVA -lMLP -lTreePlayer -L/afs/cern.ch/ams/Offline/CERN/NagLib -lnag64 -L/afs/cern.ch/ams/Offline/CERN/2005/lib -lmathlib
+
+$(SRC_U)_shared:  $(SRC_U).C
+	$(CXX) -o $@ $(CXXFLAGS) $^  -L$(AMSWD)/lib/$(MARCH)5.34/ntuple_slc6_PG.so `root-config --libs` -lRFIO -lMinuit -lNetx -lGeom -lMathMore -lEG -lProof -lTMVA -lXMLIO -lMLP -lTreePlayer -L/afs/cern.ch/ams/Offline/CERN/NagLib -lnag64 -L/afs/cern.ch/ams/Offline/CERN/2005/lib -lmathlib
+
+
+clean:
+	rm -fv *.o
+	rm -fv $(SRC_U)
+

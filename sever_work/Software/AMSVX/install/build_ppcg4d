@@ -1,0 +1,14 @@
+#!/bin/tcsh
+setenv ROOTSYS $Offline/root5.34/linux-ppcbgxlc
+setenv LD_LIBRARY_PATH $ROOTSYS/lib:$ROOTSYS/lib/32
+setenv G4AMS 1
+setenv G4MULTITHREADED 1 
+setenv AMSP 1
+setenv PGTRACK 1
+setenv VERBOSE 1
+setenv DEBUGFLAG 1
+setenv NOOSTLS 1
+source g4i10.1.ppc
+setenv ROOTSYSRUN $Offline/root-v5-34-32
+make -j 12
+

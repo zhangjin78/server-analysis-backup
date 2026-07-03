@@ -1,0 +1,17 @@
+///////////// HOT TO DUMP RAW DATA FOR FUTURE USE
+.L ntuple_slc4_PG.so 
+.L saver.C+
+TFile *f=new TFile("/afs/cern.ch/ams/Offline/AMSDataDir/v5.00/RichChargeUniformityCorrection.root")
+.ls
+f->Get("ChargeAgl")
+f->Get("ChargeNaF")
+GeomHashEnsemble *ChargeAgl=f->Get("ChargeAgl")
+GeomHashEnsemble *ChargeNaF=f->Get("ChargeNaF")
+GeomHashEnsembleBridge ChargeAglData
+GeomHashEnsembleBridge ChargeNaFData
+to_GeomHashEnsembleBridge(ChargeAglData,*ChargeAgl)
+to_GeomHashEnsembleBridge(ChargeNaFData,*ChargeNaF)
+TFile fout("RichChargeUniformityCorrection_data.root","RECREATE")
+ChargeAglData.Write("ChargeAgl_Data")
+ChargeNaFData.Write("ChargeNaF_Data")
+fout.Close()

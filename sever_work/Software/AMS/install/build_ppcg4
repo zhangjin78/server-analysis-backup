@@ -1,0 +1,16 @@
+#!/bin/tcsh
+setenv ROOTSYS $Offline/root5.34/linux-ppcbgxlc-try
+#source $ROOTSYS/bin/thisroot.csh
+setenv LD_LIBRARY_PATH $ROOTSYS/lib:$ROOTSYS/lib/32
+setenv G4AMS 1
+setenv G4MULTITHREADED 1 
+setenv AMSP 1
+setenv PGTRACK 1
+setenv VERBOSE 1
+setenv NOOSTLS 1
+unsetenv DEBUGFLAG 
+setenv AMSDataDir $Offline/AMSDataDir
+source g4i10.1.ppc
+make -j 24
+make producerlite
+

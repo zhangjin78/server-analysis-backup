@@ -1,0 +1,106 @@
+#
+SHELL=/bin/sh
+#
+ROOTINCDIR := $(shell $(ROOTSYS)/bin/root-config --incdir)
+ROOTLIBDIR := $(shell $(ROOTSYS)/bin/root-config --libdir)
+ifeq  "$(shell uname)"  "AIX" 
+SHLDFLAGS=/usr/lpp/xlC/bin/makeC++SharedLib $(ROOTLIBS) -lm -lcurses -p 0
+ROOTLIBS=
+CFLAGS=     -D__BATCH__ -O2   -D__IBMAIX__ -I../include -I$(ROOTINCDIR) -I../include/stl
+CFLAGSn=   -D__BATCH__ -g   -I../include -I$(ROOTINCDIR) -I../include/stl
+FFLAGS=    -I../include -O -qextname 
+DFLAGS=  -D__AMSDEBUG__     -I/usr/include -I/usr/lpp/xlC/include -I../include -I../include/stl
+LDFLAGS= -g -bloadmap:map -lxlf90 -lxlf -L/cern/96a/lib  -lgeant321 -lmathlib -lpacklib -lkernlib  -L/afs/cern.ch/asis/packages/licensed/nag-mark16/rs_aix32/nagfl16df -lnag $(ROOTLIBS)
+CC=xlC
+FF=xlf
+LD=xlC
+BIN=../bin/aix/
+EXE=/exe/aix
+LIB=/lib/aix
+TIMEL=../bin/aix/timel.o
+endif
+ifeq  "$(shell uname)"  "OSF1" 
+SHLDFLAGS = ld -L/usr/lib/cmplrs/cxx -rpath /usr/lib/cmplrs/cxx -expect_unresolved -g -shared /usr/lib/cmplrs/cc/crt0.o /usr/lib/cmplrs/cxx/_main.o -lcxxstd -lcxx -lexc -lots -lc
+ROOTLIBS =
+CFLAGS=  -D__BATCH__ -D__ALPHA__   -O4     -I../include -I$(ROOTINCDIR) -I../include/stl -define_templates 
+CFLAGSn=  -D__BATCH__ -D__ALPHA__  -O4     -I../include -I$(ROOTINCDIR) -I../include/stl -define_templates 
+FFLAGS=   -O -I../include  -d -static -nofor_main -convert big_endian -fpe2
+DFLAGS=  -g   -I/usr/include  -I../include -I../include/stl -I/usr/include/cxx
+LDFLAGS=    -non_shared -lUfor   -lfor -lFutil -lots -lm -L/cern/pro/lib  -lgeant321 -lmathlib -lpacklib -lkernlib  -L/afs/cern.ch/asis/packages/licensed/nag-mark16/alpha_osf32c/nagfl16df -lnag -L/usr/lib -lUfor   -lfor -lFutil -lots -lm -lXrdClient -lXrd -lXrdNet -lXrdOuc -lXrdSys  
+CC=cxx
+FF=f77
+LD=cxx
+BIN=../bin/osf1/
+EXE=/exe/osf1
+LIB=/lib/osf1
+TIMEL=
+endif
+ifeq  "$(shell uname)"  "Linux"
+# DEFAULTS 
+RH9add=
+ifdef RH9
+ RH9add=-pthread 
+endif
+
+ifneq "$(shell uname -r )" "2.4.20-24.7.cernsmp"
+ RH9add=-pthread  
+endif
+
+ifeq "$(wildcard /usr/lib/ctype-info.o)" ""
+ RH9add=
+endif
+#CFLAGS=     -D__BATCH__  -I../include    -D__WRITEROOT__ -D__ROOTPOINTERS__ -I$(ROOTINCDIR) -g
+CFLAGS=   -D__ICC__  -D_PGTRACK_    -D__BATCH__  -I../include   -D__LINUXGNU__ -D__WRITEROOT__ -D__ROOTPOINTERS__ -I$(ROOTINCDIR) -D__FASTNTRD__ -O
+FFLAGS=   -D__ICC__  -O -I../include
+DFLAGS=       -I/usr/include  -I$(AMSWD)/include -I../include/stl 
+#LDFLAGS=  -static     -lnsl -L/usr/local/lib    -lm  -lg2c 
+LDFLAGS=  -static -L$(ROOTLIBDIR) -L$(AMSWD)/lib/linuxx8664icc   -lntuple_slc4_PG -lRootgf  -Wl,--allow-multiple-definition -lcrypt -lcrypto -L//afs/cern.ch/exp/ams/Offline/CERN/2005/lib    -lpacklib -lmathlib -lkernlib   -lshift -ldl   -lfreetype -lpcre -lncurses -pthread   -lXrdClient -lXrd -lXrdNet -lXrdOuc -lXrdSys -L/opt/intel/Compiler/11.1/073/lib/intel64/ -lifport -lifcoremt -limf  -lipgo -lirc_s -limf -lirc  -lrt -llzma -L/afs/cern.ch/exp/ams/Offline/CERN/NagLib -lnag64_nofpic
+CC=/opt/intel/Compiler/11.1/073/bin/intel64/icc  -openmp 
+FF=/opt/intel/Compiler/11.1/073/bin/intel64/ifort  -openmp 
+LD=/opt/intel/Compiler/11.1/073/bin/intel64/icpc  -openmp   $(PARALLEL) 
+BIN=$(AMSWD)/bin/linuxx8664icc/fastntrd/
+EXE=$(AMSWD)/exe/linuxx8664icc/fastntrd/
+TIMEL=
+endif
+
+#
+#
+#
+SCC=../CC/
+SHLD=..$(LIB)/ntuple.so
+FILES= $(SCC)fastntrd.C ../F/fntread.F ../CC/rootread.C  ../CC/commonsi.C ../CC/root.C
+OBJECTS= $(BIN)fastntrd.o  $(BIN)fntread.o $(BIN)rootread.o $(BIN)commonsi.o $(BIN)root.o
+$(EXE)/fastntrd.exe:	$(BIN)fastntrd.o  $(BIN)fntread.o $(BIN)rootread.o $(BIN)commonsi.o $(BIN)root.o
+	@if ! [ -d $(EXE) ] ; then mkdir -p $(EXE); fi
+	$(LD) -g -v -o $(EXE)/fastntrd.exe $(OBJECTS) $(TIMEL) $(LDFLAGS)
+
+	chmod +x  $(EXE)/fastntrd.exe 
+
+
+$(BIN)fastntrd.o:         $(SCC)fastntrd.C
+	@if ! [ -d $(BIN) ] ; then mkdir -p $(BIN); fi
+	$(CC) -c $(CFLAGS) $(SCC)fastntrd.C -o $(BIN)fastntrd.o $(BIN)root.o
+
+
+$(BIN)fntread.o:         ../F/fntread.F
+	$(FF) -c $(FFLAGS) ../F/fntread.F -o $(BIN)fntread.o
+
+$(BIN)rootread.o:    	 $(SCC)rootread.C
+	$(CC) -c $(CFLAGS) -D__ROOTSHAREDLIBRARY__ $(SCC)rootread.C -o $(BIN)rootread.o
+
+$(BIN)commonsi.o:	$(SCC)commonsi.C
+	$(CC) -c $(CFLAGS) -D__ROOTSHAREDLIBRARY__ $(SCC)commonsi.C -o $(BIN)commonsi.o
+
+$(BIN)root.o:	$(SCC)root.C
+	$(CC) -c $(CFLAGS) -D__ROOTSHAREDLIBRARY__ $(SCC)root.C -o $(BIN)root.o
+
+ 
+
+depend: 	
+	makedepend -f Mopt -- $(DFLAGS) -- $(FILES) -p$(BIN)
+
+
+        
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+

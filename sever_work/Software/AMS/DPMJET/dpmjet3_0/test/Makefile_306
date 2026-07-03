@@ -1,0 +1,69 @@
+MARCH:=`root-config --arch`
+CXX:=`root-config --cxx`
+FF=ifort
+
+
+DPMFFBIN=../3.0-6-mt/bin/
+DPMCCBIN=../3.0-6-mt/bin/
+DPMFF=../3.0-6-mt/
+DPMCC=../
+
+VERSION      := $(shell $(ROOTSYS)/bin/root-config --version | cut -b1-4)
+ifeq ($(VERSION),5.27)
+VERSIONP=
+else
+VERSIONP = $(VERSION)
+endif
+
+#---G4LIB
+G4INSTALL=/afs/cern.ch/exp/ams/Offline/geant4.10.01.p01-ams
+
+G4INCLUDEDIR= -I$(G4INSTALL)/include/geant4/ -I$(G4INSTALL)/source/geometry/management/include -I$(DPMCC)
+
+G4LIBDIR=$(G4INSTALL)/lib/Linux-icc
+
+G4LIBS=   -L$(G4LIBDIR) -lG4error_propagation -lG4readout -lG4physicslists -lG4run -lG4event -lG4tracking -lG4parmodels -lG4processes -lG4digits_hits -lG4track -lG4particles -lG4geometry -lG4materials -lG4graphics_reps -lG4intercoms -lG4global
+#---CLHEP
+CLHEP_BASE_DIR=/afs/cern.ch/exp/ams/Offline/CLHEP.2.0.4.7.icc64
+
+G4INCLUDEDIR+= -I$(CLHEP_BASE_DIR)/include
+
+#G4LIBS+= $(CLHEP_BASE_DIR)/lib/libCLHEP.a
+G4LIBS+=-Bstatic -L$(CLHEP_BASE_DIR)/lib -lCLHEP 
+
+#----
+EXE=g4adpmjet306
+
+CPPFLAGS=-I. -Ilib -I$(ROOTSYS)/include $(G4INCLUDEDIR)
+
+#CXXFLAGS=-g -qopenmp -axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals $(CPPFLAGS) -DUSEDPMUS=2
+CXXFLAGS=-O2 -qopenmp -axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals $(CPPFLAGS) -DUSEDPMUS=2
+
+#FFFLAGS=-g -qopenmp -axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals -assume 2underscores
+FFFLAGS=-O2 -qopenmp -axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals -assume 2underscores
+
+$(DPMCCBIN)%.o: $(DPMCC)/%.cc $(DPMCC)/*.h
+	@if ! [ -d $(DPMCCBIN) ] ; then mkdir -p $(DPMCCBIN); fi
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(DPMFFBIN)%.o: $(DPMFF)/%.f
+	@if ! [ -d $(DPMFFBIN) ] ; then mkdir -p $(DPMFFBIN); fi
+	$(FF) -c $(FFFLAGS) $< -o $@
+
+DPMFFLIST= $(wildcard $(DPMFF)/*.f)
+DPMFFLIST1= $(notdir $(DPMFFLIST))
+DPMFFOBJ=$(patsubst %.f, $(DPMFFBIN)%.o, $(DPMFFLIST1))
+DPMCCLIST= $(wildcard $(DPMCC)/*.cc)
+DPMCCLIST1= $(notdir $(DPMCCLIST))
+DPMCCOBJ=$(patsubst %.cc, $(DPMCCBIN)%.o, $(DPMCCLIST1))
+
+main: $(EXE)
+$(EXE): g4adpmjet.cc $(DPMFFOBJ) $(DPMCCOBJ)
+	$(CXX) -static -o $@ $(CXXFLAGS) $^  -L$(ROOTSYS)/lib -lRoot -lcrypt -llzma -lfreetype  -lpcre  $(G4LIBS) -lifport -lifcoremt -limf  -lipgo -lirc_s
+
+#$(EXE): g4adpmjet.cc $(DPMFFOBJ) $(DPMCCOBJ)
+#	$(CXX) -o $@ $(CXXFLAGS) $^ `root-config --libs` -lMinuit -lTMVA -lNetx -lRFIO  $(G4LIBS) -lifcore -lifport -lifcoremt
+
+clean:
+	rm -fv  $(DPMCCBIN)*.o $(DPMFFBIN)*.o $(EXE)
+

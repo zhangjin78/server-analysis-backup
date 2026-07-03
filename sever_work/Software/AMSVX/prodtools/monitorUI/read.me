@@ -1,0 +1,93 @@
+
+monitorUI release candidate ready
+---------------------------------
+For now the application is built  in slc5 64-bit mode with 64-bit ORBit2
+interface, Qt4.8.5 GUI static libraries and  Oracle 10 instant client as 
+well. 
+
+Start parameters
+----------------
+support connection to many amsprodservers:
+  ./runMonitorUI.sh [-v5 -v6...] [-h<hostname>] [-l] [-o] [-p<perl_path>] [-s<data_rq_period>] 
+                   [-u<user_name>] -a<[amsdes/]password[@pdb_ams]> [-t<timeout_in_sec>] [-f<stream_name|all>]
+                    --ORBIIOPIPv4=<1|0> --ORBInitialMsgLimit=<size_in_bytes> 
+parameters:
+    -v - amsprodserver id, default is 4
+    -h - set host name to get oracle password file, default is pcamss0.cern.ch
+    -l - redirect logging from cout to the Logs::My_logging window
+    -o - take validation path from oracle Environment$ValidationDirPath
+    -p - perl path, only 'Export to perl BDB' needs it, use this one:
+         /afs/cern.ch/ams/Offline/AMSDataDir/DataManagement/perl
+    -s - set data request period in seconds, not obligatory, default is 300 sec 
+    -u - not obligatory, set user name with write permissions to edit Control 
+         tables, the 'ams'  user has it by default
+    -a - specify Oracle user/password@oracleDB explicetely
+         if no user specified, amsdes will be taken
+         if no DB specified, pdb_ams will be taken
+    -t - timeout in sec for internal ssh calls, default is 100 sec
+    -f - stream filter for Delete Runs, if not specified - nothing will be done,
+         if -fall - all runs will be deleted, if -fzg1 - only zg1 runs will be 
+         deleted (**DEPRECATED**) 
+corba specific parameters:
+    --ORBIIOPIPv4        - enable IPv4 server sockets, if equals to 1
+    --ORBInitialMsgLimit - amount of data accepted on first method invocation.   Succeeding method 
+                           invocations are not limited. This option is used to prevent DOS attacks
+                           - ie. opening a connection to service, sending huge amount of junk data.
+                           Should be set for several MBytes for this program.
+
+To see all available CORBA_ORB_init parameters, go:
+    https://projects.gnome.org/ORBit2/orbit-faq/faq/faq.html#which_parameters_are_supported_by_corba_orb_init
+
+Hot keys
+--------
+<CTRL>+ - ZoomIn menu item
+<CTRL>- - ZoomOut menu item
+<CTRL>n - add new line to the Control table selected
+<CTRL>x - clear content of Logs::My_logging window
+ <ALT>u  - UpdateStatus menu item
+ <ALT>h  - ResetHosts menu item
+ <ALT>q  - Quit menu item
+Tables cursor navigation:
+  <CTRL>Home, <CTRL>End, PageUp, PageDown, arrows (left, right, up, down)
+Logs::My_logging cursor navigation:
+  Home, End, PageUp, PageDown, arrows (left, right, up, down)
+Tabbed pages cursor navigation, between 'Producer processes', 'Producer i/o', 'Service', etc.
+  <CTRL>left, <CTRL>right 
+
+Menu items
+----------
+'Preferences::LockUpdate' - being set, blocks any data requests to amsprodserver, usefull for 
+                            editing in the Control table
+
+Environment variables
+---------------------
+All them may be set by adding appropriate variable to AMSProdVarv<x> file or by modifying of
+'Set Environment' Control table.
+
+1. AMSVrdLog
+Is needed for logging of VRD log files, sample for amsprodserverv5:
+    /afs/cern.ch/ams/local/logs/production_logs/vrdv5std,/afs/cern.ch/ams/local/logs/production_logs/vrdv5stdu
+
+2. AMSDBServCpp
+If set to 0, VC perl dbserver should be used by amsprodserver.
+If set to 1, C++ dbServer should be used by amsprodserver.
+
+3.AMSDBServDbg
+The given value assigns some optional debug information of the dbServer process, set values means:
+    0 - no debuf info
+    1 - trace corba entries (default)
+    2 - as previous + possible problems with db container traits
+    3 - trace of bdb c++ containers
+
+4. AMSServCred
+The way to renew Kerberos5 and AFS credentials in amsprodserver:
+    0 - using k5reauth (default)
+    1 - using k5reauth and showing credentials in amsprodserver log file
+    2 - using old VC implementation with 'Update AFS token' done by monitors
+		
+Testing
+-------
+Done on the follows machines:
+    slc5: lxplus5
+    slc6: lxplus, pcamsf8, pcamsj0, pcamsj1, pcamsj2, pcamsj3
+meter.cernch

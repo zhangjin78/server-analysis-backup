@@ -1,0 +1,31 @@
+MARCH:=`root-config --arch`
+CXX:=`root-config --cxx`
+
+VERSION      := $(shell $(ROOTSYS)/bin/root-config --version | cut -b1-4)
+ifeq ($(VERSION),5.27)
+VERSIONP=
+else
+VERSIONP = $(VERSION)
+endif
+
+
+OBJS_U=$(SRC_U:%.C=%.o)
+
+WD=/afs/cern.ch/user/c/chenyam/analisi
+#CPPFLAGS=-DUSEGENFIT -I. -Ilib -I$(AMSWD)/include -I$(ROOTSYS)/include -I$(AMSWD)/GenFit/include -I$(QToolWD)
+CPPFLAGS=-DUSEGENFIT -I. -Ilib -I$(AMSWD)/include -I$(ROOTSYS)/include -I$(AMSWD)/GenFit/include -I$(WD) -I$(WD)/include #YC
+
+CXXFLAGS=-O3 -qopenmp -lifcore -lifcoremt $(CPPFLAGS) -static-libstdc++ -std=c++11
+#CXXFLAGS=-O3 -qopenmp -lifcore -lifcoremt $(CPPFLAGS)
+############
+EXE=$(EXEAPP_U)$(SRC_U).exe
+
+main: static
+static: $(EXE)
+
+$(EXE): $(SRC_U).C
+	$(CXX) -o $@ $(CXXFLAGS) $^  `root-config --libs`  -lGeom -lMathMore -lEG -lMinuit -lTMVA -lNetx -lRFIO -L/$(AMSWD)/lib/$(MARCH)$(VERSIONP) -lntuple_slc6_PG  -L/afs/cern.ch/ams/Offline/CERN/NagLib -lnag64 -L/afs/cern.ch/ams/Offline/CERN/2005/lib -lmathlib
+
+clean:
+	rm -fv $(EXE)
+

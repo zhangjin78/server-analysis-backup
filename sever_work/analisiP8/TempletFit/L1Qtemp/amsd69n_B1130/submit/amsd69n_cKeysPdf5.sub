@@ -1,0 +1,77 @@
+executable	= protest_cKeysPdf5.sh
+output		= output/$(file).out
+error		= error/$(file).err
+log		= log/$(file).log
+
+initialdir = /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130
+
++JobFlavour = "testmatch"
+
+file=R0_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R1_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R2_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R3_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R4_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R5_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R6_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R7_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R8_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R9_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R10_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R11_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R12_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R13_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R14_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R15_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R16_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R17_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R18_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R19_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R20_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R21_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)
+
+file=R22_amsd69n_cKeysPdf5
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L1Qtemp/amsd69n_B1130/submit/arg/$(file)

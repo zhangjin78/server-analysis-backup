@@ -1,0 +1,74 @@
+MARCH:=$(shell root-config --arch)
+CXX:=  $(shell root-config --cxx)
+ifneq ($(findstring g,$(CXX)),g)
+ ifneq ("$(findstring oneAPI,$(INTELDIR))","")
+   ifndef NOICX
+     CXX:=icpx
+   endif
+ endif
+endif
+
+#----
+VERSION6     := $(shell $(ROOTSYS)/bin/root-config --version | cut -b1-1)
+#----
+VERSION      := $(shell $(ROOTSYS)/bin/root-config --version | cut -b1-4)
+ifeq ($(VERSION),5.27)
+  VERSIONP=
+else
+#  VERSIONP= $(VERSION)
+  VERSIONP= $(VERSION)_7
+endif
+
+ifneq ("$(wildcard /etc/redhat-release)","")
+  RH_Version := $(shell cat /etc/redhat-release|awk -F'[^0-9]+' '{ print $$2 }')
+  VERSIONP = $(VERSION)_$(RH_Version)
+endif
+
+
+OBJS_U=$(SRC_U:%.C=%.o)
+
+############
+CXXFLAGS:=-O3 -qopenmp -std=c++11 -Wabi-tag
+ifeq ($(findstring icpx,$(CXX)),icpx)
+  CXXFLAGS:=-O3 -qopenmp -std=c++11 -axSSE4.2,SSE4.1,SSSE3,AVX,CORE-AVX2,CORE-AVX512 -fp-model precise -Wabi
+else ifeq ($(findstring g,$(CXX)),g)
+  CXXFLAGS:=-O3 -std=c++11 -Wall -Wabi-tag
+endif
+CXXFLAGS+= -D_GLIBCXX_USE_CXX11_ABI=0
+
+############
+INCLUDEDIRS:=-I. -Ilib -I$(AMSWD)/include -I$(ROOTSYS)/include -I$(AMSWD)/GenFit/include -I$(QToolWD)
+
+############
+LIBAUXS:=-L/cvmfs/ams.cern.ch/Offline/CERN/NagLib -lnag64 -L/cvmfs/ams.cern.ch/Offline/CERN/2005/lib -lmathlib
+#LIBAUXS+= -lifcore -lifcoremt
+#LIBAUXS+= -lifcore -lifcoremt -static-libstdc++
+LIBAUXS+= -lifcore -lifcoremt -lsvml -lintlc -lirng -static-libgcc
+ifeq ($(findstring g,$(CXX)),g)
+  LIBAUXS:=-L/cvmfs/ams.cern.ch/Offline/CERN/NagLib -lnaggcc64 -L/cvmfs/ams.cern.ch/Offline/CERN/2005.gcc64.44/lib -lmathlib
+  LIBAUXS+= -lgfortran -lm -lgomp
+endif
+ifeq ($(VERSION6),6)
+  LIBAUXS:=-lCling -lz $(LIBAUXS)
+endif
+
+############
+DEFINES:=-D_PGTRACK_ -DUSEGENFIT -D__ROOTSHAREDLIBRARY__
+ifeq ($(VERSION6),6)
+  DEFINES+= -DVERSION6
+endif
+ifneq ($(FLAGAP_U),)
+  DEFINES+= $(FLAGAP_U)
+endif
+############
+EXE=$(SRC_U)$(EXEAP_U).exe
+
+main: static
+static: $(EXE)
+
+$(EXE): $(SRC_U).C
+	$(CXX) -o $@ $(CXXFLAGS) $(DEFINES) $(INCLUDEDIRS) $^ -L$(AMSWD)/lib/$(MARCH)$(VERSIONP) -lntuple_slc6_PG $(shell root-config --libs) -lGeom -lMathMore -lEG -lMinuit -lTMVA -lNetx -lXMLIO $(LIBAUXS)
+
+clean:
+	rm -fv $(EXE)
+

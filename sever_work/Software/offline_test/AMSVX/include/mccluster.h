@@ -1,0 +1,325 @@
+//  $Id: mccluster.h,v 1.48 2022/04/08 12:37:41 qyan Exp $
+// Author V. Choutko 24-may-1996
+//
+// June 12, 1996. ak. add set/getnumbers function to AMSTrMCCluster
+// July 22, 1996. ak. the same for AMSTOFMCCluster
+// Aug  07, 1996. ak. V124
+// Sep  30, 1996. ak. V127
+// Oct  04, 1996. ak _ContPos is moved to AMSLink
+//
+// May 03,  2012. AMSTOFMCPmtHit
+
+#ifndef __AMSMCCLUSTER__
+#define __AMSMCCLUSTER__
+#include "upool.h"
+#include "apool.h"
+
+#include "link.h"
+#include "commons.h"
+#include <stdlib.h>
+#include "trdid.h"
+#include "ecaldbc.h"
+//========================================================  
+class AMSTOFMCCluster: public AMSlink{
+public:
+
+ integer  idsoft;
+ integer  parentid;
+ integer  particle;
+ integer  gtrkid;
+ AMSPoint xcoo;
+ number   tof;
+ number   beta;
+ number   ekin;
+ number   edep;
+ number   edepr;
+ number   step;
+ integer getid() const {return idsoft;}
+ static integer Out(integer);
+ AMSTOFMCCluster(integer _idsoft,AMSPoint _xcoo,number _edep, number _tof,number _ekin,number _beta,number _edepr,number _step, integer _parentid, integer _particle, integer _gtrkid=-2) :
+ idsoft(_idsoft),parentid(_parentid),particle(_particle),gtrkid(_gtrkid),xcoo(_xcoo),tof(_tof),beta(_beta),ekin(_ekin),edep(_edep),edepr(_edepr),step(_step){_next=0;};
+ AMSTOFMCCluster(){_next=0;};
+ ~AMSTOFMCCluster(){};
+ void _printEl(ostream &stream){stream <<"AMSTOFMCCluster "<<idsoft<<" "<<edep<<" "<<xcoo<<endl;}
+ void _writeEl();
+ void _copyEl(){};
+ integer operator < (AMSlink & o)const{
+   integer idsofto=((AMSTOFMCCluster*)(&o))->idsoft;
+   integer gtrkido=((AMSTOFMCCluster*)(&o))->gtrkid;
+   number  tofo   =((AMSTOFMCCluster*)(&o))->tof;
+   if     (idsoft!=idsofto)return (idsoft<idsofto);
+   else if(gtrkid!=gtrkido)return (gtrkid<gtrkido);
+   else                    return (tof   <tofo); 
+ }
+ static void sitofhits(integer _idsoft, geant _vect[],geant _edep, geant _tofg, geant _ekin=0,geant _beta=0, geant _edepr=0, geant _step=0, integer _parentid=0,integer _particle=0, integer _gtrkid=-2);
+  AMSTOFMCCluster *  next(){return (AMSTOFMCCluster*)_next;}
+#ifdef __WRITEROOT__
+   friend class TofMCClusterR;
+#endif
+};
+
+//========================================================
+class AMSTOFMCPmtHit:  public AMSlink{
+  protected: //sum SE-time= _phtim+_phtimp
+  integer _pmtid;//PMT id
+  integer _parentid;//PMT phton Parent paticle Id
+  number _phtim; //PMT photon arrving time in pmt
+  number _phtiml;//PMT photon local transmit time(SC+LG)(ns)
+  number _phtral; //PMT photon local transmit length(cm)  
+  number _phekin; //PMT photon energy(keV)
+  AMSPoint _phpmpos;//photon gene vetex pos(cm)
+  AMSDir _phpmdir;//photon gene vetex dir
+  number _phtimp;//Transmit time in PMT
+  number _phamp;//SE amp
+
+  public:
+  AMSTOFMCPmtHit(integer pmtid,integer parentid,number phtim,number phtiml,number phtral,number phekin,AMSPoint phpos,AMSDir phdir):
+    AMSlink(),_pmtid(pmtid),_parentid(parentid),_phtim(phtim),_phtiml(phtiml),_phtral(phtral),_phekin(phekin),_phpmpos(phpos),_phpmdir(phdir),_phtimp(0),_phamp(0){};
+
+  AMSTOFMCPmtHit():AMSlink(){};
+  ~AMSTOFMCPmtHit(){};
+  AMSTOFMCPmtHit * next(){ return (AMSTOFMCPmtHit *)_next;}
+
+  void _printEl(ostream &stream){stream <<"AMSTOFMCPmtHit "<<_pmtid<<" "<<" "<<_phtim<<endl;}
+  void _writeEl();
+  void _copyEl(){};
+  integer operator < (AMSlink & o)const{
+  return _pmtid < ((AMSTOFMCPmtHit*)(&o)) ->_pmtid;}
+
+  static void sitofpmthits(integer pmtid,integer parentid,geant phtim, geant phtiml, geant phtral,geant phekin, geant pos[],geant dir[]);
+  static integer Out(integer);
+  void sitofpmtpar(geant phtimp,geant phamp);
+  integer  getpmtid()   const {return _pmtid;}
+  integer  getparentid()const {return  _parentid;}
+  number   getphtime()  const {return _phtim;}
+  number   getphtimel() const {return _phtiml;}
+  number   getphtral()  const {return _phtral;}
+  number   getphekin()  const {return _phekin; }
+  AMSPoint getphpos()   {return _phpmpos;}
+  AMSDir getphdir()   {return _phpmdir;}
+  number  gettimp()   const {return _phtimp;}
+  number  getamp()    const {return _phamp; }
+#ifdef __WRITEROOT__
+  friend class TofMCPmtHitR;
+#endif
+};
+
+
+
+//=====================================================
+class AMSAntiMCCluster: public AMSlink{
+protected:
+ integer  _idsoft;
+ AMSPoint _xcoo;
+ number _tof;
+ number _edep;
+ integer _gtrkid;
+
+public:
+  AMSAntiMCCluster(integer idsoft,AMSPoint xcoo,number edep, number tof) :
+ _idsoft(idsoft), _xcoo(xcoo),_tof(tof),_edep(edep), _gtrkid(-2) {_next=0;};
+ AMSAntiMCCluster(integer idsoft,AMSPoint xcoo,number edep, number tof, integer gtrkid) :
+ _idsoft(idsoft), _xcoo(xcoo),_tof(tof),_edep(edep), _gtrkid(gtrkid) {_next=0;};
+ AMSAntiMCCluster(){_next=0;};
+ ~AMSAntiMCCluster(){};
+ void _printEl(ostream &stream){stream <<"AMSAntiMCCluster "<<_idsoft<<" "<<_edep<<endl;}
+ void _writeEl();
+ void _copyEl(){};
+ static void siantihits(integer idsoft , geant vect[],geant edep, geant tofg, integer _gtrkid=-2);
+ AMSAntiMCCluster *  next(){return (AMSAntiMCCluster*)_next;}
+ integer operator < (AMSlink & o)const{
+ return _idsoft < ((AMSAntiMCCluster*)(&o)) ->_idsoft;}
+
+ integer getid() const {return _idsoft;}
+ number getedep() const {return _edep;}
+ number gettime() const {return _tof;}
+ integer getgtrkid() const { return _gtrkid; }
+ number getcoo(integer i) {return i>=0 && i<3 ? _xcoo[i]:0;}
+ static integer Out(integer);
+
+#ifdef __WRITEROOT__
+   friend class AntiMCClusterR;
+#endif
+
+};
+//=====================================================
+class AMSEcalMCHit: public AMSlink{
+protected:
+ integer  _idsoft;// SSLLFFF (SS->s-layer,LL->f-layer in SS, FFF->fiber in LL)
+ AMSPoint _xcoo;
+ number _tof;
+ number _edep;
+
+public:
+ 
+ AMSEcalMCHit(integer idsoft,AMSPoint xcoo,number edep, number tof) :
+ _idsoft(idsoft), _xcoo(xcoo),_tof(tof),_edep(edep){_next=0;};
+ AMSEcalMCHit(){_next=0;};
+ ~AMSEcalMCHit(){};
+ void _printEl(ostream &stream){stream <<"AMSEcalMCHit "<<_idsoft<<" "<<_edep<<endl;}
+ void _writeEl();
+ void _copyEl(){};
+ static void siecalhits(integer idsoft , geant vect[],geant edep, geant tofg);
+ AMSEcalMCHit *  next(){return (AMSEcalMCHit*)_next;}
+ integer operator < (AMSlink & o)const{
+ return _idsoft < ((AMSEcalMCHit*)(&o)) ->_idsoft;}
+
+ integer getid() const {return _idsoft;}
+ number getedep() const {return _edep;}
+ number gettime() const {return _tof;}
+ number getcoo(integer i) {return i>=0 && i<3 ? _xcoo[i]:0;}
+ static number impoint[2];
+ static integer Out(integer);
+ static number leadedep[ecalconst::ECSLMX];
+#ifdef __WRITEROOT__
+   friend class EcalMCHitR;
+#endif
+
+};
+
+//------------------------------------------------------
+// MC bank for RICH: Preliminary
+
+class AMSRichMCHit: public AMSlink{
+protected:
+
+  integer _id;        // Number of geant particle or -666 for noise
+  integer _channel;   // Channel number (presently 16*pmt#+window#)
+  geant _counts;      // ADC counts for this hits
+  AMSPoint _origin;   // Particle origin (if applicable)
+  AMSPoint _direction;// Particle direction in the origin (if applicable)
+  geant _angle;       // Entrance angle in the LG
+  integer _status;    // photon status
+  integer _hit;       // associated hit
+  integer _gtrkid;    // geant4 track id;
+  integer _gparentid; // geant4 parent track id;
+public:
+
+AMSRichMCHit(integer id,integer channel,geant counts,AMSPoint origin,AMSPoint direction,integer status) :
+    AMSlink(),_id(id),_channel(channel),_counts(counts),_origin(origin),_direction(direction),
+    _status(status),_hit(-1), _gtrkid(-2), _gparentid(-2){};
+
+AMSRichMCHit(integer id,integer channel,geant counts,AMSPoint origin,AMSPoint direction,integer status, integer gtrkid, integer gparentid) :
+    AMSlink(),_id(id),_channel(channel),_counts(counts),_origin(origin),_direction(direction),
+    _status(status),_hit(-1), _gtrkid(gtrkid), _gparentid(gparentid){};
+
+AMSRichMCHit():AMSlink(),_counts(0){};
+  ~AMSRichMCHit(){};
+
+  void _printEl(ostream &stream){stream <<"AMSRichMCHit "<<_channel<<endl;}
+  void _writeEl();
+  void _copyEl(){};
+  AMSRichMCHit *  next(){return (AMSRichMCHit*)_next;}
+  integer operator < (AMSlink & o)const{
+    return _channel < ((AMSRichMCHit*)(&o)) ->_channel;}
+
+  static void sirichhits(integer id, integer pmt,geant position[],geant origin[],geant momentum[],integer status, integer gtrkid=-2, integer gparentid=-2);
+  static void noisyhit(integer channel,integer mode=1); // Add noise
+  static geant adc_hit(integer n,integer channel=0,integer mode=1);   // Compute the adc counts
+  static geant adc_empty(integer channel=0,integer mode=1);
+  static geant noise(int channel,integer mode=1);
+  integer getid() const {return _id;}
+  integer getchannel() const {return _channel;}
+  geant getcounts() const {return _counts;}
+  const AMSPoint & getorigin(){return _origin;}
+  const AMSPoint & getdirection(){return  _direction;}
+  integer getstatus() const {return _status;}
+  integer gethit() const {return _hit;}
+  void puthit(integer n) {_hit=n;};
+  integer getgtrkid() const {return _gtrkid;}
+  integer getgparentid() const {return _gparentid;}
+#ifdef __WRITEROOT__
+  friend class RichMCClusterR;
+#endif
+};
+
+
+
+//=======================================================
+
+
+
+// MC  bank for tracker
+
+
+
+
+
+class AMSTRDMCCluster: public AMSlink{
+public:
+ AMSTRDIdGeom _idsoft;   // geant stray id
+ integer _itra;     // geant itra
+ integer _ipart;     // geant itra
+ integer _gtrkid;  //geant4 track id
+ integer _gtrkids;  //geant4 track id for saving
+ integer _procid;  //process id
+ AMSPoint _xgl;     // global coo (cm)
+ number _step;      // track length (cm)
+ number   _edep;      // energy deposition (GeV)
+ number   _ekin;      // total particle energy
+ void _printEl(ostream & stream);
+ void _writeEl();
+ void _copyEl();
+ static integer _NoiseMarker;
+ static integer Out(integer);
+public:
+ // Constructor for noise and crosstalk
+ AMSTRDMCCluster(const AMSTRDIdGeom & id ,geant energy, integer itra, integer gtrkid, integer gtrkids):AMSlink(),_idsoft(id),_itra(itra),_gtrkid(gtrkid),_gtrkids(gtrkids),_procid(0),_xgl(0,0,0),_step(0),_edep(energy),_ekin(0) {};
+ // Constructor for geant track
+   AMSTRDMCCluster(integer idsoft , AMSPoint xgl, AMSDir xdir, geant step,geant energy, geant edep, integer ipart, integer itra):AMSlink(),
+   _idsoft(idsoft),_itra(itra),_ipart(ipart),_gtrkid(-2),_gtrkids(-2), _procid(0),_xgl(xgl),_step(step),_edep(edep),_ekin(energy){}
+
+// Constructor for geant track
+ AMSTRDMCCluster(integer idsoft , AMSPoint xgl, AMSDir xdir, geant step,geant energy, geant edep, integer ipart, integer itra,integer gtrkid,integer gtrkids,integer procid):AMSlink(),
+   _idsoft(idsoft),_itra(itra),_ipart(ipart),_gtrkid(gtrkid),_gtrkids(gtrkids), _procid(procid),_xgl(xgl),_step(step),_edep(edep),_ekin(energy){}
+
+ static void    sitrdhits(integer idsoft ,geant vect[],
+			  geant destep, geant ekin, geant step,integer ipart, integer itra, integer gtrkid=-2, integer gtrkids=-2, integer procid=0);   
+
+ // Constructor for daq
+ AMSTRDMCCluster (AMSPoint xgl, integer itra): AMSlink(),
+  _idsoft(0),_itra(itra),_xgl(xgl),_step(0),_edep(0),_ekin(0){}
+
+ AMSTRDMCCluster():AMSlink(){};
+ ~AMSTRDMCCluster(){};
+  integer IsNoise(){return _itra==_NoiseMarker;}
+  AMSPoint getHit(){return _xgl;}
+  integer getgtrkid() const { return _gtrkid; }
+  integer getgtrkids()const { return _gtrkids; }
+  integer getprocid() const { return _procid; }
+  static integer noisemarker(){return _NoiseMarker;}
+  geant getedep()const {return _edep;}
+  geant getitra()const {return _itra;}
+  AMSTRDIdGeom getid()const {return _idsoft;}
+  AMSTRDMCCluster *  next(){return (AMSTRDMCCluster*)_next;}
+ static void sitrdnoise();
+ static void init();
+ integer operator < (AMSlink & o)const{
+   uinteger cmpt   =_idsoft.cmpt();
+   uinteger cmpto  =((AMSTRDMCCluster*)(&o))->_idsoft.cmpt();
+   integer  gtrkido=((AMSTRDMCCluster*)(&o))->_gtrkid;
+   number   ekino  =((AMSTRDMCCluster*)(&o))->_ekin;
+   if     (cmpt!=cmpto)     return (cmpt   <cmpto);
+   else if(_gtrkid!=gtrkido)return (_gtrkid<gtrkido);
+   else                     return (_ekin  >ekino);
+ }
+ // Interface with DAQ
+
+/*
+ static int16u getdaqid(){return (15 <<9);}
+ static integer checkdaqid(int16u id);
+ static integer calcdaqlength(integer i);
+ static integer getmaxblocks(){return 1;}
+ static void builddaq(integer i, integer n, int16u *p);
+ static void buildraw(integer n, int16u *p);
+*/
+
+#ifdef __WRITEROOT__
+ friend class TrdMCClusterR;
+#endif
+
+};
+
+
+
+#endif

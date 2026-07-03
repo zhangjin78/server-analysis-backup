@@ -1,0 +1,249 @@
+#! /bin/sh
+[ -z "$UNAME" ]      && UNAME=`(uname) 2>/dev/null`
+[ -z "$UNAME" ]      && (echo could not determine hosttype ; exit)
+
+if [ "$UNAME" = "Linux" ] ; then
+    MACHINE="linux"
+else
+echo $UNAME is not supported yet
+
+fi
+
+
+NICKNAME=AMS02/2022.v6.00 
+DATASETNAME=CI.test 
+JOBNAME=ci.test.8800.test 
+THREADS=32
+CPUTIME=600000 
+CPUTYPE="Pentium IV Xeon" 
+CLOCK=2000 
+SUBMITTIME=1748243652
+PART=69
+PMIN=7.995
+PMAX=800.368
+RUN=83155315
+TRIG=827000
+CPULIM=37.500
+RNDM1=1291753288
+RNDM2=1518197738
+ROOTNTUPLE='1=0 168=18000000 170=1315 127=-2 128='
+TRIGGER=
+OUPUTMODE=
+SPECTRUM=
+SETUP=
+TIMBEG=15072011
+HRSBEG=182155
+TIMEND=18072011
+HRSEND=60307
+FOCUS=
+COSMAX=
+PLANENO=
+GEOCUTOFF=
+COOCUB1=
+COOCUB2=
+COOCUB3=
+COOCUB4=
+COOCUB5=
+COOCUB6=
+RUNDIR=
+JOB=
+RUNMIN=
+RUNMAX=
+OPENCLOSE=
+
+ulimit -m 3000000
+eosfusebind
+hostname
+THREADS=32
+TotalMem=`grep MemTotal /proc/meminfo | awk '{print $2}'`
+CustomizedVMEM=$(( TotalMem*8/10 ))
+echo "Total memory is $TotalMem, setting VMEM to be $CustomizedVMEM."
+export AMSFSCRIPT=./test.83155315.ci.test.8800.test.job 
+export G4AUTODETECT=0
+export G4INSTALL=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams
+export G4LEVELGAMMADATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/PhotonEvaporation3.1
+export G4RADIOACTIVEDATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/RadioactiveDecay4.2
+export G4LEDATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4EMLOW6.41
+export NeutronHPCrossSections=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4NDL4.5
+export G4NEUTRONXSDATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4NEUTRONXS1.4
+export G4PIIDATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4PII1.3
+export G4ELASTIC=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4ELASTIC1.1
+export G4DPMJET2_5DATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/DPMJET/GlauberData
+export G4DPMJET3_DATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/DPMJET/dpmjet3_0/tabs
+export G4SAIDXSDATA=/cvmfs/ams.cern.ch/Offline/geant4.10.01-ams/data/G4SAIDDATA1.1
+export AMSRescueHost=scamsfs1.cern.ch
+export NtupleValidatorExec=fastntrd64.exe
+export NtupleDir2=$TMPDIR/nt
+export NtupleDestDirBackup=/eos/ams/Data/scratch/test/nt
+export Offline=/cvmfs/ams.cern.ch/Offline
+export AMSDataDir=$Offline/AMSDataDir
+export NOUPDATEABLEMAPDIR=1
+export EventStatusTable04=/afs/cern.ch/ams/local5/MCStandAlone/DataBase.standalone/
+
+export ExeDir=$Offline/AMSDataDir/DataManagement/exe
+export ProductionLogDirAFS=/afs/cern.ch/ams/local5/MCStandAlone/journals
+qtypesci=`grep QTYPE=SCI ${BASH_SOURCE[0]} | grep -v ^qtypesci=`
+if [ "$JOB" != "" ]; then
+    jid=$JOB
+else
+    jid=$RUN
+fi
+export ROOTSYS=$Offline/root/Linux/527.icc64
+export TransferRawBy="timeout --signal 9 900 /afs/cern.ch/ams/local/castor/bin/rfcp "
+export TransferRawByB="timeout --signal 9 900 /afs/cern.ch/ams/Offline/root/Linux/527.icc64/bin/xrdcp -OSsvcClass=amscdr -ODsvcClass=amscdr -f root://castorpublic.cern.ch//"
+export TransferRawBy2="scp "
+export EosTransferRawBy="timeout --signal 9 1000 eos cp "
+export EosTransferMakeDir="timeout --signal 9 10 eos mkdir -p "
+export TransferSharedLib=/afs/cern.ch/ams/Offline/root/Linux/527.gcc64/lib:/afs/cern.ch/ams/local/castor/lib:/afs/cern.ch/ams/local2/opt/xrootd-icc64-12/lib64:/afs/cern.ch/ams/opt/intel/composer_xe_2013_sp1.1.106/compiler/lib/intel64
+export TransferMakeDir="timeout --signal 9 90 /afs/cern.ch/ams/local/castor/bin/nsmkdir -p  "
+
+#if [ -d "/pool/lsf/`whoami`" ]; then
+if [ -d "$TMPDIR" ]; then
+    export NtupleDir=$TMPDIR/tmp/nt
+else
+    export NtupleDir=/tmp/`whoami`
+fi
+mkdir -p $NtupleDir
+ulimit -c unlimited
+ulimit -a
+df -f $NtupleDir
+available_scratch=`df -P $NtupleDir | grep -v Available | awk '{print $4}'`
+if [[ "$available_scratch" == "" ]] || [[ $available_scratch -lt 30000000 ]]; then
+    echo "$NtupleDir available space $available_scratch less than 30G, changing ..."
+    echo "df $NtupleDir produced:"
+    df $NtupleDir
+    if [ -d "/eos/ams/scratch/nt" ]; then
+        export NtupleDir=/eos/ams/scratch/nt
+        echo "$NtupleDir changed to /eos/ams/scratch/nt"
+    else
+        export NtupleDir=/tmp/`whoami`
+        echo "$NtupleDir changed to /tmp/`whoami`"
+    fi
+fi
+export ProductionLogDir=$NtupleDir
+if [ "$qtypesci" != "" ]; then
+    jobtype=Data
+    export NtupleDestDir=/eosams/Data/scratch/test/nt
+    joudir=$ProductionLogDir/Producer
+    joudirafs=$ProductionLogDirAFS/Producer
+    export AMSDataDirMap=$NtupleDir/Map
+    mkdir -p $AMSDataDirMap
+    rsync -rLptv $AMSDataDir/DataBase/Map/ $AMSDataDirMap/
+else
+    export NtupleDestDir=/eosams/MC/scratch/test/nt
+    joudir=$ProductionLogDir/MCProducer
+    joudirafs=$ProductionLogDirAFS/MCProducer
+    jobtype=MC
+fi
+journal=$joudir/`printf "%010d" $jid`.journal
+
+export MACHINE=$MACHINE
+if [[ "`cat /etc/os-release|grep ^VERSION=|awk -F= '{print $2}'|sed 's/\"//g'|cut -c1`" == "9" ]]; then
+    ALMA9=".alma9"
+fi
+ExePath=`grep 'gbatch\-orbit' $0 | grep -v grep | awk '{print $1}' | envsubst`
+echo $ExePath
+mkdir -p $TMPDIR/$MACHINE/
+cp -v $ExePath$ALMA9 $TMPDIR/$MACHINE/$( basename $ExePath )
+cp -v $ExeDir/$MACHINE/fastntrd64.exe $TMPDIR/$MACHINE/
+if [[ $? -eq 0 ]]; then
+    export ExeDir=$TMPDIR
+    echo ExeDir redefined to $ExeDir
+else
+    echo "Failed to cp Exe $ExePath$ALMA9 to $TMPDIR/$MACHINE/$( basename $ExePath ), exiting..."
+    exit 1
+fi
+which eos
+
+
+export GetIorExec=dummygetior.exe
+export AMSISS=$AMSDataDir/altec/
+export AMSISSSA=$AMSDataDir/isssa/
+[ -z "$NtupleValidatorExec" ] && export NtupleValidatorExec=fastntrd.exe
+if [ -n "$CustomizedVMEM" ]; then
+    ulimit -v $CustomizedVMEM
+else
+    vmem=`echo "(3+$THREADS)*1024*1024" | bc`
+    ulimit -v $vmem
+fi
+if [ -z "$MEMGBPERCORE" ]; then
+    MEMGBPERCORE=1
+fi
+$ExeDir/$MACHINE/gbatch-orbit.exe.v6.00.0.B1315_1013.g4 -IOR:010000002100000049444c3a616d732e6365726e2e63682f4450532f50726f64756365723a312e3000000000040000000054424f380000000101020005000000554e49580000000014000000616d732d766f626f7831312e6365726e2e6368000600000031303031300000000000000000000000440000000101020014000000616d732d766f626f7831312e6365726e2e6368001a2700001c000000010000009f3cfb5e0db70a78cf563ea21ef69f5d05000000bf2a0a4a00000000caaedfba30000000010102000600000031303031300000001c000000010000009f3cfb5e0db70a78cf563ea21ef69f5d05000000bf2a0a4a01000000480000000100000002000000050000001c000000010000009f3cfb5e0db70a78cf563ea21ef69f5d05000000bf2a0a4a01000000140000000100000001000105000000000901010000000000 -U83155315 -M -D1 -GL -SYes <<!
+LIST
+MCGEN 25=$TIMBEG 27=$TIMEND 26=$HRSBEG 28=$HRSEND
+MISC 33=$MEMGBPERCORE
+C  generate o16 3.9m cube top plane && fullplane (log spectrum) 8 to 800 GeV/c dpmjet3__bic_radecay-vcparam no-EMD XS_bias=(1.08,1.5,0.42,0.9) v6-pass8
+
+C OPENCLOSE=3
+C ROOTNTUPLE
+C PART=69
+C PMIN=8.
+C PMAX=800.
+C TIMBEG=01062011
+C TIMEND=27052018
+C EXCLTIMBEG=29092014 05032017
+C EXCLTIMEND=29112014 09032017
+C TOTALEVENTS=4000000000
+C CPUPEREVENTPERGHZ=1.16028818
+C THREADS=16
+
+LIST
+G4FF 4=1 6=0  
+MISC 29=11
+MISC 4=0 5=1 32=0
+TRDMC 48=1.
+CALIB 4=1111
+TRMC 608=0. 609=0. 610=0. 611=0.
+TKGEOM 807=1
+
+RICR 1=11 2=1 3=1 4=1
+TRMC 608=0. 609=0. 610=0. 611=0.
+
+
+KINE $PART 
+LOSS 1
+HADR 1 
+MULS 1
+CUTS 1=0.0005 2=0.0005 3=0.001 4=0.001 5=0.001
+TRIG $TRIG
+DEBUG -1 10 1000
+MCGEN  12=0. 13=$PMIN 14=$PMAX 15=1 19=$RUN  20=5 21=0 34=0
+IOPA $ROOTNTUPLE'
+$NtupleDir/ecalpl1/$PART'
+43=101 45='TriggerLVL1 ' 126=199999 
+RNDM $RNDM1 $RNDM2
+C      Simul Debug    CpuLim  Read Write Jobname
+AMSJOB 1=10000   2=0      3=$CPULIM   4=0  5=0 
+C Special HP-UX
+TIME 1=600000.000 2=100. 3=10000000
+TERM 1234567890
+L3REC 11=0
+C MAGS 1=1
+TRMC 564=4 592=60. 593=60. 594=30. 595=0. 596=600. 597=600.
+TRMC 598=5 599=5 647=3 659=0.03 662=12
+TRMC 681=1 682=500. 683=8. 684=-1.
+TRCL 1=11010022 81=13
+TRCL 38=500 39=500 40=500
+TRFIT 13=2.5 14=2.5
+MISC 8=$THREADS 39=1.0
+DAQC 1=610 42='
+$NtupleDir/'
+G4FF 7=502057 8=0 20=1.08 21=1.5 22=0.42 23=11.
+G4FF 24=0.9 25=0.85 32=1.2 33=0.8 34=1
+END
+!
+
+gbatch_ret=$?
+#if [[ $? -ne 0 ]]; then
+#  cp core* /eos/ams/MC/scratch/
+#fi
+XRDCP=/cvmfs/ams.cern.ch/Offline/AMSsoft/xrootd/xrootd-icc64-12/bin/xrdcp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/ams.cern.ch/Offline/AMSsoft/xrootd/xrootd-icc64-12/lib64:/cvmfs/ams.cern.ch/Offline/intel/composer_xe_2013_sp1.1.106/compiler/lib/intel64:/afs/cern.ch/ams/local/castor/lib
+eos cp $journal /eos/ams/$jobtype/scratch/test/jou/ || cp -a $journal /eos/ams/$jobtype/scratch/test/jou/ || $XRDCP -x -f $journal root://eosams.cern.ch//eos/ams/$jobtype/scratch/test/jou/ || cp -a $journal $joudirafs/
+if [[ $? -eq 0 ]]; then
+    rm -v $journal $journal.moved2eos
+    rm -v $joudir/*.$jid.*
+fi
+exit $gbatch_ret
+

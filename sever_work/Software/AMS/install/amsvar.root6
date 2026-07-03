@@ -1,0 +1,17 @@
+unsetenv DEBUGFLAG 
+setenv GDBMAN 1
+setenv GDBINFO 1
+setenv VERBOSE 1
+setenv LANGUAGE US
+setenv LANG C
+setenv LC_ALL en_US
+
+setenv ROOTSYS $Offline/root/Linux/root6-04-08-icc16
+source $ROOTSYS/bin/thisroot.csh
+source /cvmfs/sft.cern.ch/lcg/contrib/gcc/4.9.3/x86_64-slc6/setup.csh  /afs/cern.ch/sw/lcg/external
+setenv INTELSW /cvmfs/projects.cern.ch
+setenv INTELDIR $INTELSW/intelsw/psxe/linux/x86_64/2019
+setenv INTELVER compilers_and_libraries_2019.0.117/linux
+source /cvmfs/projects.cern.ch/intelsw/psxe/linux/all-setup.csh
+source /cvmfs/projects.cern.ch/intelsw/psxe/linux/x86_64/2019/compilers_and_libraries/linux/bin/compilervars.csh   intel64
+setenv GENFIT 1

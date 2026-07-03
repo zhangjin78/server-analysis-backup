@@ -1,0 +1,3 @@
+#!/bin/tcsh
+
+./ci_build_527_slc5_icc . all

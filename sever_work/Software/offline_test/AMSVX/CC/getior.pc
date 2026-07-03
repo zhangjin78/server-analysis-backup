@@ -1,0 +1,355 @@
+//  $Id: getior.pc,v 1.16 2023/03/06 15:31:28 bshan Exp $
+//
+// Subroutines to get IOR from AMS ORACLE database
+//
+//
+// A.Klimentov  March   20, 2002. 
+//
+// Last Edit : March 26, 2002
+//
+
+#include <iostream.h>
+#include <fstream.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <sys/times.h>
+#include <strstream>
+#include <iomanip.h>
+#include <math.h>
+
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+
+
+
+#include <sqlca.h>
+#include <oraca.h>
+
+
+
+int  verbose = 0;
+int  output  = 0;
+char ofile[256];
+int MINIORPLENGTH=20;
+
+
+EXEC SQL BEGIN DECLARE SECTION;
+//
+
+
+  char     uline[32];
+
+
+  VARCHAR  dynstmt[2048];
+
+  struct ior {
+   char name[2048];
+   unsigned int time;
+  } iorp[100];
+
+
+unsigned int irun;
+ 
+ struct run{
+   unsigned int run;
+   unsigned int fevent;
+   unsigned int levent;
+   unsigned int feventtime;
+   unsigned int leventtime;
+}runp[100];
+
+
+EXEC SQL END DECLARE SECTION;
+
+void Fmessage(const char *subr, const char *text, const char *errcode)
+{
+//
+// subr -  subroutine name
+// text -  message text
+// errcode - 'I' / 'F' / 'W' etc
+//
+ if (subr && text) {
+  cout<<"AMSOracle::"<<subr<<"-"<<errcode<<"-"<<text<<endl;
+ }
+}
+
+void sql_error(char *msg)
+{
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+    Fmessage("sql_error",msg,"E");
+    Fmessage("sql_error",sqlca.sqlerrm.sqlerrmc,"E");
+    EXEC SQL ROLLBACK RELEASE;
+    exit(1);
+}
+
+void sql_nothing(char *msg)
+{
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+    Fmessage("sql_error",msg,"W");
+    Fmessage("sql_error",sqlca.sqlerrm.sqlerrmc,"W");
+}
+
+void sql_notfound(char *msg)
+{
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+    Fmessage("sql_notfound",msg,"W");
+}
+
+bool getft(unsigned int irun){
+
+EXEC SQL WHENEVER SQLERROR DO sql_nothing("ORACLE warning: AMSoracle::getRun");
+EXEC SQL SELECT run,fevent,levent,fetime,letime INTO :runp FROM amsdes.datafiles WHERE substr(type, 0, 2) != 'MC' and run=:irun;
+
+  int niorp  = sqlca.sqlerrd[2];
+  if(niorp==0){
+    cerr<<"AMSOracle::getft-E-runNotFound "<<irun<<endl;
+    return false;
+  }
+  else if(niorp>1){
+    cerr<<"AMSOracle::getft-W-MoreOneRecordFound "<<irun;
+  }
+  return true;
+
+}
+unsigned int getior(int datamc)
+{
+//
+// return host id for given client id
+//
+
+
+ EXEC SQL WHENEVER SQLERROR DO sql_nothing("ORACLE warning: AMSoracle::getIORP");
+if(datamc==0){
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=0 ORDER BY createtime DESC;
+
+}
+else if(datamc==1)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=1 ORDER BY createtime DESC;
+}
+else if(datamc==2)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=2 ORDER BY createtime DESC;
+}
+
+else if(datamc==3)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=3 ORDER BY createtime DESC;
+}
+
+else if(datamc==4)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=4 ORDER BY createtime DESC;
+}
+
+else if(datamc==5)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=5 ORDER BY createtime DESC;
+}
+
+else if(datamc==6)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=6 ORDER BY createtime DESC;
+}
+else if(datamc==7)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=7 ORDER BY createtime DESC;
+}
+else if(datamc==8)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=8 ORDER BY createtime DESC;
+}
+else if(datamc==9)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=9 ORDER BY createtime DESC;
+}
+else if(datamc==10)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=10 ORDER BY createtime DESC;
+}
+else if(datamc==11)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=11 ORDER BY createtime DESC;
+}
+else if(datamc==12)
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=12 ORDER BY createtime DESC;
+}
+else 
+{
+
+ EXEC SQL SELECT iorp, createtime INTO :iorp FROM amsdes.servers WHERE status='Active' and datamc=13 ORDER BY createtime DESC;
+}
+
+
+  int niorp  = sqlca.sqlerrd[2];
+  if (verbose) {
+   cout<<"getior -I- found "<<niorp<<" IORP"<<endl;
+   if (niorp > 0) {
+    time_t t = iorp[0].time;
+    cout<<"getior -I- the last one dated "<<ctime(&t)<<endl;
+   }
+  }
+  if (niorp == 0)
+    {
+     strcpy(iorp[0].name, "-- IORP not found in Servers ---");
+  }
+  if (strlen(iorp[0].name) < MINIORPLENGTH) {
+     strcpy(iorp[0].name, "-- IORP invalid length ---");
+  }
+  return niorp;
+}
+
+int oracle_connect()
+{
+  char line[256];
+  char n[255];
+  char db[255];
+
+
+//  EXEC SQL WHENEVER SQLERROR GOTO connect_error;
+//
+  strcpy(uline,"ams");
+  strcpy(n,"ams");
+  strcpy(db,"pdb_");
+  strcat(db,uline);
+  strcat(uline,"ro");
+  strcat(uline,"/");
+  strcat(uline,"eto_");
+  strcat(uline,n);
+  strcat(uline,"ro");
+  strcat(uline,"@");
+  strcat(uline,db);
+//
+//
+
+
+  EXEC SQL CONNECT :uline;
+  if (verbose) {
+   strcpy(line,uline);
+   Fmessage("oracle_connect ", line,"I");
+ }
+   return 0;
+
+connect_error :
+cout <<" code "<<sqlca.sqlcode<<endl;
+   strcpy(line,"failed to connect to amsdb ");
+   Fmessage("oracle_connect", line,"F");
+
+   return -1;
+}
+
+int suppressBlanks(char* string)
+{
+  int rstat = -1;
+  if (string > 0) {
+        for (int j=strlen(string)-1; string[j]==' '; j--) {
+           string[j] = '\0';
+         }
+    rstat = 1;
+   }
+   return rstat;
+}
+
+
+
+
+int main(int argc, char* argv[]) 
+{
+  unsetenv("NLS_LANG");
+//  char tns[]="/afs/cern.ch/ams/Offline/oracle/admin";
+  char tns[]="/afs/cern.ch/project/oracle/admin";
+  setenv("TNS_ADMIN",tns,0);
+  int datamc=1;
+  bool brun=false;
+   unsigned int run=0;
+  if (argc > 1) {
+   for (int i=0; i<argc; i++) {
+     if(strcmp(argv[i],"-m") ==0){
+       datamc=0;
+     }
+     if(strstr(argv[i],"-s") ){
+       datamc=atol(argv[i]+2);
+     }
+     if (strcmp(argv[i],"-o") == 0) {
+      if (i+1 < argc) {
+       cout<<"output file "<<argv[i+1]<<endl;
+       output = 1;
+       strcpy(ofile,argv[i+1]);
+      } else {
+       cout<<"Error - no output file "<<endl;
+       exit(0);
+      }
+     }
+     if (strcmp(argv[i],"-r") == 0) {
+      if (i+1 < argc) {
+       brun=true;
+       run=atol(argv[i+1]);
+      } else {
+       cout<<"Error - no run "<<endl;
+       exit(0);
+      }
+     }
+     if (strcmp(argv[i],"-v") == 0) {
+      verbose = 1;
+     }
+     if (strcmp(argv[i],"-h") == 0) {
+      cout<<"getior : reads AMS Oracle Database and returns IORP for server with the latest CREATETIME"<<endl;
+      cout<<"source ~/AMS/install/AMSoracle"<<endl;
+      cout<<"./getior"<<endl;
+      cout<<"-h : print help"<<endl;
+      cout<<"-m : version4.00 "<<endl;
+      cout<<"-v : verbose mode"<<endl;
+      cout<<"-o iorfile : write IOR to iorfile"<<endl;
+      exit(0);  
+     }
+   }
+  }
+   EXEC SQL WHENEVER SQLERROR DO sql_error("ORACLE error:");
+   if(oracle_connect() != 0) exit(1);
+   if(!brun){
+    getior(datamc);
+    suppressBlanks(iorp[0].name);
+    if (!output) {
+     cout<<iorp[0].name<<endl;
+    } else {
+    ofstream rfile(ofile,ios::out|ios::out);
+    rfile.setf(ios::dec);
+    rfile<<iorp[0].name<<endl;
+    rfile.close();
+   }
+   }
+   else{
+     if(getft(run)){
+    if (!output) {
+     cout<<runp[0].run<<" "<<runp[0].fevent<<" "<<runp[0].levent<<" "<<runp[0].feventtime<<" "<<runp[0].leventtime<<" "<<endl;
+    } else {
+    ofstream rfile(ofile,ios::out|ios::out);
+    rfile.setf(ios::dec);
+     rfile<<runp[0].run<<" "<<runp[0].fevent<<" "<<runp[0].levent<<" "<<runp[0].feventtime<<" "<<runp[0].leventtime<<" "<<endl;
+    rfile.close();
+   }
+   }
+   else{
+      cout <<" 0"<<endl;
+      exit(1);
+   }
+   }
+   exit(0);
+}

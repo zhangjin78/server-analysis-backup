@@ -1,0 +1,57 @@
+#[ae-29.11.2020] insert default path
+ifndef AMSWD
+AMSWD := ..
+endif
+
+SLC6system=
+ifneq "$(wildcard /etc/redhat-release)" ""
+  RH_Version := $(shell cat /etc/redhat-release | awk -F'[^0-9]+' '{ print $$2 }')
+  ifeq ("$(RH_Version)", "6")
+        SLC6system := $(RH_Version)
+  else ifeq ("$(RH_Version)", "7")
+        SLC6system := $(RH_Version)
+  else ifeq ("$(RH_Version)", "8")
+        SLC6system := $(RH_Version)
+  else ifeq ("$(RH_Version)", "9")
+        SLC6system := $(RH_Version)
+  endif
+endif
+
+SCC     = ../CC/
+FILES   = ${SCC}getntuplepathinfo.cxx ${SCC}eos_search.cxx
+
+#ifdef SLC6system
+#  ORACLE_HOME   := /afs/cern.ch/project/oracle/@sys/prod
+#else
+#  ORACLE_HOME   := /afs/cern.ch/project/oracle/@sys/old
+#endif
+#[ae-29.11.2020] this simple one provides compilation for slc6 & cc7
+#	        being built on slc6, works on slc6 and cc7 
+ifneq ($(wildcard /afs/cern.ch/project/oracle),)
+	ORACLE_HOME   := /afs/cern.ch/project/oracle/@sys/prod
+else
+	ORACLE_HOME   := /cvmfs/ams.cern.ch/opt/oracle/linux64/prod
+endif
+
+ARCH	  := linux
+ifndef INTELVER
+INTELVER      := composer_xe_2013_sp1.1.106/compiler
+INTELDIR      := /cvmfs/ams.cern.ch/opt/intel
+endif
+CXX	      := $(INTELDIR)/$(INTELVER)/bin/intel64/icc
+INCLUDES      := -I$(ORACLE_HOME)/rdbms/public
+LIBRARIES     := -L$(ORACLE_HOME)/lib -locci -lclntsh
+DEBUG	      := -g
+CXXFLAGS      := $(DEBUG) -v
+LDFLAGS       := -Wl,-rpath,$(ORACLE_HOME)/lib
+
+EXE	   := $(AMSWD)/exe/$(ARCH)
+
+all:
+	@if ! [ -d $(EXE) ] ; then mkdir -p $(EXE); fi
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) ${INCLUDES} $(LIBRARIES) -o ${EXE}/getntuplepathinfo ${FILES}
+	chmod +x  $(EXE)/getntuplepathinfo
+
+.PHONY: clean
+clean:
+	rm -f ${EXE}/getntuplepathinfo ${EXE}/getntuplepathinfo.o

@@ -1,0 +1,23 @@
+How to update amsed ams02 geometry  form /linux/exe/gxint.exe
+ 
+Command [10] rz/file 21 ams02.g3 on
+ $ROOTSYS/bin/g2rootold ams02.g3
+
+patch ams02.C add at the end
+
+
+ams02->Draw();
+TFile f("ams02.geom","NEW");
+ams02->Write();
+f.Write();
+f.Close();
+ 
+root  ams02.C
+
+
+
+to link g2root
+
+ifx/ifort -c g2root.f
+ifx/ifort -o g2root g2root.o -g -L/afs/cern.ch/ams/Offline/CERN/2005.icc64.17/lib -lpacklib -lkernlib -lgfortran -static
+

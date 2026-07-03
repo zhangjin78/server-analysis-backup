@@ -1,0 +1,35 @@
+DPMFF1BIN=./3.0-6-mt/bin/
+DPMFF2BIN=./3.2017-1-mt/bin/
+DPMFF1=./3.0-6-mt/
+DPMFF2=./3.2017-1-mt/
+DPMFF1LIB=libdpmjet306_mt.a
+DPMFF2LIB=libdpmjet2017_mt.a
+
+FF=ifort
+FFLAGS= -O2 -assume nounderscore -fopenmp -axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals -lifcore -lifport -lifcoremt
+
+$(DPMFF1BIN)%.o: $(DPMFF1)/%.f
+	@if ! [ -d $(DPMFF1BIN) ] ; then mkdir -p $(DPMFF1BIN); fi
+	$(FF) -c $(FFLAGS) $< -o $@
+
+$(DPMFF2BIN)%.o: $(DPMFF2)/%.f
+	@if ! [ -d $(DPMFF2BIN) ] ; then mkdir -p $(DPMFF2BIN); fi
+	$(FF) -c $(FFLAGS) $< -o $@
+
+DPMFF1LIST= $(wildcard $(DPMFF1)/*.f)
+DPMFF1LIST1= $(notdir $(DPMFF1LIST))
+DPMFF1OBJ=$(patsubst %.f, $(DPMFF1BIN)%.o, $(DPMFF1LIST1))
+DPMFF2LIST= $(wildcard $(DPMFF2)/*.f)
+DPMFF2LIST1= $(notdir $(DPMFF2LIST))
+DPMFF2OBJ=$(patsubst %.f, $(DPMFF2BIN)%.o, $(DPMFF2LIST1))
+
+main: $(DPMFF1LIB) $(DPMFF2LIB)
+$(DPMFF1LIB): $(DPMFF1OBJ)
+	ar rcs $@ $^ 
+
+$(DPMFF2LIB): $(DPMFF2OBJ)
+	ar rcs $@ $^ 
+ 
+clean:
+	rm -fv  $(DPMFF1BIN)*.o $(DPMFF2BIN)*.o $(DPMFF1LIB) $(DPMFF2LIB)
+

@@ -1,0 +1,117 @@
+#!/bin/tcsh
+
+source /Offline/vdev/install/amsvar
+
+if ( "$1" != "" )  then
+setenv AMSWD $1
+endif
+
+if ( "$2" != "" )  then
+    setenv ADDBUILDNO 1
+else
+    unsetenv ADDBUILDNO
+endif
+
+unsetenv AMSLIB 
+unsetenv  CERNDIR    
+unsetenv  CERNICC     
+unsetenv  CERNSRCDIR  
+ 
+
+unsetenv SLC6system
+setenv CXXVERS `g++ -dumpversion | tr -d "."`
+
+setenv PREFIX $Offline/vdev/install
+setenv TESTFLAG 
+unsetenv G4AMS
+unsetenv MARCH
+setenv ECALBDT 1
+setenv MAKEFLAGS -j20
+
+echo
+echo "******** setenv PGTRACK 1 ********"
+echo
+
+setenv PGTRACK 1
+source  $PREFIX/amsvar$TESTFLAG.icc64
+source  $PREFIX/g4i$TESTFLAG.icc64
+gmake all
+gmake fast64
+
+source  $PREFIX/amsvar$TESTFLAG.gcc32
+source  $PREFIX/g4i$TESTFLAG.gcc32
+if ( "$CXXVERS" < "430" ) then
+  gmake allp
+endif
+
+source  $PREFIX/amsvar$TESTFLAG.gcc64
+source  $PREFIX/g4i$TESTFLAG.gcc64
+gmake allp
+gmake fast64
+
+echo "$PREFIX/amsvar$TESTFLAG.icc32 building..."
+
+source $PREFIX/amsvar$TESTFLAG.icc32
+if ( "$CXXVERS" < "430" ) then
+  gmake allold 
+setenv MARCH linuxicc26
+gmake -j
+gmake producer -i
+endif
+
+
+
+unsetenv MARCH
+setenv PGTRACK 1
+setenv G4AMS 1
+source $PREFIX/amsvar$TESTFLAG.icc64
+source $PREFIX/g4i$TESTFLAG.icc64
+gmake  -j
+gmake producer -i
+unsetenv MARCH
+setenv PGTRACK 1
+setenv G4AMS 1
+source $PREFIX/amsvar$TESTFLAG.gcc64
+source $PREFIX/g4i$TESTFLAG.gcc64
+gmake  -j
+gmake producer -i
+unsetenv G4AMS
+unsetenv PGTRACK
+
+unsetenv G4AMS
+unsetenv PGTRACK
+
+unsetenv G4AMS
+unsetenv MARCH
+unsetenv PGTRACK
+setenv ECALBDT 1
+source $PREFIX/amsvar$TESTFLAG.icc64
+source  $PREFIX/g4i$TESTFLAG.icc64
+gmake allg4
+
+source  $PREFIX/amsvar$TESTFLAG.gcc64
+gmake allp
+
+source  $PREFIX/amsvar$TESTFLAG.icc32
+echo "$PREFIX/amsvar$TESTFLAG.icc32 bbuilding..."
+if ( "$CXXVERS" < "430" ) then
+  gmake allold 
+  setenv MARCH linuxicc26
+  gmake -j
+  gmake producer -i
+endif
+
+
+unsetenv MARCH
+source  $PREFIX/amsvar$TESTFLAG.gcc32
+source  $PREFIX/g4i$TESTFLAG.gcc32
+if ( "$CXXVERS" < "430" ) then
+  # errors on 'g++ -m32 -o ../exe/Linux-g++/gbatch-orbit.exe'
+  gmake allp
+endif
+gmake server
+
+
+
+
+

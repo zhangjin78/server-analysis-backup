@@ -1,0 +1,2845 @@
+//  $Id: geant4.C,v 1.263 2023/11/28 23:08:42 qyan Exp $
+#include "G4Version.hh"
+#include "job.h"
+#include "event.h"
+#include "trrec.h"
+#include "richdbc.h"
+#include "richid.h"
+#include <signal.h>
+#ifdef _PGTRACK_
+#include "MagField.h"
+#include "TrSim.h"
+#else
+#include "trmccluster.h"
+#endif
+extern "C" void fortran_raise_int_();
+extern "C" void fortran_thread_signalled_(int &mp);
+extern "C" void fortran_throw_ex_(char *mes);
+extern "C" void abend_();
+#include "MPIEmulator.h"
+extern MPIEmulator mpi;
+#include "mccluster.h"
+#include "daqevt.h"
+#include "mceventg.h"
+#include "geant4.h"
+#include "astring.h"
+#include "g4physics.h"
+#include "G4GeometryTolerance.hh"
+#include "G4PropagatorInField.hh"
+#include "G4PhysicalVolumeStore.hh"
+#include "G4FieldManager.hh"
+#include "G4ChordFinder.hh"
+#include "G4Mag_UsualEqRhs.hh"
+#include "G4SimpleHeum.hh"
+#include "G4ImplicitEuler.hh"
+#include "G4ExplicitEuler.hh"
+#include "G4ClassicalRK4.hh"
+#include "G4TransportationManager.hh"
+#include "G4Material.hh"
+#include "G4MaterialScanner.hh"
+#include "G4Box.hh"
+#include "G4LogicalVolume.hh"
+#include "G4ThreeVector.hh"
+#include "G4Event.hh"
+#include "G4PVPlacement.hh"
+#include "G4StateManager.hh"
+#include "G4ApplicationState.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4VProcess.hh"
+#include "g4xray.h"
+#include "producer.h"
+#include "TofSimUtil.h"
+#include "Tofsim02.h"
+#include "g4tof.h"
+#include "g4rich.h"
+#include "richlip.h"
+#include "g4matscan.h"
+#ifdef G4MULTITHREADED
+#include "G4MTHepRandom.hh"
+#endif
+#ifdef G4VIS_USE
+#include "g4visman.h"
+#endif
+#ifdef G4MULTITHREADED
+#include "G4MTRunManager.hh"
+#include "G4Threading.hh"
+#endif
+#ifndef __DARWIN__
+#include <malloc.h>
+#else
+#include <mach/task.h>
+#include <mach/mach_init.h>
+#endif
+
+static long long totals[512];
+static long long totall[512];
+const int maxa=12;
+//static long long totala[256][maxa];
+
+static double cpu_spent=0;
+static double cpu_spent_x=0;
+#ifdef _OPENMP
+#pragma omp threadprivate (cpu_spent)
+#pragma omp threadprivate (cpu_spent_x)
+#endif
+#ifdef _OPENMP
+#ifdef G4MULTITHREADED
+    G4ThreadLocal AMSG4MagneticField* AMSG4DetectorInterface::pf=0;
+#else
+    AMSG4MagneticField*  AMSG4DetectorInterface::pf=0;
+#endif
+#else
+    AMSG4MagneticField* AMSG4DetectorInterface::pf=0;
+#endif
+
+
+ extern "C" void getfield_(geant& a);
+
+ static double g4_primary_momentum=0;
+ static double g4_cpu_limit=0;
+#ifdef _OPENMP
+#pragma omp threadprivate(g4_primary_momentum,g4_cpu_limit) 
+#endif
+size_t get_memory_usage() {
+
+#ifndef __DARWIN__
+  struct mallinfo m = mallinfo();
+  return m.uordblks + m.arena;
+#else
+  struct task_basic_info t_info;
+  mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+  task_info(current_task(), TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count);
+  return t_info.resident_size;
+#endif
+}
+
+AMSG4Physics * pph = 0;
+
+extern MPIEmulator mpi;
+
+void *g4ams::func(void *p)
+{
+#if defined(G4MULTITHREADED) 
+    TIMEL(GCTIME.TIMINT);
+    MPIEmulator *pmpi=(MPIEmulator*)p;
+    if(!pmpi || pmpi->getMPIStatus()!=1)return NULL;
+        cout<<"g4ams::func-I-started "<<pmpi->InitTime()<<endl;
+ while(pmpi->RunMode<2 ){   
+   if(pmpi->Terminate()>=0|| ((AMSEvent::get_num_threads()-GCFLAG.IFINIT[15]<MISCFFKEY.BTRaise || GCFLAG.IFINIT[15]==0)&&pmpi->bcast())){
+       cout<<"g4ams::func-I-ReadyToRaiseINT"<<" "<<pmpi->getTotal()<<" "<<pmpi->RunMode<<" "<<pmpi->Terminate()<<endl;
+       if(pmpi->RunMode<2){
+           pmpi->RunMode=2;
+           time_t tt;
+           time(&tt);
+           cerr<<"g4ams::func-W-RaisingINT "<<tt<<endl;
+#ifdef __PPC64
+           GCKINE.ikine=GCKINEST.ikine;
+            G4FFKEY.SigTerm=1;
+              raise(SIGTERM);
+                 G4FFKEY.SigTerm=2;
+        //   fortran_raise_int_();
+#else
+  G4FFKEY.SigTerm=1;
+  raise(SIGTERM);
+   G4FFKEY.SigTerm=2;
+#endif
+        break;
+       }
+   }
+   else sleep(2);   
+ }
+ int finished=0;
+ int ntry=0;
+ while(pmpi->RunMode==2){
+   if(GCFLAG.IFINIT[15]==finished)ntry++;
+   else    {
+        finished=GCFLAG.IFINIT[15];
+        ntry=0;
+   }
+   int left=AMSEvent::get_num_threads()-GCFLAG.IFINIT[15]-mpi.Signalled;
+   if(ntry>0)cout<<"g4ams::func-I-Ntry "<<ntry<<" "<<left<<" "<<pmpi->Terminate(true)<<endl;
+   if(!left)break; 
+   else if((left<=MISCFFKEY.BTRaise && ntry>1) || ntry>left || pmpi->Terminate(true)>0){
+                time_t tt;
+           time(&tt);
+      cerr<<"g4ams::func-W-RaisingKILL "<<tt<<endl;
+      G4FFKEY.SigTerm=2;
+      raise(SIGTERM);
+      break;
+   }
+  sleep(5); 
+}
+ cout<<"g4ams::func-I-exited "<<pmpi->InitTime()<<endl;
+#endif
+
+ return NULL;
+
+}
+
+void g4ams::G4INIT(){
+#if G4VERSION_NUMBER  > 999
+G4AllocatorPool::gThreshold=MISCFFKEY.G4AllocatorSize;
+cout<<"  g4AMS::G4INIT-I-MaxG4AllocatorSize "<<G4AllocatorPool::gThreshold<<endl;
+#endif
+
+// Initialize Random Number Generator
+
+#ifndef G4MULTITHREADED
+HepRandom::setTheEngine(new RanecuEngine());
+#else
+G4MTHepRandom::setTheEngine(new RanecuEngine());
+#endif
+//  to be verified can we do this?
+//
+//G4Random::setTheEngine(new RanecuEngine());
+long seed[3]={0,0,0};
+seed[0]=GCFLAG.NRNDM[0];
+seed[1]=GCFLAG.NRNDM[1];
+#ifndef G4MULTITHREADED
+HepRandom::setTheSeeds(seed);
+#else
+G4MTHepRandom::setTheSeeds(seed);
+#endif
+
+#ifdef G4MULTITHREADED
+  G4MTRunManager* pmgr = new G4MTRunManager;
+  if(MISCFFKEY.NumThreads<=-maxthread)MISCFFKEY.NumThreads=-maxthread+1;
+  else if(MISCFFKEY.NumThreads>=maxthread)MISCFFKEY.NumThreads=maxthread-1;
+  if(MISCFFKEY.NumThreads<0){
+   pmgr->SetNumberOfThreads(-MISCFFKEY.NumThreads);
+   MISCFFKEY.NumThreads*=-1;
+  }
+  else pmgr->SetNumberOfThreads(MISCFFKEY.NumThreads>0 && MISCFFKEY.NumThreads<G4Threading::G4GetNumberOfCores()?MISCFFKEY.NumThreads:G4Threading::G4GetNumberOfCores());
+  cout <<"g4ams::G4INIT-I-SetNumberOfThreads "<< pmgr->GetNumberOfThreads()<<endl;
+#else
+  G4RunManager* pmgr = new G4RunManager;
+#endif
+ 
+
+
+
+
+//   Detector
+
+    pmgr->SetUserInitialization(new AMSG4DetectorInterface(AMSJob::gethead()->getgeom()->pg4v())); 
+
+    //   AMSG4Physics * pph = new AMSG4Physics();
+    //   AMSJob::gethead()->addup(pph);
+    //    pph->SetCuts();
+    if(!pph)pph=new AMSG4Physics();
+    AMSJob::gethead()->getg4physics()=pph;
+    pmgr->SetUserInitialization(pph);
+
+
+
+
+#if G4VERSION_NUMBER  > 999
+     pmgr->SetUserInitialization(new AMSG4ActionInitialization(CCFFKEY.npat));
+#else
+     AMSG4GeneratorInterface* ppg=new AMSG4GeneratorInterface(CCFFKEY.npat);
+     AMSJob::gethead()->getg4generator()=ppg;
+     pmgr->SetUserAction(ppg);
+     pmgr->SetUserAction(new AMSG4EventAction);
+     pmgr->SetUserAction(new AMSG4RunAction);
+     pmgr->SetUserAction(new AMSG4SteppingAction);
+     pmgr->SetUserAction(new AMSG4StackingAction);
+//    pmgr->SetUserAction(new AMSG4RunAction);
+#endif
+     pmgr->Initialize();
+
+     cout<<"~~~~~~Dump All Geant4 range cut: "<<endl;
+     pph->DumpCutValuesTable();
+
+#ifdef G4VIS_USE
+   AMSG4VisManager::create();
+  cout<<"  geant4i-I-visman created"<<endl; 
+#endif
+
+}
+void g4ams::G4RUN(){
+   mpi.RunMode=1;
+
+  if (MISCFFKEY.DoMatScan==1) {
+    G4MaterialScanner *scanner=new G4MaterialScanner();
+    scanner->SetNTheta(1);
+    scanner->SetThetaMin(MISCFFKEY.StartScanTheta*deg);
+    scanner->SetThetaSpan(0*deg);
+    scanner->SetNPhi(1);
+    scanner->SetPhiMin(MISCFFKEY.StartScanPhi*deg);
+    scanner->SetPhiSpan(0*deg);
+    scanner->SetRegionName("DefaultRegionForTheWorld");
+    cout << scanner->GetRegionName() << endl;
+    cout<<"~~~~~~~~~~~~~~~Start scanning the materials"<<endl;
+    float X,Y,Z;
+    X=  MISCFFKEY.StartScanXstart;
+    while ( X<=MISCFFKEY.StartScanXstop){
+      Y=  MISCFFKEY.StartScanYstart;
+      while ( Y<=MISCFFKEY.StartScanYstop){
+	Z=  MISCFFKEY.StartScanZstart;
+	while ( Z<=MISCFFKEY.StartScanZstop){
+	  scanner->SetEyePosition(G4ThreeVector(X*cm,Y*cm,Z*cm));
+	  cout << " X= " << X << " Y= " << Y << " Z= " << Z << endl;
+	  scanner->Scan();
+	  Z+= MISCFFKEY.StartScanZstep;
+	}
+	Y+= MISCFFKEY.StartScanYstep;
+      }
+      X+= MISCFFKEY.StartScanXstep;
+    }
+    
+    cout<<"~~~~~~~~~~~~~~~Finish scanning the materials _____________________________"<<endl;
+  }
+  if (MISCFFKEY.DoMatScan==2) {
+    AMSMaterialScanner *scan = new AMSMaterialScanner;
+    scan->Set(MISCFFKEY.StartScanXstart, MISCFFKEY.StartScanYstart,
+	      MISCFFKEY.StartScanZstart, MISCFFKEY.StartScanXstop,
+	      MISCFFKEY.StartScanYstop,  MISCFFKEY.StartScanZstop,
+	      MISCFFKEY.StartScanXstep,  MISCFFKEY.StartScanYstep,
+	      MISCFFKEY.StartScanZstep, 10);
+    cout<<"~~~~~~~~~~~~~~~ Start scanning _______________________"<<endl;
+    scan->Scan();
+    cout<<"~~~~~~~~~~~~~~~Finish scanning _______________________"<<endl;
+  }
+
+// Initialize GEANT3
+    GCFLAG.IEVENT=1;
+    TIMEL(GCTIME.TIMINT);
+#if defined(G4MULTITHREADED)
+if(mpi.getMPIStatus()==1){ 
+       pthread_attr_t attr;
+        pthread_attr_init(&attr);
+       pthread_attr_setstacksize(&attr,1024*1024);
+       pthread_t worker;
+       pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+        int ret=pthread_create( &worker, &attr, func , &mpi );
+        if(ret){
+             G4cerr<<"  G4THREADCREATE-E-UnableToCreateThread "<<ret<<G4endl;\
+        }
+        else cout <<"  G4THREADCREATE-I-ThreadCreated "<<G4endl;
+}
+else G4cerr<<"MPI-I-funNotStarted "<<mpi.getMPIStatus()<<G4endl; 
+#endif
+
+#ifndef G4VIS_USE
+   cout <<"g4ams::G4RUN-I-RunRequestedFor "<<GCFLAG.NEVENT-GCFLAG.IEVENT+1<<endl;
+   G4RunManager::GetRunManager()->BeamOn(GCFLAG.NEVENT-GCFLAG.IEVENT+1);
+#endif
+}
+
+
+void g4ams::G4LAST(int err){
+    if(err){
+#ifndef JUQUEEN
+        if(mpi.RunMode<2)AMSG4Physics::SaveXS(GCKINE.ikine);
+#endif
+    }
+if(mpi.RunMode>2)return;
+G4FFKEY.SigTerm=1;
+mpi.RunMode=3;
+        if(MISCFFKEY.G3On)GRNDMQ(GCFLAG.NRNDM[0],GCFLAG.NRNDM[1],0,"G");
+        else {
+#ifndef G4MULTITHREADED
+          GCFLAG.NRNDM[0]=HepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=HepRandom::getTheSeeds()[1];
+#else
+          GCFLAG.NRNDM[0]=G4MTHepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=G4MTHepRandom::getTheSeeds()[1];
+#endif
+        }
+cout <<"           **** RANDOM NUMBER GENERATOR AFTER LAST COMPLETE EVENT "<<GCFLAG.NRNDM[0]<<" "<<GCFLAG.NRNDM[1]<<endl;
+float TIMLFT;
+ TIMEL(TIMLFT);
+ float fac=1;
+#ifdef  JUQUEEN
+ fac=MISCFFKEY.NumThreads;
+#endif
+  geant xmean  =fac*(GCTIME.TIMINT - TIMLFT)/GCFLAG.IEVENT;
+  cout <<"           **** NUMBER OF EVENTS PROCESSED = "<<GCFLAG.IEVENT<<endl;
+  cout <<"           **** TIME TO PROCESS ONE EVENT IS = "<<xmean<<" SECONDS "<<endl;
+#ifndef __PPC64
+if(!err)delete  G4RunManager::GetRunManager();
+#ifdef G4VIS_USE
+AMSG4VisManager::kill();
+#endif
+#endif
+}
+
+
+
+void AMSG4MagneticField::GetFieldValue(const double x[3], double *B) const{
+ int i;
+   geant _v[3],_b[3];
+ for(i=0;i<3;i++)_v[i]=x[i]/cm;
+ GUFLD(_v,_b);
+ for(i=0;i<3;i++)*(B+i)=_b[i]*kilogauss;
+//#pragma omp critical (bf)
+//cout <<"BField "<<x[0]<<" "<<x[1]<<" "<<x[2]<<" "<<B[0]<<" "<<AMSEvent::get_thread_num()<<endl;
+
+//if(B[0])cout <<x[0]<<" "<<x[1]<<" "<<x[2]<<" "<<B[0]<<endl;
+}
+
+
+
+#include "G4ParticleGun.hh"
+AMSG4GeneratorInterface::AMSG4GeneratorInterface(G4int npart):AMSNode(AMSID("AMSG4GeneratorInterface",0)),G4VUserPrimaryGeneratorAction(),_npart(npart),_cpart(0){
+  _particleGun = new G4ParticleGun[_npart];
+
+}
+
+
+
+void AMSG4GeneratorInterface::SetParticleGun(int ipart, number mom, AMSPoint  Pos, AMSPoint   Dir, AMSDir PolarDir ){
+#ifdef __AMSDEBUG__
+assert(_cpart < _npart);
+#endif
+ G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+  const G4String pname(AMSJob::gethead()->getg4physics()->G3toG4(ipart));
+_particleGun[_cpart].SetParticleDefinition(particleTable->FindParticle(pname));
+_particleGun[_cpart].SetParticleEnergy(0);
+_particleGun[_cpart].SetParticleMomentum(mom*GeV);
+_particleGun[_cpart].SetParticleMomentumDirection(G4ThreeVector(Dir[0],Dir[1],Dir[2]));
+_particleGun[_cpart].SetParticlePosition(G4ThreeVector(Pos[0]*cm,Pos[1]*cm,Pos[2]*cm));
+//if(PolarDir.norm()>1e-10 ) 
+  _particleGun[_cpart].SetParticlePolarization( G4ThreeVector(PolarDir.x(),PolarDir.y(),PolarDir.z()) ) ;
+     _cpart++;
+  
+}
+
+void AMSG4GeneratorInterface::GeneratePrimaries(G4Event* anEvent){
+
+//static integer event=0;
+//(void)event;
+//cout <<"  running blia "<<GCKINE.ikine<<" "<<GCKINEST.ikine<<" "<<" "<<GCKINEST.ipart<<" "<<AMSEvent::get_thread_num()<<endl;
+#ifdef __PPC64 
+memcpy(&GCKINE,&GCKINEST,sizeof(GCKINE_DEF));
+#endif
+//cout <<"  running blia !!!!!!    "<<GCKINE.ikine<<" "<<AMSEvent::get_thread_num()<<endl;
+//AMSJob::gethead()->getg4generator()->Reset();
+Reset();
+//cout <<"  running blia b"<<endl;
+// create new event & initialize it
+  if(AMSJob::gethead()->isSimulation()){
+    AMSgObj::BookTimer.start("GEANTTRACKING");
+    cpu_spent=0;
+    cpu_spent_x=0;
+   if(IOPA.mode%10 !=1 ){
+//    AMSEvent::sethead((AMSEvent*)AMSJob::gethead()->add(
+//    new AMSEvent(AMSID("Event",GCFLAG.IEVENT),CCFFKEY.run,0,0,0)));
+AMSEvent *pn=0;
+AMSgObj::BookTimer.start("MCEVENTG");
+#ifdef _OPENMP
+#pragma omp critical (initco)
+#endif
+{
+     pn= new AMSEvent(AMSID("Event",GCFLAG.IEVENT++),CCFFKEY.run,0,0,0);
+}
+     pn->_init();
+     AMSEvent::sethead(pn);
+    for(integer i=0;i<CCFFKEY.npat;i++){
+        if(MISCFFKEY.G3On)GRNDMQ(GCFLAG.NRNDM[0],GCFLAG.NRNDM[1],0,"G");
+        else {
+#ifdef _OPENMP
+#pragma omp critical (initco)
+#endif
+{
+#ifndef G4MULTITHREADED
+          GCFLAG.NRNDM[0]=HepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=HepRandom::getTheSeeds()[1];
+#else
+          GCFLAG.NRNDM[0]=G4MTHepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=G4MTHepRandom::getTheSeeds()[1];
+#endif
+        }
+ }
+       AMSmceventg* genp=new AMSmceventg(GCFLAG.NRNDM);
+    if(genp){
+     AMSEvent::gethead()->addnext(AMSID("AMSmceventg",0), genp);
+//cout <<"  running blia c"<<GCKINE.ikine<<endl;
+     genp->runG4(this,GCKINE.ikine);
+//cout <<"  running blia d"<<endl;
+    }
+    }
+AMSgObj::BookTimer.stop("MCEVENTG");
+   }
+   else {
+    AMSIO io;
+    if(IOPA.mode/10?io.readA():io.read()){
+     AMSEvent::sethead((AMSEvent*)AMSJob::gethead()->add(
+     new AMSEvent(AMSID("Event",io.getevent()),io.getrun(),0,io.gettime(),io.getnsec(),
+     io.getpolephi(),io.getstheta(),io.getsphi(),io.getveltheta(),
+     io.getvelphi(),io.getrad(),io.getyaw(),io.getpitch(),io.getroll(),io.getangvel())));
+     AMSmceventg* genp=new AMSmceventg(io);
+     if(genp){
+      AMSEvent::gethead()->addnext(AMSID("AMSmceventg",0), genp);
+      genp->runG4(this);
+      //genp->_printEl(cout);
+     }
+    }
+    else{
+     cout <<"SettIng IEORUN to 1 A"<<endl;
+     GCFLAG.IEORUN=1;
+     GCFLAG.IEOTRI=1;
+#if G4VERSION_NUMBER  > 999
+     G4AllocatorPool::gThreshold=0;
+#endif
+     return;
+    }   
+   }
+
+
+//cout <<" cpart "<<_cpart<<endl;
+  for(int ipart=0;ipart<_cpart;ipart++){
+//     cout <<_particleGun[ipart].GetParticleDefinition()->GetParticleName()<<endl;
+
+//cout <<"  running blia f "<<ipart<<endl;
+     _particleGun[ipart].GeneratePrimaryVertex(anEvent);
+//cout <<"  running blia g "<<ipart<<endl;
+  }
+
+  }
+
+}
+
+
+
+AMSG4GeneratorInterface::~AMSG4GeneratorInterface(){
+delete[] _particleGun;
+}
+
+#include "Tofsim02.h"
+#include "G4AllocatorPool.hh"
+#if G4VERSION_NUMBER  > 999
+#include "G4AllocatorList.hh"
+#endif
+void  AMSG4RunAction::BeginOfRunAction(const G4Run* anRun){
+  static unsigned int iq=0;
+#if G4VERSION_NUMBER  > 999
+if(IsMaster() ){
+#else
+if(1){
+#endif
+  if(iq++==0){ 
+    cout<<"~~~~~~~~~~~~~~~~Begin of Run Action, Construct G3G4 Tables here~~~~~~~~~~~~~~"<<endl;
+    pph->_init();
+  }
+}
+}
+
+
+#include "G4ProcessTable.hh"
+#include "G4ParticleTable.hh"
+#include "G4DynamicParticle.hh"
+#include "G4ThreeVector.hh"
+#include "G4Element.hh"
+#include "G4NistManager.hh"
+// #include "G4CrossSectionDataStore.hh"
+#include "G4HadronicInteraction.hh"
+#include "G4HadFinalState.hh"
+#include "G4HadProjectile.hh"
+#include "G4Nucleus.hh"
+#include "G4Version.hh"
+
+void  AMSG4RunAction::DumpCrossSections(int verbose, int ipart, G4int At, G4int Zt) {
+  if (verbose<=0) return;
+  cout << "~~~~~~~~~~~~~~~~ DumpCrossSections ~~~~~~~~~~~~~~" << endl;
+  // get
+  const char *name = AMSJob::gethead()->getg4physics()->G3toG4(ipart);
+  G4ParticleTable *table = G4ParticleTable::GetParticleTable();
+  G4ParticleDefinition* particle = table->FindParticle(G4String(name));
+  if (!particle) {
+    G4cout << "DumpCrossSections-W: no particle with ID " << ipart << "found." << endl;
+    return;
+  }
+  // dump
+  particle->DumpTable();
+  G4ProcessManager* manager = particle->GetProcessManager();
+  if (!manager) {
+    G4cout << "DumpCrossSections-W: no process manager found for particle with ID " << ipart << "." << endl;
+    return;
+  }
+  manager->DumpInfo();
+  G4ProcessTable* theProcessTable = G4ProcessTable::GetProcessTable();
+  G4HadronInelasticProcess* process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("ionInelastic",particle);
+  if (!process) process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("protonInelastic",particle);
+  if (!process) process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("ProtonInelastic",particle);
+  if (!process) process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("alphaInelastic",particle);
+  if (!process) process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("AlphaInelastic",particle);
+  if (!process) process = (G4HadronInelasticProcess*) theProcessTable->FindProcess("IonInelastic",particle);
+  if (!process) {
+    G4cout << "DumpCrossSections-W: no hadronic inelastic process manager found for particle with ID " << ipart << "." << endl;
+    return;
+  }
+  process->DumpPhysicsTable(*particle);
+  // search/build target
+  G4Element* target = 0;
+  G4ElementTable::iterator iter;
+  G4ElementTable *elementTable = const_cast<G4ElementTable*> (G4Element::GetElementTable());
+  for (iter = elementTable->begin(); iter != elementTable->end(); ++iter) {
+    G4int AA = (*iter)->GetN();
+    G4int ZZ = (*iter)->GetZ();
+    if ( (AA==At)&&(ZZ=Zt) ) target = *iter;
+  }
+  if(!target){
+    G4cout << "DumpCrossSections-W: No element found for A=" << At << " Z= " << Zt << G4endl;
+    return;
+    // we should build it, but in general this does not happen. 
+  }
+  // a dummy material
+  G4Material* material = new G4Material("material_target",2.26,1);
+  material->AddElement(target,1.);
+  // histograms
+  G4int Ap = particle->GetBaryonNumber();
+  G4int Zp = particle->GetPDGCharge()/eplus;
+  TH1D* inelast = 0;
+  if (verbose>2) inelast = new TH1D(Form("inelast_Zp%02d_Ap%02d_Zt%02d_At%02d",Zp,Ap,Zt,At),"; log_{10}(K_{n}/(GeV/n)); XS (mb)",60,-2,4);
+  int _ZS = (Zp>8)?8:Zp;
+  int _AS = (Ap>16)?16:Ap;
+  TH2D* partial[8][16] = {{0}};
+  if (verbose>2) {
+    for (int iz=0; iz<_ZS; iz++) 
+      for (int ia=0; ia<_AS; ia++)
+        partial[iz][ia] = new TH2D(Form("partial_Zp%02d_Ap%02d_Zt%02d_At%02d_Zs%02d_As%02d",Zp,Ap,Zt,At,iz+1,ia+1),"; log_{10}(K_{n}/(GeV/n)); log_10(K_{n}/(GeV/n))",60,-2,4,600,-2,4);
+  }
+  // loop on kinetic energy bins
+  G4int nmc = 10000;
+  for (int ik=0; ik<=60; ik++) {
+    // inelastic cross section  
+    G4ThreeVector momentum_direction(1,0,0); 
+    G4double kn = 0.01*pow(10.,ik*(log10(10000)-log10(0.01))/60.)*GeV;
+    G4double k = Ap*kn;
+    G4DynamicParticle projectile(particle,momentum_direction,k);
+    G4HadronicInteraction* model = process->GetManagerPointer()->GetHadronicInteraction(kn,material,target);
+    if (!model) continue;
+#if G4VERSION_NUMBER  > 945 
+    G4double XS = process->aScaleFactor*process->GetElementCrossSection(&projectile,target,material); // v9.6.p02
+#else
+    G4double XS = process->GetMicroscopicCrossSection(&projectile,target,295*kelvin); // v9.4.p04
+#endif
+    printf("(%2d,%2d)->(%2d,%2d) @ %10.3f GeV/n = %10.3f mbarn (%s)\n",Ap,Zp,At,Zt,kn/GeV,XS/millibarn,model->GetModelName().c_str());
+    if (inelast) inelast->SetBinContent(ik+1,XS/millibarn); 
+    if (verbose<=1) continue; 
+    // partial cross-section (dry-MC)
+    G4int ngood[8][16] = {{0}};
+    for (int imc=0; imc<nmc; imc++) { 
+      G4HadProjectile a_projectile(projectile);
+      G4Nucleus a_target(At,Zt);
+      G4double kns_max[8][16] = {{0}}; 
+      G4HadFinalState* final_state = model->ApplyYourself(a_projectile,a_target); 
+      for (int isec=0; isec<final_state->GetNumberOfSecondaries(); isec++) {
+        G4DynamicParticle* secondary = final_state->GetSecondary(isec)->GetParticle();
+        G4int A_sec = secondary->GetParticleDefinition()->GetBaryonNumber();
+        G4int Z_sec = abs(secondary->GetParticleDefinition()->GetPDGCharge()/eplus);
+        G4double kn_sec = secondary->GetKineticEnergy()/A_sec;
+        if ( (Z_sec>A_sec)&&(Z_sec>1) ) { cout << "DumpCrossSections-W: Secondary with Z>A (" << Z_sec << ">" << A_sec << "), PDG id is " << secondary->GetPDGcode() << endl; } 
+        for (int iz=0; iz<_ZS; iz++) {
+          for (int ia=0; ia<_AS; ia++) {
+            if ( (Z_sec==iz+1)&&(A_sec==ia+1)&&(kn_sec>kns_max[iz][ia]) ) kns_max[iz][ia] = kn_sec;
+          }
+        }
+      }
+      for (int iz=0; iz<_ZS; iz++) {
+        for (int ia=0; ia<_AS; ia++) {
+          if (kns_max[iz][ia]>0) { 
+            ngood[iz][ia]++; 
+            if (partial[iz][ia]) {  
+              double center = partial[iz][ia]->GetXaxis()->GetBinCenter(ik+1);
+              partial[iz][ia]->Fill(center,log10(kns_max[iz][ia]/GeV)); 
+            }
+          }
+        }
+      }
+    }
+    for (int iz=0; iz<_ZS; iz++) {
+      for (int ia=0; ia<_AS; ia++) {
+        if (ngood[iz][ia]>0) printf("     P((%2d,%2d)+(%2d,%2d)->(%2d,%2d)) = %4.3f\n",Ap,Zp,At,Zt,ia+1,iz+1,1.*ngood[iz][ia]/nmc);
+      }
+    }
+  }
+  // save
+  if (verbose>2) { 
+    TFile* file = TFile::Open(Form("partial_Zp%02d_Ap%02d_Zt%02d_At%02d.root",Zp,Ap,Zt,At),"recreate");
+    if (inelast) inelast->Write();
+    for (int iz=0; iz<_ZS; iz++) {
+      for (int ia=0; ia<_AS; ia++) {
+        if (!partial[iz][ia]) continue;
+        if (partial[iz][ia]->GetEntries()==0) continue;
+        partial[iz][ia]->Scale(1./nmc);
+        partial[iz][ia]->Write(); 
+      } 
+    }
+    file->Close();
+  }
+  if (inelast) delete inelast;
+  for (int iz=0; iz<_ZS; iz++) 
+    for (int ia=0; ia<_AS; ia++) 
+      if (partial[iz][ia]) delete partial[iz][ia]; 
+  cout << "~~~~~~~~~~~~~~~~ DumpCrossSections ~~~~~~~~~~~~~~" << endl;
+}
+
+void  AMSG4RunAction::SampleProcess(){
+
+  G4cout<<"AMSG4RunAction::SampleProcess begin"<<G4endl;
+//----the projectile and target
+  G4ParticleTable *ppart=G4ParticleTable::GetParticleTable();
+  const G4IonTable *pIonT= ppart->GetIonTable();
+  int up=-1;
+//  int up=4;
+//  int up=8;
+  const int np=10;
+  G4double p_pn[]={200,150,100,6.1,100,6.1,1000, 100,100,100};//please note the energy is Etot/N
+  G4int Zp[]     ={6,  80, 82 ,8,  8,  82, 82,   14, 2,  26};//C/Hg/Pb
+  G4int Ap[]     ={12, 202,208,16, 16, 208,208,  28, 4,  56};
+  G4int Zt[]     ={6,  80, 82 ,6,  6,  82, 82,   6,  6,  6};
+  G4int At[]     ={12, 202,208,12, 12, 208,208,  12, 12, 12};
+//----
+  G4int nev=10000;
+  char histn[1000];
+  for(int ip=0;ip<np;ip++){
+     if(up>=0){if(ip!=up)continue;}//only accept up
+     else     {if(ip==6)continue;}///exclude Pb+Pb Etot/N=1000GeV/n,too time consuming
+//------prepare particle and target
+     G4double Ip_pn=p_pn[ip]*GeV;
+     G4int    IAp =Ap[ip];
+     G4int    IZp =Zp[ip];
+     G4int    IAt =At[ip];
+     G4int    IZt =Zt[ip];
+     G4ParticleDefinition* particle=((G4IonTable *)pIonT)->GetIon(IZp,IAp);
+     G4ProcessManager *processManager = particle->GetProcessManager();
+     G4ProcessVector  *processVector = processManager->GetProcessList();
+     G4HadronicProcess* hproc = 0;
+     for(G4int j=0; j<processVector->size(); j++){
+       G4VProcess *process=(*processVector)[j];
+       G4String procName = process->GetProcessName();
+       if(procName.contains("Inelastic")||procName.contains("inelastic")){
+         hproc=(G4HadronInelasticProcess*) process;
+         break;
+       }
+    }
+    if(!hproc)continue;//not found
+    G4ThreeVector lv(0,0,1);
+    G4double Ekin=Ip_pn*IAp-particle->GetPDGMass();//Ekin=Etot-Mass
+    G4DynamicParticle pParticle(particle,lv,Ekin);
+    sprintf(histn,"Tele%d",ip);
+    G4Element *pElem=new G4Element(histn,histn,IZt,G4double(IAt)*g/mole);
+    sprintf(histn,"Tmat%d",ip);
+    G4Material*pMat=new G4Material(histn,1.*g/cm3,1);
+    pMat->AddElement(pElem,1);
+    G4HadronicInteraction* hpinc= hproc->GetManagerPointer()->GetHadronicInteraction(pParticle.GetKineticEnergy()/particle->GetBaryonNumber(),pMat,pElem);
+    if(!hpinc)continue;
+//-----ready for simulation
+    for(G4int iev=0;iev<nev;iev++){
+       G4HadProjectile theTrack(pParticle);
+       G4Nucleus pTarget(IAt,IZt);
+       G4int    AP       = particle->GetBaryonNumber();
+       G4int    ZP       = G4int(particle->GetPDGCharge()/eplus + 0.5);
+       G4double EkP      = pParticle.GetKineticEnergy()/GeV;
+       G4double EP       = pParticle.GetTotalEnergy()/GeV;
+       G4int    AT       = pTarget.GetA_asInt();
+       G4int    ZT       = pTarget.GetZ_asInt();
+       G4double TotalEPost = 0.0;
+       G4double MaxES      = 0;
+       G4double MaxEkS     = 0;
+       G4double MaxZS      = 0.;
+       G4int    MaxAS      = 0;
+       if(iev==0)G4cout<<"PartiInfo="<<AP<<","<<ZP<<","<<AT<<","<<ZT<<","<<EkP<<","<<EP<<" modelN="<<hpinc->GetModelName()<<G4endl;
+       G4HadFinalState *pchange=hpinc->ApplyYourself(theTrack,pTarget);
+       int nSec=(pchange)?pchange->GetNumberOfSecondaries():0;
+       for (G4int j=0; j<nSec; j++) {
+          G4DynamicParticle *theDParticle = pchange->GetSecondary(j)->GetParticle();
+          G4double      ES = theDParticle->GetTotalEnergy()/GeV;
+          G4double      EkS= theDParticle->GetKineticEnergy()/GeV;
+          G4ThreeVector PS = theDParticle->GetMomentum()/GeV;
+          G4ParticleDefinition *theParticle = theDParticle->GetDefinition();
+          G4double      ZS = theParticle->GetPDGCharge();
+          G4int         AS = theParticle->GetBaryonNumber();
+          TotalEPost += ES;
+          if(EkS>MaxEkS){MaxZS=ZS; MaxAS=AS; MaxES=ES; MaxEkS=EkS;}
+       }
+       for(G4int j=0; j<nSec; ++j){
+         delete (pchange->GetSecondary(j)->GetParticle());
+       }
+       pchange->Clear();
+//-----Fill histogram
+       sprintf(histn,"fragnpar%ds",ip);
+       hman.Fill(histn,nSec+0.5);
+       sprintf(histn,"fragen%dvs",ip);
+       hman.Fill(histn,TotalEPost/(EP+AT*0.938));
+       sprintf(histn,"fragzmap%dms",ip);
+       hman.Fill(histn,MaxZS+0.5);
+       sprintf(histn,"fragamap%dms",ip);
+       hman.Fill(histn,MaxAS+0.5);
+       sprintf(histn,"frageva%dvms",ip);
+       if(AP>=1&&MaxAS>=1)hman.Fill(histn,MaxEkS/MaxAS/(EkP/AP));
+    }
+  }
+  G4cout<<"AMSG4RunAction::SampleProcess end"<<G4endl;
+  return;
+}
+
+
+void  AMSG4RunAction::EndOfRunAction(const G4Run* anRun){
+  if (G4FFKEY.DumpCrossSections%10>0) DumpCrossSections(G4FFKEY.DumpCrossSections,GCKINE.ikine,G4FFKEY.DumpCrossSectionsAt,G4FFKEY.DumpCrossSectionsZt);
+  AMSG4Physics::SaveXS(GCKINE.ikine);
+  if ((G4FFKEY.DumpCrossSections/100)%10>0)SampleProcess(); 
+}
+
+#if G4VERSION_NUMBER  > 999
+#include "G4NavigationHistoryPool.hh"
+#include "G4NavigationHistory.hh"
+#include "G4Navigator.hh"
+#endif
+void  AMSG4EventAction::BeginOfEventAction(const G4Event* anEvent){
+
+
+ AMSEvent::gethead()->SetEventSkipped(false);
+  fmap_det_tracks.clear();
+
+ fmap_det_tracks.insert( std::pair<int, track_information>(1, track_information(0,0,true)) );
+ flast_trkid=flast_resultid=flast_processid=-1;
+// cout <<"  primary "<<anEvent->GetPrimaryVertex(0)<<endl;
+       G4ThreeVector primaryMomentumVector = anEvent->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+       g4_primary_momentum = sqrt(primaryMomentumVector.x() / GeV * primaryMomentumVector.x() / GeV +                                       primaryMomentumVector.y() / GeV * primaryMomentumVector.y() / GeV +                                       primaryMomentumVector.z() / GeV * primaryMomentumVector.z() / GeV);
+//     cout <<" &&&&7 primary "<<g4_primary_momentum<<endl;
+  double g=g4_primary_momentum?log10(fabs(g4_primary_momentum)):-1;
+ double cl=3.6*(exp(0.23*g)-1.);
+ cl=pow(10.,cl);
+  g4_cpu_limit=cl/AMSCommonsI::getmips()*5000.;
+
+ if(!AMSJob::gethead()->isSimulation()){
+    //
+    // read daq    
+    //
+    DAQEvent * pdaq=0;
+    DAQEvent::InitResult res=DAQEvent::init();
+  for(;;){
+     if(res==DAQEvent::OK){ 
+       pdaq = new DAQEvent();
+       if(pdaq->read()){
+      AMSEvent::sethead((AMSEvent*)AMSJob::gethead()->add(
+      new AMSEvent(AMSID("Event",pdaq->eventno()),pdaq->runno(),
+      pdaq->runtype(),pdaq->time(),pdaq->usec())));
+//      pdaq->runtype(),tm,pdaq->usec()))); // tempor introduced to read PC-made files
+//<------      
+      AMSEvent::gethead()->addnext(AMSID("DAQEvent",pdaq->GetBlType()), pdaq);
+   if(GCFLAG.IEORUN==2){
+      // if production 
+      // try to update the badrun list
+         if(AMSJob::gethead()->isProduction() && AMSJob::gethead()->isRealData()){
+           char fname[256];
+           char * logdir = getenv("ProductionLogDirLocal");
+           if(logdir){
+            strcpy(fname,logdir);
+           }
+           else {
+             cerr<<"gukine-E-NoProductionLogDirLocalFound"<<endl;
+             strcpy(fname,"/Offline/local/logs");
+           }
+           strcat(fname,"/BadRunsList");
+           ofstream ftxt;
+           ftxt.open(fname,ios::app);
+           if(ftxt){
+            ftxt <<pdaq->runno()<<" "<<pdaq->eventno()<<endl;
+            ftxt.close();
+           }
+           else{
+            cerr<<"gukine-S-CouldNotOPenFile "<<fname<<endl;
+            exit(1);
+           }
+           
+         }
+        pdaq->SetEOFIn();    
+        GCFLAG.IEORUN=-2;
+   }
+   else if (GCFLAG.IEORUN==-2){
+        GCFLAG.IEORUN=0;
+      //  AMSJob::gethead()->uhend();
+      //  AMSJob::gethead()->uhinit(pdaq->runno(),pdaq->eventno());
+   }
+      AMSG4EventAction::EndOfEventAction(anEvent);
+   cout <<" GCFLAG.IEVENT C "<<GCFLAG.IEVENT<<" "<< GCFLAG.IEOTRI<<" "<<GCFLAG.IEORUN<<endl;
+      if(GCFLAG.IEOTRI || GCFLAG.IEVENT >= GCFLAG.NEVENT)break;
+#ifdef _OPENMP
+//#pragma omp atomic
+//      GCFLAG.IEVENT++;
+#endif
+  }
+  else{
+#ifdef __CORBA__
+    try{
+     AMSJob::gethead()->uhend();
+     AMSProducer::gethead()->sendRunEnd(res);
+     AMSProducer::gethead()->getRunEventInfo(AMSProducer::gethead()->IsSolo());
+    }
+    catch (AMSClientError a){
+     cerr<<a.getMessage()<<endl;
+     break;
+    }
+#else
+     break;
+#endif
+    }
+   }
+   else{
+#ifdef __CORBA__
+    try{
+     AMSJob::gethead()->uhend();
+     AMSProducer::gethead()->sendRunEnd(res);
+     AMSProducer::gethead()->getRunEventInfo(AMSProducer::gethead()->IsSolo());
+    }
+    catch (AMSClientError a){
+     cerr<<a.getMessage()<<endl;
+     break;
+    }
+#else
+     break;
+#endif
+}
+}
+     cout <<"  Setting IEORUN 1 B "<<endl;  
+     GCFLAG.IEORUN=1;
+     GCFLAG.IEOTRI=1;
+#if G4VERSION_NUMBER  > 999
+     G4AllocatorPool::gThreshold=0;
+#endif
+     return; 
+ }   
+
+
+
+}
+
+
+
+void  AMSG4EventAction::EndOfEventAction(const G4Event* anEvent){
+#ifdef G4MULTITHREADED
+if(!G4Threading::IsWorkerThread() )return;
+#endif
+
+   if(AMSJob::gethead()->isSimulation()){
+
+       G4ThreeVector primaryMomentumVector = anEvent->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentum();
+       G4double primaryMomentum = sqrt(primaryMomentumVector.x() / GeV * primaryMomentumVector.x() / GeV +
+                                       primaryMomentumVector.y() / GeV * primaryMomentumVector.y() / GeV +
+                                       primaryMomentumVector.z() / GeV * primaryMomentumVector.z() / GeV);
+    if (AMSEvent::gethead()->EventSkipped()) {
+       
+       hman.Fill("PAllskipped", primaryMomentum?log10(fabs(primaryMomentum)):-2); 
+     }
+       hman.Fill("PAll", primaryMomentum?log10(fabs(primaryMomentum)):-2);
+           
+
+   double tt=AMSgObj::BookTimer.stop("GEANTTRACKING");
+   hman.Fill("cputime",primaryMomentum?log10(fabs(primaryMomentum)):-2,tt?log10(tt):-2);
+ {
+    float xx,yy;
+    TIMEX(xx);
+    TIMEL(yy);
+#ifdef __CORBA__
+    AMSProducer::timex[AMSEvent::get_thread_num()]=xx; 
+#endif
+    if(GCTIME.TIMEND < xx || (yy>0 && yy<AMSFFKEY.CpuLimit) ){
+      cout <<" GCFLAG.IEVENT ending run "<< xx<<" "<<GCTIME.TIMEND<<" "<<yy<<" "<<AMSFFKEY.CpuLimit<<endl;
+      GCFLAG.IEORUN=1;
+      GCFLAG.IEOTRI=1;
+      GCTIME.ITIME=1;
+#if G4VERSION_NUMBER  > 999
+      G4AllocatorPool::gThreshold=0; 
+#endif
+    }
+  }
+
+   static unsigned int minit=0;
+    unsigned int mall=get_memory_usage();
+    if(minit==0){
+      minit=mall;
+      cout<<"  AMSG4EventAction::EndOfEventAction-I-InitialMemoryAllocation "<<mall<<" "<<minit<<" "<<G4FFKEY.MemoryLimit<<endl;
+      
+    }
+#if G4VERSION_NUMBER  > 999
+    if(G4AllocatorPool::gThreshold>500000 &&gams::mem_not_enough(150000*(1+AMSEvent::get_num_threads()))){
+#pragma omp atomic
+      G4AllocatorPool::gThreshold/=sqrt(2.);
+      cout<<"  AMSG4EventAction::EndOfEventAction-W-MemoryMayNotBeEnough Setting Threshold "<< G4AllocatorPool::gThreshold<<endl;
+            
+    }
+#endif
+    if(gams::mem_not_enough(102400*(2+MISCFFKEY.MemReservedWeightPerThread*(AMSEvent::get_num_threads()-1)))){
+      cout<<"  AMSG4EventAction::EndOfEventAction-E-MemoryNotEnough "<<endl;
+#ifndef JUQUEEN
+      GCFLAG.IEORUN=1;
+      GCFLAG.IEOTRI=1;
+#if G4VERSION_NUMBER  > 999
+      G4AllocatorPool::gThreshold=0;
+#endif
+#else
+      G4AllocatorPool::gThreshold=0;
+      cerr<<" raising SIGABRT "<<endl;
+          raise(SIGABRT);
+#endif
+    }
+    if(G4FFKEY.MemoryLimit>0 && long(mall-minit)>G4FFKEY.MemoryLimit){
+      GCFLAG.IEORUN=1;
+      GCFLAG.IEOTRI=1;
+#if G4VERSION_NUMBER  > 999
+      G4AllocatorPool::gThreshold=0;
+#endif
+      cout<<"  AMSG4EventAction::EndOfEventAction-I-Memory Allocation "<<mall<<endl;
+      cerr<<"  AMSG4EventAction::EndOfEventAction-W-TerminatingRun "<<mall<<" "<<G4FFKEY.MemoryLimit<<endl;
+
+      
+    } 
+}
+      CCFFKEY.curtime=AMSEvent::gethead()->gettime();
+   try{
+
+          if(anEvent  ){
+            AMSEvent::gethead()->event();
+          }
+   }
+   catch (AMSuPoolError e){
+     cerr << e.getmessage()<<endl;
+     AMSEvent::gethead()->Recovery();
+#ifdef __CORBA__
+#pragma omp critical (g1)
+    AMSProducer::gethead()->AddEvent();
+#endif
+      return;
+   }
+   catch (AMSaPoolError e){
+     cerr << e.getmessage()<<endl;
+     AMSEvent::gethead()->Recovery();
+#ifdef __CORBA__
+#pragma omp critical (g1)
+    AMSProducer::gethead()->AddEvent();
+#endif
+      return;
+   }
+   catch (AMSTrTrackError e){
+     cerr << e.getmessage()<<endl;
+     cerr <<"Event dump follows"<<endl;
+     AMSEvent::gethead()->_printEl(cerr);
+      AMSEvent::gethead()->seterror();
+      AMSEvent::gethead()->setmoreerror(3);
+/*
+     UPool.Release(0);
+     AMSEvent::gethead()->remove();
+     UPool.Release(1);
+     AMSEvent::sethead(0);
+      UPool.erase(0);
+*/
+   }
+   catch (amsglobalerror e){
+     cerr << e.getmessage()<<endl;
+     cerr <<"Event dump follows"<<endl;
+     AMSEvent::gethead()->_printEl(cerr);
+      AMSEvent::gethead()->seterror(e.getlevel());
+      AMSEvent::gethead()->setmoreerror(10);
+      if(e.getlevel()>2)throw e; 
+/*
+     UPool.Release(0);
+     AMSEvent::gethead()->remove();
+     delete AMSEvent::gethead();
+     UPool.Release(1);
+     AMSEvent::sethead(0);
+      UPool.erase(0);
+*/
+   }
+#ifdef __CORBA__
+#pragma omp critical (g1)
+    AMSProducer::gethead()->AddEvent();
+#endif
+#pragma omp critical (g3)
+      if(GCFLAG.IEVENT%abs(GCFLAG.ITEST)==0 ||     GCFLAG.IEORUN || GCFLAG.IEOTRI || 
+         GCFLAG.IEVENT>=GCFLAG.NEVENT){
+      AMSEvent::gethead()->printA(AMSEvent::debug);
+        if(MISCFFKEY.G3On)GRNDMQ(GCFLAG.NRNDM[0],GCFLAG.NRNDM[1],0,"G");
+        else {
+#ifndef G4MULTITHREADED
+          GCFLAG.NRNDM[0]=HepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=HepRandom::getTheSeeds()[1];
+#else
+          GCFLAG.NRNDM[0]=G4MTHepRandom::getTheSeeds()[0];
+          GCFLAG.NRNDM[1]=G4MTHepRandom::getTheSeeds()[1];
+#endif
+        }
+       cout <<" RNDM "<<GCFLAG.NRNDM[0]<<" " <<GCFLAG.NRNDM[1]<<endl;
+}
+     integer trig;
+     if(AMSJob::gethead()->gettriggerOr()){
+      trig=0;
+     integer ntrig=AMSJob::gethead()->gettriggerN();
+       for(int n=0;n<ntrig;n++){
+        for(int i=0; ;i++){
+         AMSContainer *p=AMSEvent::gethead()->
+         getC(AMSJob::gethead()->gettriggerC(n),i);
+         if(p)trig+=p->getnelem();
+         else break;
+        }
+       }
+     }
+     else{
+      trig=1;
+     integer ntrig=AMSJob::gethead()->gettriggerN();
+       for(int n=0;n<ntrig;n++){
+        integer trigl=0;
+        for(int i=0; ;i++){
+         AMSContainer *p=AMSEvent::gethead()->
+         getC(AMSJob::gethead()->gettriggerC(n),i);
+         if(p)trigl+=p->getnelem();
+         else break;
+        }
+        if(trigl==0)trig=0;
+
+       }
+     }
+     //    cout << "trigger "<<trig<<endl;  
+// try to manipulate the conditions for writing....
+//   if(trig ){ 
+//     AMSEvent::gethead()->copy();
+//   }
+     if(GCFLAG.IEORUN || GCFLAG.IEOTRI)trig=1; 
+     AMSEvent::gethead()->write(trig);
+
+     UPool.Release(0);
+   AMSEvent::gethead()->remove();
+   delete AMSEvent::gethead();
+     UPool.Release(1);
+   AMSEvent::sethead(0);
+   UPool.erase(2000000);
+
+#ifdef _OPENMP
+//#pragma omp atomic
+//   GCFLAG.IEVENT++;
+#endif
+//   cout <<" GCFLAG.IEVENT A "<<GCFLAG.NEVENT<<" "<<GCFLAG.IEVENT<<" "<< GCFLAG.IEOTRI<<" "<<GCFLAG.IEORUN<<endl;
+   if(GCFLAG.IEVENT>GCFLAG.NEVENT){
+#pragma omp critical (g3finished)
+{
+  //  cout<< " finished? "<<GCFLAG.IEVENT<<endl;
+     bool finished=true;
+     for(int k=0;k<AMSEvent::get_num_threads();k++){
+       //        if(AMSEvent::gethead(k))cout<<" ok "<<k<<" "<< AMSEvent::gethead(k)->getid()<<endl;
+       if(AMSEvent::gethead(k) && AMSEvent::gethead(k)->getid()<GCFLAG.NEVENT){
+         finished=false;
+         break;
+       }   
+     }
+     if(finished){
+       //       cout <<"  FINISHED!!!!! "<<endl;
+       GCFLAG.IEOTRI=1;
+       GCFLAG.IEORUN=1;
+#if G4VERSION_NUMBER  > 999
+    G4AllocatorPool::gThreshold=0;
+#endif
+     }
+     else{
+       GCFLAG.IEOTRI=0;
+        GCFLAG.IEORUN=0;
+     }
+  }
+   }
+//   cout <<" GCFLAG.IEVENT B "<<GCFLAG.NEVENT<<" "<<GCFLAG.IEVENT<<" "<< GCFLAG.IEOTRI<<" "<<GCFLAG.IEORUN<<endl;
+   if(GCFLAG.IEOTRI || GCFLAG.IEORUN){
+    cout <<" G4 AbortingRun "<<GCFLAG.NEVENT<<" "<<GCFLAG.IEVENT<<" "<< GCFLAG.IEOTRI<<" "<<GCFLAG.IEORUN<<" "<<GCFLAG.IFINIT[15]<<endl;
+      G4RunManager::GetRunManager()->AbortRun();
+#pragma omp atomic
+      GCFLAG.IFINIT[15]++;
+      if(mpi.RunMode>2){
+         sleep(864000);
+         pthread_exit(NULL);
+      }
+      if(mpi.Signalled && AMSEvent::get_num_threads()-GCFLAG.IFINIT[15]==mpi.Signalled){
+        cout <<" G4 RaisingSigTerm "<<endl;
+         G4FFKEY.SigTerm=2;
+        raise(SIGTERM);
+        sleep(864000);
+//        pthread_exit(NULL); 
+      }
+
+     }
+  if(mpi.getTotal()){
+    if(mpi.RunMode<2)
+        {
+            if(mpi.AnyOneFinished()){
+            cerr<<"AMSG4EventAction::EndoEventAction-W-AbortingRunBecauseofMPI "<<" "<<mpi.getTotal()<<endl;
+            mpi.RunMode=2;
+            GCFLAG.IEORUN=1;
+            GCFLAG.IEOTRI=1;
+              float b=mpi.getFinished();
+            if(b/mpi.getTotal()>MISCFFKEY.MPIFinished){
+                 cerr<<"AMSG4EventAction::EndoEventAction-W-BroadCasting "<<endl;
+                 if(mpi.bcast(true))cerr<<"AMSG4EventAction::EndoEventAction-E-UnabletoBroadCast "<<endl;
+            }
+           }
+        }
+    }
+
+
+MemoryManagement(anEvent);
+}
+void AMSG4EventAction::MemoryManagement(const G4Event* anEvent){
+  
+#if G4VERSION_NUMBER  > 999
+
+//  Memory Management
+
+//debug only
+
+
+// no garbage collection for singlethreaded jobs by request
+if(AMSEvent::get_num_threads()==1 && !MISCFFKEY.G4AllocatorSize)return;
+
+const int gmes=1000000;
+ static int mess=0;
+
+
+
+
+
+ G4AllocatorList *fa=G4AllocatorList::GetAllocatorListIfExist();
+
+// G4Allocators Erase
+
+
+
+long long  ms=fa->GetAllocatedSize();
+long long  ml=fa->GetNoPages();
+
+// Unsafe Nethod if  no garbage collection done
+ if(MISCFFKEY.G4AllocatorSize==0){
+ for(int k=0;k<fa->fList.size();k++){
+   if(fa->fList[k]->GetAllocatedSize()>abs(MISCFFKEY.G4AllocatorSize) &&strstr(fa->fList[k]->tn.c_str(),"G4Track")){
+        fa->fList[k]->ResetStorage();
+          }
+            if(fa->fList[k]->GetAllocatedSize()>abs(MISCFFKEY.G4AllocatorSize) &&strstr(fa->fList[k]->tn.c_str(),"G4DynamicParticle")){
+                 fa->fList[k]->ResetStorage();
+                   }
+                   }
+                   }
+
+
+totals[AMSEvent::get_thread_num()]=ms;
+totall[AMSEvent::get_thread_num()]=ml;
+long long sms=0;
+long long sml=0;
+long long sma[maxa]={0,0,0,0,0,0,0,0,0,0,0};
+for(int k=0;k<sizeof(totals)/sizeof(totals[0]);k++)sms+=totals[k];
+for(int k=0;k<sizeof(totall)/sizeof(totall[0]);k++)sml+=totall[k];
+
+if(mess++<gmes/1000){
+cout<<" g4AMSG4EventAction::MemoryManagement-I-AllocatorsMB "<<sms/1000000<<" "<<sml<<endl;
+/*
+for(int k=0;k<fa->fList.size();k++){
+cout <<" k "<<k<<" "<<AMSEvent::gethead()->get_thread_num()<<" "<<fa->fList[k]->tn<<" "<<fa->fList[k]->GetNoPages()<<" "<<fa->fList[k]->GetAllocatedSize()<<" "<<fa->fList[k]->GetUsed()<<" "<<fa->fList[k]->GetFree()<<" "<<endl;
+
+}
+}
+*/
+}
+       hman.Fill("G4MemoryMB-1",GCFLAG.IEVENT,sms/1000000);
+       hman.Fill("G4MemoryMB-2",GCFLAG.IEVENT,sml);
+       hman.Fill("G4MemoryMB-3",GCFLAG.IEVENT,1);
+
+
+#endif
+}
+
+
+
+void AMSG4EventAction::AddRegisteredTrack(int gtrkid)
+{
+#ifndef __PPC64
+      struct track_information& info = fmap_det_tracks[gtrkid];
+      info.registered = true;
+#else
+      std::map<int, track_information>::iterator it= fmap_det_tracks.find( gtrkid);
+ if( it!=fmap_det_tracks.end())it->second.registered=true;
+ else{
+     track_information info;
+     info.registered = true;
+     fmap_det_tracks.insert(std::make_pair(gtrkid,info));
+             }
+#endif
+}
+
+
+void AMSG4EventAction::AddRegisteredParentChild(int gtrkid, int gparentid, int processid)
+{
+#ifndef __PPC64
+  struct track_information& info = fmap_det_tracks[gtrkid];
+  info.parent = gparentid;
+  info.process = processid;
+#else 
+    std::map<int, track_information>::iterator it= fmap_det_tracks.find( gtrkid);
+     if( it!=fmap_det_tracks.end()){
+          it->second.parent = gparentid;
+          it->second.process = processid;
+     }
+      else{
+               track_information info;
+              info.parent = gparentid;
+               info.process = processid;
+               fmap_det_tracks.insert(std::make_pair(gtrkid,info));
+      }
+#endif
+}
+
+void AMSG4EventAction::FindClosestRegisteredTrack( int& gtrkid, int& processid ){
+
+
+  if( gtrkid == flast_trkid ) {
+    gtrkid = flast_resultid; //to speedup
+    processid = flast_processid;
+    return;
+  }
+
+  bool err = false;
+  int current_par_id = gtrkid;
+  int current_process_id = processid;
+
+  std::map<int, track_information>::const_iterator end_it = fmap_det_tracks.end();
+  std::map<int, track_information>::const_iterator it = end_it;
+
+  while ( true ) {
+    it = fmap_det_tracks.find( current_par_id );
+    if ( it == end_it ) {
+      err = true;
+      break;
+    }
+    if (it->second.registered) {
+      // no change to input variables but cache result
+      if (current_par_id == gtrkid) {
+        flast_trkid = gtrkid;
+        flast_resultid = gtrkid;
+        flast_processid = processid;
+        return;
+      }
+      // found match
+      break;
+    }
+    current_par_id = it->second.parent;
+    current_process_id = it->second.process;
+  }
+
+  if (err) {
+    static unsigned int smax=0;
+    if(smax++<100)cerr<<"AMSG4EventAction::FindClosestRegisteredTrack-E-chain is broken on track: "<<current_par_id<<endl;
+    return;
+  }
+
+  // flip sign of parent ID to signify that this parent is indirectly associated
+  int result_par_id = -current_par_id;
+  int result_process_id = current_process_id;
+
+  // store results for this input gtrkid for future retrieval
+  flast_trkid = gtrkid;
+  flast_resultid = result_par_id;
+  flast_processid = result_process_id;
+
+  // store results in input references
+  gtrkid = result_par_id;
+  processid = result_process_id;
+}
+ AMSG4MagneticField::AMSG4MagneticField(G4VPhysicalVolume *pv):G4MagneticField(){
+      G4FieldManager*  fieldMgr =G4TransportationManager::GetTransportationManager()->GetFieldManager();
+     fieldMgr->SetDetectorField(this);
+     G4double delta =G4FFKEY.Delta*cm;
+     if(G4FFKEY.BFOrder){
+      G4ChordFinder *pchord;
+      G4Mag_EqRhs* fEquation = new G4Mag_UsualEqRhs(this);
+      const G4double stepMinimum = 1.e-4 * cm;
+      if(G4FFKEY.BFOrder ==3){
+        pchord=new G4ChordFinder(this,stepMinimum,new G4SimpleHeum(fEquation));
+      }
+      else if(G4FFKEY.BFOrder ==2){
+        pchord=new G4ChordFinder(this,stepMinimum,new G4ImplicitEuler(fEquation));
+      }
+      else if(G4FFKEY.BFOrder ==1){
+       pchord=new G4ChordFinder(this,stepMinimum,new G4ExplicitEuler(fEquation));
+      }
+      else if(G4FFKEY.BFOrder==4){
+       pchord=new G4ChordFinder(this,stepMinimum,new G4ClassicalRK4(fEquation));
+      }
+      else {
+       cerr<<"gams::G4INIT-F-No"<<G4FFKEY.BFOrder<<"OrderRunge-KuttaFound"<<endl;
+       exit(1);
+      }
+      fieldMgr->SetChordFinder(pchord);
+      cout <<"g4ams::G4INIT-I-"<<G4FFKEY.BFOrder<<"Order Runge-Kutta Selected "<<endl;
+     }
+     else{
+      cout <<"g4ams::G4INIT-I-DefaultTrackingSelected "<<endl;
+      fieldMgr->CreateChordFinder(this);
+     }
+     cout << "AMSG4DetectorInterface::ConstructMagneticField()-I-chord was "<<fieldMgr->GetChordFinder()->GetDeltaChord()<<endl;
+     fieldMgr->GetChordFinder()->SetDeltaChord(delta);
+     cout << "AMSG4DetectorInterface::ConstructMagneticField()-I-chord set "<<fieldMgr->GetChordFinder()->GetDeltaChord()<<endl;
+
+
+
+double mxs=G4TransportationManager::GetTransportationManager()->GetPropagatorInField()->GetLargestAcceptableStep();
+G4TransportationManager::GetTransportationManager()->GetPropagatorInField()->SetLargestAcceptableStep(5);
+
+     cout << "AMSG4DetectorInterface::ConstructMagneticField()-I-MaxStep was/ set "<<mxs<<" "<<G4TransportationManager::GetTransportationManager()->GetPropagatorInField()->GetLargestAcceptableStep()<<endl;
+  if(pv)pv->GetLogicalVolume()->SetFieldManager(fieldMgr,true);
+
+}
+ G4VPhysicalVolume* AMSG4DetectorInterface::Construct(){
+// geometry
+
+if(!_pv){
+  cout << "AMSG4DetectorInterface::Construct-I-Building Geometry "<<endl;
+  //G4GeometryTolerance::GetInstance()->SetSurfaceTolerance(10000);
+  cout << "AMSG4DetectorInterface::Construct-I-SurficeToleranceSetTo "<<G4GeometryTolerance::GetInstance()->GetSurfaceTolerance()<<" mm" <<endl;;
+
+  AMSJob::gethead()->getgeom()->MakeG4Volumes();
+//---
+  if(G4FFKEY.TFNewGeant4>0){ //TOF New Geant4 Geometry->down to mother
+    cout << "AMSG4DetectorInterface::Construct-I-New TOFB Geometry "<<endl;
+    TofSimUtil::Head->MakeTOFG4Volumes(AMSJob::gethead()->getgeom()->down());
+   }
+
+
+  G4PhysicalVolumeStore* phystore = G4PhysicalVolumeStore::GetInstance();
+if(G4FFKEY.OverlapTol &&phystore){
+  cout <<" AMSgvolume::MakeG4Volumes-I-Total of "<<phystore->size()<<" volumes found"<<endl;
+  for(unsigned int i=0;i<phystore->size();i++){
+    G4VPhysicalVolume*p=(*phystore)[i];
+     if(p && p->CheckOverlaps(1000,G4FFKEY.OverlapTol*cm,false)){
+       cerr<<"  AMSgvolume::MakeG4Volumes-E-OverlapFoundFor "<<p->GetName()<<endl;
+}
+}
+}
+
+
+//--
+// Attention as step volumes are linked to false_mother, not mother as other ones
+ AString fnam(AMSDATADIR.amsdatadir);
+ fnam+="amsstp_";
+ fnam+=AMSJob::gethead()->getsetup();
+ fnam+= AMSJob::gethead()->isRealData()?".1":".0";
+// as usual doesn't work...
+//  AMSJob::gethead()->getgeom()->ReadG4StepVolumes((char*)fnam);  
+  cout << "AMSG4DetectorInterface::Construct-I-"<<AMSgvolume::getNpv()<<" Physical volumes, "<<AMSgvolume::getNlv()<<" logical volumes and "<<AMSgvolume::getNrm()<<" rotation matrixes have been created "<<endl;
+ _pv=AMSJob::gethead()->getgeom()->pg4v();
+}
+ 
+ if(!_pv){
+   cerr <<"g4ams::G4INIT()-W-DummyDetectorWillBeCreated "<<endl;
+   double kfac=1;
+   G4LogicalVolume* dummyl=
+      new G4LogicalVolume(new G4Box("Box",AMSDBc::ams_size[0]/2*cm,AMSDBc::ams_size[1]/2*cm,AMSDBc::ams_size[2]/2*cm),
+      new G4Material("Vacuum",1,g/mole,kfac*universe_mean_density,kStateGas,0.1*kelvin,1.e-19*pascal*kfac),"Vacuum_log",0,0,0);
+  _pv=new G4PVPlacement(0,G4ThreeVector(),"AMS",
+                        dummyl,0,false,1);
+
+ }
+
+
+//Mag Field
+#if G4VERSION_NUMBER  <1000
+
+    if( !pf && G4FFKEY.UniformMagField!=-1){
+     pf = new AMSG4MagneticField(_pv);
+    }
+#endif
+
+ return _pv;
+
+
+
+}
+extern "C" void timest_(float & t);
+  void AMSG4DetectorInterface::ConstructSDandField(){
+#if G4VERSION_NUMBER  > 999
+  float zero=0;
+  timest_(zero);
+  float xx;
+  TIMEX(xx);
+
+     cout <<" AMSG4DetectorInterface::ConstructSDandField-I-Entered "<<endl;
+if(!pf && G4FFKEY.UniformMagField!=-1){
+     cout <<" AMSG4DetectorInterface::ConstructSDandField-I-SetUp Magneticfield for Thread ";
+#ifdef _OPENMP
+cout <<" openmp "<< AMSEvent::get_thread_num();
+#endif
+#ifdef G4MULTITHREADED
+cout <<" g4 "<< G4Threading::G4GetThreadId();
+#endif
+cout <<endl;
+     pf = new AMSG4MagneticField(_pv);
+
+     
+}
+  for(AMSgvolume::SensMapi i=AMSgvolume::SensMap.begin();i!=AMSgvolume::SensMap.end();++i ){
+    SetSensitiveDetector(i->first,i->second);
+  }
+#endif   
+ }
+AMSG4RotationMatrix::AMSG4RotationMatrix(number nrm[3][3]):G4RotationMatrix(nrm[0][0],nrm[0][1],nrm[0][2],nrm[1][0],nrm[1][1],nrm[1][2],nrm[2][0],nrm[2][1],nrm[2][2]){
+//AMSG4RotationMatrix::AMSG4RotationMatrix(number nrm[3][3]):G4RotationMatrix(nrm[0][0],nrm[1][0],nrm[2][0],nrm[0][1],nrm[1][1],nrm[2][1],nrm[0][2],nrm[1][2],nrm[2][2]){
+#ifdef __AMSDEBUG__
+ for (int i=0;i<3;i++){
+  double norm=0;
+  for(int j=0;j<3;j++){
+   norm+=nrm[j][i]*nrm[j][i];
+  }
+  if(fabs(norm-1)>1.e-6){
+   cerr <<"AMSG4RotationMatrix::AMSG4RotationMatrix-E-MatrixNotNormalized "<<i<<" "<<norm<<" "<<nrm[0][i]<<" "<<nrm[1][i]<<" "<<nrm[2][i]<<" "<<endl;
+   exit(1);
+  }
+ }
+#endif
+
+}
+
+void AMSG4RotationMatrix::Test(){
+   AMSmceventg::SaveSeeds();   
+   AMSPoint xp,yp,zp;
+   float d = 0;
+   number nrm[3][3];
+// Test against possible CLHEP changes in the future
+   for (int i=0;i<10;i++){
+    int j,k;
+    for(j=0;j<3;j++){
+      xp[j]=RNDM(d);
+      yp[j]=RNDM(d);
+      zp[j]=RNDM(d);
+    }
+    AMSDir x(xp);
+    AMSDir y(yp);
+    AMSDir z(zp);
+     for(j=0;j<3;j++){
+        nrm[j][0]=x[j];
+        nrm[j][1]=y[j];
+        nrm[j][2]=z[j];
+     }
+     AMSG4RotationMatrix mtest(nrm);
+     geant r[3],sph,cth,cph,sth,theta[3],phi[3];
+     integer rt=0;
+     for (j=0;j<3;j++){
+      for (k=0;k<3;k++) r[k]=nrm[k][j];
+       GFANG(r, cth,  sth, cph, sph,  rt);
+       theta[j]=atan2((double)sth,(double)cth);
+       phi[j]=atan2((double)sph,(double)cph);
+      }
+     geant t1[3],p1[3];
+     p1[0]=mtest.phiX(); 
+     p1[1]=mtest.phiY(); 
+     p1[2]=mtest.phiZ(); 
+     t1[0]=mtest.thetaX(); 
+     t1[1]=mtest.thetaY(); 
+     t1[2]=mtest.thetaZ(); 
+     AMSPoint P1(p1); 
+     AMSPoint T1(t1); 
+     AMSPoint Phi(phi); 
+     AMSPoint Theta(theta); 
+     if(P1.dist(Phi)>1.e-6 ||  T1.dist(Theta)>1.e-6){
+      cerr<<"AMSG4RotationMatrix::Test-F-TestFailed at "<<i<<" "<<
+      P1<< " " <<Phi <<" "<<T1<< " "<<Theta<<" "<<P1.dist(Phi)<<" "<<T1.dist(Theta)<<endl;
+      exit(1);
+     }
+   }
+#ifdef __AMSDEBUG__
+     cout <<"AMSG4RotationMatrix::Test-I-TestPassed "<<endl;
+#endif
+   
+   AMSmceventg::RestoreSeeds();   
+
+}
+
+
+AMSG4DummySD** AMSG4DummySD::_pSD=0;
+integer AMSG4DummySD::_Count=0;
+integer AMSG4DummySDI::_Count=0;
+#if G4VERSION_NUMBER < 1050 
+AMSG4DummySD::AMSG4DummySD(char * name):G4VSensitiveDetector(name==0?"AMSG4dummySD":name){};
+#else
+AMSG4DummySD::AMSG4DummySD(char *name){
+string nm=name?name:"AMSG4dummySD";
+int l=strlen(nm.c_str())+18;
+char tmp[l];
+sprintf(tmp,"%s%d",nm.c_str(),_Count++);
+G4VSensitiveDetector(tmp);
+}
+#endif
+AMSG4DummySDI::AMSG4DummySDI(){
+if(!_Count++){
+ AMSG4DummySD::_pSD=new AMSG4DummySD*[3];
+ AMSG4DummySD::pSD()=new AMSG4DummySD();
+ AMSG4DummySD::pSD(1)=new AMSG4DummySD("AMSG4TRDRadiator");
+ AMSG4DummySD::pSD(2)=new AMSG4DummySD("AMSG4TRDGas");
+}
+}
+
+AMSG4DummySDI::~AMSG4DummySDI(){
+ if(--_Count==0){
+//  for(int i=0;i<3;i++)delete AMSG4DummySD::pSD(i);
+ // delete[] AMSG4DummySD::_pSD;
+}
+}
+#include "G4SteppingManager.hh"
+#include "G4Track.hh"
+#include "G4Step.hh"
+#include "G4StepPoint.hh"
+#include "G4TrackStatus.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4ParticleTypes.hh"
+
+void AMSG4SteppingAction::UserSteppingAction(const G4Step * Step){
+if(!Step)return;
+  // just do as in example N04
+  // don't really understand the stuff
+     
+  GCTRAK.istop=0;
+
+
+  /* 
+     Some stuff about step
+     G4StepPoint* GetPreStepPoint() const
+     void SetPreStepPoint(G4StepPoint* value)
+     G4StepPoint* GetPostStepPoint() const
+     void SetPostStepPoint(G4StepPoint* value)
+     G4double GetStepLength() const
+     void SetStepLength(G4double value)
+     G4Track* GetTrack() const
+     void SetTrack(G4Track* value)
+     G4ThreeVector GetDeltaPosition() const
+     G4double GetDeltaTime() const
+     G4ThreeVector GetDeltaMomentum() const
+     G4double GetDeltaEnergy() const
+     G4double GetTotalEnergyDeposit() const
+     void SetTotalEnergyDeposit(G4double value)
+     void AddTotalEnergyDeposit(G4double value)
+     void ResetTotalEnergyDeposit()
+     G4SteppingControl GetControlFlag() const
+     void SetControlFlag(G4SteppingControl StepControlFlag)
+
+     //
+     // TR Radiation Here
+     // 
+
+  */
+  static integer freq=10;
+  static integer trig=0;
+  static bool report=true;
+#ifdef _OPENMP
+#pragma omp threadprivate (trig,report,freq)
+#endif
+trig=(trig+1)%freq;
+
+#if G4VERSION_NUMBER  > 999
+
+if(!trig){
+
+
+
+G4AllocatorList *fa=G4AllocatorList::GetAllocatorListIfExist();
+if(fa)totals[AMSEvent::get_thread_num()]=fa->GetAllocatedSize();
+if(fa)totall[AMSEvent::get_thread_num()]=fa->GetNoPages();
+}
+#endif
+
+if(trig==0){
+  bool emergency= (GCFLAG.IEORUN==1 || GCFLAG.IEOTRI==1 || AMSEvent::Barrier()>0);
+  double ct=AMSgObj::BookTimer.check("GEANTTRACKING");
+  char *cs=getenv("AMSKILLYOURSELF");
+  if(cs && strlen(cs) ){
+    if(ct-cpu_spent_x>AMSFFKEY.Kill){
+       cpu_spent_x=ct;
+       if(!system(cs)){
+           AMSFFKEY.Kill=1e6;
+           cerr<<" AMSG4EventAction::EndOfEventAction-E-RaisingKillYourSelf "<<cs<<endl;
+           fortran_raise_int_();
+       }
+    }
+  }
+  
+  if(!emergency)cpu_spent=ct;
+  
+  if((ct>AMSFFKEY.CpuLimit+g4_cpu_limit&& G4FFKEY.ApplyCPULimit) || ct-cpu_spent>AMSFFKEY.CpuLimit || GCFLAG.IFINIT[19]==700){
+    freq=1;
+    G4Track * Track = Step->GetTrack();
+    GCTRAK.istop =1;
+    Track->SetTrackStatus(fStopAndKill);
+    AMSEvent::gethead()->seterror(1);
+      AMSEvent::gethead()->setmoreerror(0);
+     if(report)
+#pragma omp critical (report)
+     {
+          
+         cerr<<" AMSG4EventAction::EndOfEventAction-E-Emergency "<<ct-cpu_spent<<endl;
+        cerr<<"AMSG4EventAction::EndOfEventAction-E-CpuLimitExceeded Run Event "<<" "<<AMSEvent::gethead()->getrun()<<" "<<AMSEvent::gethead()->getid()<<" "<<AMSgObj::BookTimer.check("GEANTTRACKING")<<" "<<AMSFFKEY.CpuLimit+g4_cpu_limit<<" "<<g4_primary_momentum<<" "<<AMSEvent::Barrier()<<endl;
+     }
+//#ifdef JUQUEEN
+#ifdef G4MULTITHREADED
+     if(emergency && mpi.RunMode>2){
+         cerr<<"AMSG4EventAction::EndOfEventAction-E-WillReturnPromptly "<<endl;
+         pthread_exit(NULL); 
+     }
+#endif
+//#endif
+         report=false;
+    AMSEvent::gethead()->SetEventSkipped(true);
+//    fortran_throw_ex_("EmergencyAbortedEvent");
+    return;
+  }
+  else if(freq<10){
+   freq=10;
+   report=true;
+  }
+ }
+  /// <SH> Scan of element abundance along the track
+  if (MISCFFKEY.ScanElemAbundance && MISCFFKEY.G4On == 1
+                                  && MISCFFKEY.G3On == 0) {
+     double Z1 =   53.1*cm;  // Before L2
+     double Z2 =  -29.3*cm;  // After  L8
+     double Z3 = -135.7*cm;  // Before L9
+
+     double par1[4] = { 63.14, 48.4,  158.9, 67.14 };
+     double par9[4] = { 46.62, 34.5, -135.7, 67.14 };
+     AMSPoint crp1;
+     AMSPoint crp9;
+
+    if (crp1.norm() == 0) crp1.setp(par1[0], par1[1], par1[2]);
+    if (crp9.norm() == 0) crp9.setp(par9[0], par9[1], par9[2]);
+
+    G4StepPoint *PrePoint  = Step->GetPreStepPoint ();
+    G4StepPoint *PostPoint = Step->GetPostStepPoint();
+    G4Track *trk = Step->GetTrack();
+
+    if (trk && trk->GetParentID() == 0 && PrePoint && PostPoint &&
+	PrePoint->GetPosition().z() > Z3) {
+
+      enum { NZ = 14, NE = 6 };
+                         // 1   2  3  4  5  6  7  8   9 10 11 12 13 14
+       int iZ[NZ] = { 0, -1,-1,-1,-1, 1, 2, 3, -1,-1,-1,-1, 4, 5 };
+       int evno =  -1;
+       int nevt =   0;
+       int nxsc =   0;
+       int fpl1 =   0;
+       int intv = 100;
+       double wsum[NE*3];
+       double wavg[NE*3];
+       double xsec[NE];
+      if (evno < 0) {
+	G4cout << "AMSG4SteppingAction::UserSteppingAction-I-Initialize "
+	       << "element abundance vector" << G4endl;
+	for (int i = 0; i < NE*3; i++) wavg[i] = 0;
+	for (int i = 0; i < NE;   i++) xsec[i] = 0;
+	nevt = 0;
+      }
+      if (evno != int(AMSEvent::gethead()->getEvent())) {
+	  evno  = AMSEvent::gethead()->getEvent();
+	for (int i = 0; i < NE*3; i++) wsum[i] = 0;
+	fpl1 = 0;
+      }
+
+      G4double x1 =  PrePoint->GetPosition().x();
+      G4double y1 =  PrePoint->GetPosition().y();
+      G4double z1 =  PrePoint->GetPosition().z();
+      G4double z2 = PostPoint->GetPosition().z();
+
+      // Layer1 check
+      if (z1/cm > crp1.z() && z2/cm < crp1.z() &&
+	  fabs(x1)/cm < crp1.x() && fabs(y1)/cm < crp1.y() && 
+	  (x1*x1+y1*y1)/cm/cm < par1[3]*par1[3]) fpl1 = 1;
+
+      // Layer9 check
+      if (z1 > Z3 && z2 < Z3 && 
+	  fabs(x1)/cm < crp9.x() && fabs(y1)/cm < crp9.y() && 
+	  (x1*x1+y1*y1)/cm/cm < par9[3]*par9[3] && fpl1) {
+
+	for (int i = 0; i < NE*3; i++) wavg[i] += wsum[i];
+	nevt++;
+
+	if (nevt%intv == 0) {
+	  if (intv < 100000) intv *= 10;
+	  G4cout<< std::fixed << std::setprecision(1);
+	  G4cout << "## Element abundance (rho*L*w/A) in cm^2 "
+		 << "averaged with Nevent= " << nevt << G4endl;
+	  G4cout << "## Element abundance (1) Z>" << Z1/cm
+		 << " (2) Z> " << Z3/cm
+		 << " (3) " << Z2/cm << " >Z> " << Z3/cm << G4endl;
+	  G4cout << "##" << G4endl;
+	  G4cout << "## Element abundance    : "
+		 << "  1(H)   6(C)   7(N)   8(O) 13(Al) 14(Si)" << G4endl;
+	  G4cout<< std::fixed << std::setprecision(4);
+	  for (int i = 0; i < 3; i++) {
+	    G4cout << "## Element abundance ("<<i+1<<"): ";
+	    for (int j = 0; j < NE; j++) G4cout << wavg[i*NE+j]/nevt << " ";
+	    G4cout << G4endl;
+	  }
+	  G4cout << "##" << G4endl;
+	  if (xsec[0] > 0) {
+	    G4cout << "## Element cross section: "
+		   << "  1(H)   6(C)   7(N)   8(O) 13(Al) 14(Si)" << G4endl;
+	    G4cout << "## Cross section (mb)   : ";
+	    G4cout << std::fixed << std::setprecision(3)
+		   << xsec[0]/millibarn << " ";
+	    G4cout << std::setprecision(2);
+	    for (int j = 1; j < NE; j++) G4cout << xsec[j]/millibarn << " ";
+	    G4cout << G4endl;
+	    G4cout<< std::fixed << std::setprecision(4);
+	    for (int i = 0; i < 3; i++) {
+	      G4double sum = 0;
+	      for (int j = 0; j < NE; j++) sum += xsec[j]*wavg[i*NE+j]/nevt;
+	      if (sum > 0) {
+		G4cout << "## Element rel.xsec. ("<<i+1<<"): ";
+		for (int j = 0; j < NE; j++)
+		  G4cout << xsec[j]*wavg[i*NE+j]/nevt/sum << " ";
+		G4cout << G4endl;
+	      }
+	    }
+	    G4cout << "##" << G4endl;
+	  }
+	}
+      }
+
+      const  G4DynamicParticle *prj = 0;
+      G4HadronInelasticProcess *prc = 0;
+      if (nxsc < NE) {
+	prj = trk->GetDynamicParticle();
+	const G4ParticleDefinition *pt = trk->GetParticleDefinition();
+	G4ProcessTable *ptbl = G4ProcessTable::GetProcessTable();
+
+	G4String pname = pt->GetParticleName();
+
+	if (pname == "proton") {
+	  prc = (G4HadronInelasticProcess *)ptbl
+	                                 ->FindProcess("ProtonInelastic", pt);
+	  if (!prc) prc = (G4HadronInelasticProcess *)ptbl
+		                         ->FindProcess("protonInelastic", pt);
+	}
+	else if (pname == "alpha") {
+	  prc = (G4HadronInelasticProcess *)ptbl
+	                                 ->FindProcess("AlphaInelastic", pt);
+	  if (!prc) prc = (G4HadronInelasticProcess *)ptbl
+		                         ->FindProcess("alphaInelastic", pt);
+	}
+	else if (pname == "GenericIon")
+	  prc = (G4HadronInelasticProcess *)ptbl
+	                                 ->FindProcess("IonInelastic", pt);
+
+	if (!prc) nxsc = NE;
+      }
+
+      G4Material *material = PrePoint->GetMaterial();
+      if (material) {
+	G4double slen = Step->GetStepLength();
+	G4double dens = material->GetDensity();
+	for (unsigned int i = 0; i < material->GetNumberOfElements(); i++) {
+	  const G4Element *elm = material->GetElement(i);
+	  G4int Z = elm->GetZ();
+	  if (Z < 1 || NZ < Z) continue;
+
+	  G4int iz = iZ[Z-1];
+	  if (iz < 0 || NE <= iz) continue;
+
+	  if (xsec[iz] == 0 && prc && prj) {
+	    xsec[iz] = prc->GetMicroscopicCrossSection(prj, elm, 0);
+	    nxsc++;
+	  }
+
+	  G4double W = material->GetFractionVector()[i];
+	  G4double A = elm->GetA();
+	  G4double S = W*dens/A*slen*cm2;
+	  G4double z = PrePoint->GetPosition().z();
+	  if (z > Z1) wsum[iz]      += S;
+	  if (z > Z3) wsum[iz+NE]   += S;
+	  if (z < Z2 &&
+	      z > Z3) wsum[iz+NE*2] += S;
+	}
+      }
+    }
+  }
+  /// <SH> Measurement of element abundance on the track
+
+
+   /// QY count process information
+   if((G4FFKEY.DumpCrossSections/10)%10>0)FillProcessInfo(Step);
+   
+
+   /// <CC> BEGIN material scanning information
+   // only for Geant4
+   if (MISCFFKEY.SaveMCTrack == 1 && MISCFFKEY.G4On == 1 && MISCFFKEY.G3On == 0)
+   {
+       double ECAL_Z = ECALDBc::ZOfEcalTopHoneycombSurface()*cm;
+       double ene_threshold = MISCFFKEY.MCTrackMinEne*MeV;
+       bool   save_sec = MISCFFKEY.SaveMCTrackSecondary == 1;
+
+      G4Track *step_trk = Step->GetTrack();
+
+      if (step_trk != NULL)
+      {
+         G4int pid = step_trk->GetParentID();
+         G4int tid = step_trk->GetTrackID();
+
+         G4ParticleDefinition *pdef = step_trk->GetDynamicParticle()->GetDefinition();
+         G4String part_name = pdef->GetParticleName();
+         int part_info;
+         int g3code = AMSJob::gethead()->getg4physics()->G4toG3(part_name, part_info);
+         bool isDummy = g3code == AMSG4Physics::_G3DummyParticle;
+         bool isNeutrino = pdef->GetPDGCharge() == 0 && pdef->GetLeptonNumber() != 0;
+
+         // save only secondary particles (but not neutrinos or dummy particles) if datacard is set
+         if (pid == 0 || (save_sec && !isNeutrino && !isDummy))
+         {
+            G4StepPoint *preStepPoint = Step->GetPreStepPoint();
+            G4StepPoint *postStepPoint = Step->GetPostStepPoint();
+
+            if (preStepPoint != NULL)
+            {
+               G4ThreeVector pre_pos = preStepPoint->GetPosition();
+               G4ThreeVector post_pos = postStepPoint->GetPosition();
+
+               bool isBacksplash = pre_pos.z() < ECAL_Z && post_pos.z() > ECAL_Z;
+
+               G4double ekin = step_trk->GetKineticEnergy();
+
+               // save only primary particle and secondary particles above ECAL (or backsplash) and with kinetic energy greater than the threshold
+               if (pid == 0 || ((pre_pos.z() > ECAL_Z || isBacksplash) && ekin >= ene_threshold))
+               {
+                  G4Material *material = preStepPoint->GetMaterial();
+
+                  if (material != NULL)
+                  {
+                     G4double stlen = Step->GetStepLength();
+                     G4double x0 = stlen/(material->GetRadlen());
+                     G4double lambda = stlen/(material->GetNuclearInterLength());
+                     G4double enetot = Step->GetTotalEnergyDeposit()/GeV*1000;
+                     G4double eneion = enetot - Step->GetNonIonizingEnergyDeposit()/GeV*1000;
+
+                     const char *tmp_name = preStepPoint->GetPhysicalVolume()->GetName().data();
+                     char vol_name[5] = "";
+                     for (int i = 0; i < 4; ++i)
+                     {
+                        vol_name[i] = tmp_name[i];
+                     }
+
+                     float pos[3];
+                     for (int i = 0; i < 3; ++i)
+                     {
+                        pos[i] = pre_pos[i]/cm;
+                     }
+                     map <int,float>felmap;
+                      for (unsigned int i=0; i<material->GetNumberOfElements(); ++i) {
+                      int Zi = (*material->GetElementVector())[i]->GetZ();
+                      float Ni=material->GetVecNbOfAtomsPerVolume()[i];
+                      felmap.insert(make_pair(Zi,Ni));
+                      }
+               
+                     AMSmctrack *genp = new AMSmctrack(x0, lambda, pos, vol_name, stlen, enetot, eneion, tid, felmap);
+                     AMSEvent::gethead()->addnext(AMSID("AMSmctrack", 0), genp);
+                  }
+               }
+            }
+         }
+      }
+   }
+   /// <CC> END material scanning information
+
+  //       cout <<" stepping in"<<endl;
+  //       AMSmceventg::PrintSeeds(cout);
+  //       AMSmceventg::SaveSeeds();
+  //       if(GCFLAG.NRNDM[0]==2130120 && GCFLAG.NRNDM[1]==1154959891){
+  //        cout <<" jopa "<<endl;
+  //       }
+  //{
+  //       G4Track * Track = Step->GetTrack();
+  //       G4ParticleDefinition* particle =Track->GetDefinition();
+  //       cout << "particle "<<particle->GetParticleName()<<endl;
+  //}         
+  //     geant d;
+  // Checking if Volume is sensitive one 
+  G4StepPoint * PostPoint = Step->GetPostStepPoint();
+  G4VPhysicalVolume * PostPV = PostPoint->GetPhysicalVolume();
+  G4StepPoint * PrePoint = Step->GetPreStepPoint();
+  G4VPhysicalVolume * PrePV = PrePoint->GetPhysicalVolume();
+
+  if(PostPV && PrePV ){
+    int gctmed_isvol=PostPV->GetLogicalVolume()->GetSensitiveDetector()!=0 ||
+      PrePV->GetLogicalVolume()->GetSensitiveDetector()!=0;
+    GCTRAK.destep=Step->GetTotalEnergyDeposit()/GeV;
+    //   if(PrePoint->GetProcessDefinedStep())cout<<" b "<<PrePoint->GetProcessDefinedStep()->GetProcessName()<<endl;
+    //   if(PostPoint->GetProcessDefinedStep())cout<<"a "<<PostPoint->GetProcessDefinedStep()->GetProcessName()<<endl;
+    G4Track * Track = Step->GetTrack();
+    GCTRAK.nstep=Track->GetCurrentStepNumber()-1;
+    GCKINE.itra=Track->GetParentID();
+    int gtrkid = Track->GetTrackID();
+    int gtrkids=gtrkid;//please stick to the original defination of gtrkid (many merge procedure rely on that). QY
+//bool print=strstr(PrePV->GetName(),"AMSG") || strstr(PostPV->GetName(),"AMSG");
+if((strstr(PrePV->GetName(),"AMSG") && ((fabs(PostPoint->GetPosition()[0])>AMSDBc::ams_size[0]*5 || fabs(PostPoint->GetPosition()[1])>AMSDBc::ams_size[1]*5 || fabs(PostPoint->GetPosition()[2])>AMSDBc::ams_size[2]*5)))){
+      Track->SetTrackStatus(fStopAndKill);
+      GCTRAK.istop =1;
+      return;
+}
+if(  (strstr(PrePV->GetName(),"AMSG") && (fabs(PostPoint->GetPosition()[0])<AMSDBc::ams_size[0]*5 && fabs(PostPoint->GetPosition()[1])<AMSDBc::ams_size[1]*5 && fabs(PostPoint->GetPosition()[2])<AMSDBc::ams_size[2]*5)&& (fabs(PrePoint->GetPosition()[0])<AMSDBc::ams_size[0]*5 && fabs(PrePoint->GetPosition()[1])<AMSDBc::ams_size[1]*5 && fabs(PrePoint->GetPosition()[2])<AMSDBc::ams_size[2]*5))){
+if(Step->GetStepLength()/cm>0.01){
+      AMSEvent::gethead()->seterror(1);
+      AMSEvent::gethead()->setmoreerror(13);
+     cerr<<"AMSG4SteppingAction-S-TrackingErrorDetectedEventWillBeAborted "<<AMSEvent::gethead()->getid()<<endl;
+   }
+     cerr << "Stepping Pre  "<<" "<<setprecision(12)<<PrePV->GetName()<<" "<<PrePV->GetCopyNo()<<" "<<PrePoint->GetPosition()<<endl;
+     cerr << "Stepping  Post"<<" "<<setprecision(12)<<PostPV->GetName()<<" "<<PostPV->GetCopyNo()<<" "<<PostPoint->GetPosition()<<" "<<PostPoint->GetKineticEnergy()/GeV<<" "<<Step->GetStepLength()/cm<<" " <<Step->GetTotalEnergyDeposit()/GeV<<endl;
+     cerr << "Part ID " << Step->GetTrack()->GetDefinition()->GetParticleName()<<" "<<gctmed_isvol<<" "<< GCTRAK.destep<<" "<<Track->GetTrackStatus()<<" "<<Step->GetStepLength()<<endl;
+//   cout <<endl;
+}
+
+    bool died=FillPrimaryInfo(Step);
+    if(died){
+      //cout <<" PRIMARYDIED "<<Step->GetPreStepPoint()->GetPosition().z()/cm<<" "<<CCFFKEY.Z<<endl;
+      if(Step->GetPostStepPoint()->GetPosition().z()/cm>CCFFKEY.Z){
+       AMSgObj::BookTimer.start("GEANTTRACKING",-1000000.);      
+      }
+    }  
+    FillBackSplash(Step);
+
+    //cout << " track id "<<GCKINE.itra<<" "<<GCTRAK.nstep<<endl;
+    G4ParticleDefinition* particle =Track->GetDefinition();
+    int parinfo;
+    GCKINE.ipart=AMSJob::gethead()->getg4physics()->G4toG3(particle->GetParticleName(),parinfo);
+    GCKINE.charge=particle->GetPDGCharge();
+    //    if(GCKINE.ipart==51){
+    //       cout <<" xray "<<PrePV->GetName()<<" "<<PostPV->GetName()<<" "<<PostPoint->GetPosition()<<endl;
+    //    }
+    /*
+      if(GCKINE.ipart==Cerenkov_photon){
+      //       cout <<" cerenkov "<<PrePV->GetName()<<" "<<PostPV->GetName()<<" "<<PostPoint->GetPosition()<<endl;
+      if((PrePV->GetName())(0)=='R' && (PrePV->GetName())(1)=='I' &&
+      (PrePV->GetName())(2)=='C' && (PrePV->GetName())(3)=='H'){
+      if(PostPoint->GetProcessDefinedStep() && PostPoint->GetProcessDefinedStep()->GetProcessName() == "Boundary")RICHDB::numrefm++;
+      }
+
+      if(PrePV->GetName()(0)=='R' && PrePV->GetName()(1)=='A' &&
+      PrePV->GetName()(2)=='D' && PrePV->GetName()(3)==' '){
+      if(GCTRAK.nstep){
+      if(PostPoint->GetProcessDefinedStep() && PostPoint->GetProcessDefinedStep()->GetProcessName() == "Rayleigh Scattering")RICHDB::numrayl++;
+      else{
+      RICHDB::numrayl=0;
+      RICHDB::numrefm=0;
+      //          RICHDB::nphgen++;  
+      if(!RICHDB::detcer(GCTRAK.vect[6])) {
+      }
+      else RICHDB::nphgen++;
+      }
+
+      }
+      }
+      }
+    */
+        
+
+    if(gctmed_isvol){// <========== we are in sensitive volume !!!
+      //
+//            cout << "Stepping  sensitive"<<" "<<PrePV->GetName()<<" "<<PrePV->GetCopyNo()<<" "<<PrePoint->GetPosition()<<endl;
+      // gothering some info and put it into geant3 commons
+
+      GCTRAK.inwvol= PostPV != PrePV;
+      GCTRAK.step=Step->GetStepLength()/cm;
+      GCTRAK.vect[0]=PostPoint->GetPosition().x()/cm; 
+      GCTRAK.vect[1]=PostPoint->GetPosition().y()/cm; 
+      GCTRAK.vect[2]=PostPoint->GetPosition().z()/cm; 
+      GCTRAK.vect[3]=PostPoint->GetMomentumDirection().x(); 
+      GCTRAK.vect[4]=PostPoint->GetMomentumDirection().y(); 
+      GCTRAK.vect[5]=PostPoint->GetMomentumDirection().z(); 
+      GCTRAK.getot=PostPoint->GetTotalEnergy()/GeV;
+      GCTRAK.gekin=PostPoint->GetKineticEnergy()/GeV;
+      GCTRAK.vect[6]=GCTRAK.getot*PostPoint->GetBeta();
+      //     GCTRAK.tofg=PostPoint->GetGlobalTime()/second;
+      GCTRAK.tofg=PrePoint->GetGlobalTime()/second;
+      { int i;
+	for(i=0;i<3;i++)GCKINE.vert[i]=Track->GetVertexPosition()[i]/cm; 
+	for(i=0;i<3;i++)GCKINE.pvert[i]=Track->GetVertexMomentumDirection()[i]; 
+
+
+	/* 
+	   Some stuff about track
+ 
+ 
+	   const G4ThreeVector& GetPosition() const
+	   void SetPosition(const G4ThreeVector& aValue)
+	   G4double GetGlobalTime() const
+	   void SetGlobalTime(const G4double aValue)
+	   // Time since the event in which the track belongs is created.
+	   G4double GetLocalTime() const
+	   void SetLocalTime(const G4double aValue)
+	   // Time since the current track is created.
+	   G4double GetProperTime() const
+	   void SetProperTime(const G4double aValue)
+	   // Proper time of the current track
+	   G4double GetTrackLength() const
+	   void AddTrackLength(const G4double aValue)
+	   // Accumulated the track length
+	   G4int GetParentID() const
+	   void SetParentID(const G4int aValue)
+	   G4int GetTrackID() const
+	   void SetTrackID(const G4int aValue)
+	   G4VPhysicalVolume* GetVolume() const
+	   G4VPhysicalVolume* GetNextVolume() const
+	   G4Material* GetMaterial() const
+	   G4Material* GetNextMaterial() const
+	   G4VTouchable* GetTouchable() const
+	   void SetTouchable(G4VTouchable* apValue)
+	   G4VTouchable* GetNextTouchable() const
+	   void SetNextTouchable(G4VTouchable* apValue)
+	   G4double GetKineticEnergy() const
+	   void SetKineticEnergy(const G4double aValue)
+	   G4double GetVelocity() const
+	   const G4ThreeVector& GetMomentumDirection() const
+	   void SetMomentumDirection(const G4ThreeVector& aValue)
+	   const G4ThreeVector& GetPolarization() const
+	   void SetPolarization(const G4ThreeVector& aValue)
+	   G4TrackStatus GetTrackStatus() const
+	   void SetTrackStatus(const G4TrackStatus aTrackStatus)
+	   G4bool IsBelowThreshold() const
+	   void SetBelowThresholdFlag(G4bool value = true)
+	   G4bool IsGoodForTracking() const
+	   void SetGoodForTrackingFlag(G4bool value = true)
+	   G4int GetCurrentStepNumber() const
+	   void IncrementCurrentStepNumber()
+	   G4double GetTotalEnergy() const
+	   G4ThreeVector GetMomentum() const
+	   G4DynamicParticle* GetDynamicParticle() const
+	   G4ParticleDefinition* GetDefinition() const
+	   G4double GetStepLength() const
+	   void SetStepLength(G4double value)
+	   G4Step* GetStep() const
+	   void SetStep(G4Step* aValue)
+	   const G4ThreeVector& GetVertexPosition() const
+	   void SetVertexPosition(const G4ThreeVector& aValue)
+	   const G4ThreeVector& GetVertexMomentumDirection() const
+	   void SetVertexMomentumDirection(const G4ThreeVector& aValue)
+	   G4double GetVertexKineticEnergy() const
+	   void SetVertexKineticEnergy(const G4double aValue)
+	   G4LogicalVolume* GetLogicalVolumeAtVertex() const
+	   void SetLogicalVolumeAtVertex(G4LogicalVolume* )
+	   const G4VProcess* GetCreatorProcess() const
+	   void SetCreatorProcess(G4VProcess* aValue)
+	   G4double GetWeight() const
+	   void SetWeight(G4double aValue)
+
+
+
+	*/
+
+        //looging if given track is already registered in MCEventG. If not, find closest parent and change sign of gtrkid
+        AMSG4EventAction* evt_act = (AMSG4EventAction*)G4EventManager::GetEventManager()->GetUserEventAction();
+        const G4VProcess* process = Track->GetCreatorProcess();
+        int process_id = process ? ( (process->GetProcessType() << 24) | (process->GetProcessSubType() & 0xFFFFFF) ) : 0;
+        evt_act->FindClosestRegisteredTrack( gtrkids, process_id );
+	G4ParticleDefinition* particle =Track->GetDefinition();
+        int parinfo;
+	GCKINE.ipart=AMSJob::gethead()->getg4physics()->G4toG3(particle->GetParticleName(),parinfo);
+	GCKINE.charge=particle->GetPDGCharge();
+	//      cout << "Stepping  sensitive"<<" "<<PostPV->GetName()<<" "<<PostPV->GetCopyNo()<<" "<<PostPoint->GetPosition()<<" "<<GCKINE.ipart<<" "<<GCTRAK.destep<<" "<<GCTRAK.step<<endl;
+
+	try{
+	  // Now one has decide based on the names of volumes (or their parents)
+	  G4VPhysicalVolume * Mother=PrePV->GetMother();
+	  G4VPhysicalVolume * GrandMother= Mother?Mother->GetMother():0;
+	  //-------------------------------------------------------------
+	  // TRD
+//          cout <<GCTRAK.destep<<  " "<< PrePV->GetName()<<endl;
+	  if(GCTRAK.destep && PrePV->GetName()(0)=='T' && PrePV->GetName()(1)=='R' 
+	     &&  PrePV->GetName()(2)=='D' && PrePV->GetName()(3)=='T'){
+	    //cout <<" trd "<<GCKINE.itra<<" "<<GCKINE.ipart<<endl;
+	    // kill the secondary electron below electronCutOnTubeWall if it reaches tube's inner wall to avoid overestimation of energy deposit
+	    if (Track->GetParentID() != 0 && PrePV && PostPV) {
+	      if (PostPV->GetName().contains("TRDW")) {
+		if (particle == G4Electron::ElectronDefinition() ||
+		    particle == G4Positron::PositronDefinition()) {
+		  G4double kineticEnergy = PrePoint->GetKineticEnergy() / keV;
+		  if (kineticEnergy < TRDMCFFKEY.electronCutOnTubeWall)
+		    Track->SetTrackStatus(fStopButAlive);
+                }
+              }
+            }
+	    AMSTRDMCCluster::sitrdhits(PrePV->GetCopyNo(),GCTRAK.vect,
+				       GCTRAK.destep,GCTRAK.gekin,GCTRAK.step,GCKINE.ipart,GCKINE.itra,gtrkid,gtrkids,process_id);   
+	  }
+
+
+
+	  //------------------------------------------------------------      
+	  //  Tracker
+	 //  cout <<"================="<<endl;
+// 	  if(GrandMother)
+// 	  cout <<GrandMother->GetName()<< endl;
+// 	  if(Mother)
+// 	  cout <<Mother->GetName()<< endl;
+//  	  cout <<PrePV->GetName()<< endl;
+// 	  cout <<GCTRAK.destep <<endl;
+// 	  cout<<endl;
+#ifdef _PGTRACK_
+          if(GCTRAK.destep && GrandMother && Mother &&
+             GrandMother->GetName()(0)=='S' &&  GrandMother->GetName()(1)=='T' && GrandMother->GetName()(2)=='K' &&
+             Mother->GetName()(0)=='L' &&  PrePV->GetName()(0)=='S'){
+             // cout <<" tracker "<<endl;
+            int part_code = GCKINE.ipart;
+            int A = int((particle->GetPDGMass()/GeV)/0.931494061+0.5);
+            int Z = abs(int(GCKINE.charge));
+            int S = (GCKINE.charge>0) ? 1 : -1;
+            // encode charge in in first 5 bits of the status
+            int status = Z;
+            if (Z>31) status = 31;
+            // try to encode in a short int the new G4 particle ID for ions
+            if (abs(part_code)>1000000000) {
+              int a = (A>99) ? 99 : A;
+              int z = (Z>99) ? 99 : Z;
+              int s = (S==1) ? 0 : 1;
+              part_code = 10000 + s*10000 + z*100 + a;
+            }
+            int sign = -1;
+            if (Track->GetTrackID()==1) sign = 1; // TrackID is 1 for primaries  
+            if (TRMCFFKEY.SetBetterEnergyAndDir) {
+              // I'm interested in the energy lost by inization only, not all! (GCTRAK.destep = GetTotalEnergyDeposit)
+              float energy_deposited = Step->GetTotalEnergyDeposit()/GeV - Step->GetNonIonizingEnergyDeposit()/GeV;
+              // // test to check complete/almost-complete stopping
+              // float kinetic_energy = PostPoint->GetKineticEnergy()/GeV;
+              // float deposited_fraction = energy_deposited/(kinetic_energy+energy_deposited); 
+              // if ( (deposited_fraction>0.9)&&(kinetic_energy>0) ) { // particle loosing more than 90% of its energy 
+              //   printf("AMSG4SteppingAction::UserSteppingAction-V big deposition step. Ekin(GeV): %12.6g   Edep(GeV): %12.6g  Frac: %7.5f\n",
+              //     kinetic_energy,energy_deposited,deposited_fraction);
+              // take pre-step point and post-step point and approximate the direction as the direction connecting this two. 
+              AMSPoint pre_point(
+                PrePoint->GetPosition().x()/cm,
+                PrePoint->GetPosition().y()/cm,
+                PrePoint->GetPosition().z()/cm
+              );
+              AMSPoint pos_point(
+                PostPoint->GetPosition().x()/cm,
+                PostPoint->GetPosition().y()/cm,
+                PostPoint->GetPosition().z()/cm
+              );
+              // cout << "AMSPoint pre_point(" << pre_point.x() << "," << pre_point.y() << "," << pre_point.z() << ");" << endl; // debug
+              // cout << "AMSPoint pos_point(" << pos_point.x() << "," << pos_point.y() << "," << pos_point.z() << ");" << endl; // debug 
+              AMSPoint chord     = pos_point - pre_point;
+              float    siz_chord = chord.norm();
+              AMSDir   dir_chord = (siz_chord>0) ? chord/siz_chord : AMSDir(0,0,-1); // default dir for step = 0
+              AMSPoint mid_chord = pre_point + dir_chord*siz_chord/2;
+              float    vector[7] = {
+                (float)pos_point.x(),(float)pos_point.y(),(float)pos_point.z(), // exit point
+                (float)dir_chord.x(),(float)dir_chord.y(),(float)dir_chord.z(), // chord direction
+                GCTRAK.vect[6] // momentum
+              };
+              // // chord != sector 
+              // float approximation = 1.e+04*fabs(siz_chord - GCTRAK.step); // micron
+              // float error = approximation/(GCTRAK.step*1e4);
+              // if ( (approximation>10)&&(error>0.1)&&(deposited_fraction<0.9) ) {  
+              // // greater that 10 micron, > 10% error, Ekin > 10 MeV    
+              // printf("AMSG4SteppingAction::UserSteppingAction-W big error on chord approx. real_step(um)=%8.3f chord_step(um)=%8.3f delta(um)=%8.3f delta/step=%8.6f ekin(keV)=%8.3f fracdep=%8.3f\n",
+              //   GCTRAK.step*1e4,siz_chord*1e4,approximation,error,kinetic_energy*1e+6,deposited_fraction);
+              // construct hit
+              if (energy_deposited>1e-15) {
+                TrSim::sitkhits(
+                  PrePV->GetCopyNo(),
+                  vector,
+                  energy_deposited,
+                  siz_chord,
+                  sign*abs(part_code),
+                  gtrkid,
+                  status
+                );
+              }
+            }
+            else {
+              // construct hit
+              TrSim::sitkhits(
+                PrePV->GetCopyNo(),
+                GCTRAK.vect,
+                GCTRAK.destep,
+                GCTRAK.step,
+                sign*abs(part_code), // to be sure of sign
+                gtrkid,
+                status
+              );
+            }
+          }
+#else
+	  if(GCTRAK.destep && GrandMother && GrandMother->GetName()(0)=='S' 
+	     &&  GrandMother->GetName()(1)=='T' && GrandMother->GetName()(2)=='K'){
+	    AMSTrMCCluster::sitkhits(PrePV->GetCopyNo(),GCTRAK.vect,
+				     GCTRAK.destep,GCTRAK.step,/*GCKINE.ipart,*/gtrkid);   
+	  }
+#endif
+	  //------------------------------------------------------------
+	  //    TOF: (imply here that Pre or Post volume is sensitive as defined by above check !!!)
+	  //
+	  geant dee,tof;
+	  int numv;
+	  integer tbegtof(0);
+	  integer tendtof(0);
+	  if(PrePV->GetName()(0)== 'T' && PrePV->GetName()(1)=='F')tbegtof=1;
+	  if(PostPV->GetName()(0)== 'T' && PostPV->GetName()(1)=='F')tendtof=1;
+	  //
+	  //------------------------------------------------------------------
+	  //  TOF simple :
+	  //
+	  numv=PrePV->GetCopyNo();
+	  dee=GCTRAK.destep;
+	  tof=GCTRAK.tofg;
+//	  if(tendtof==1 && GCTRAK.inwvol==1){// just enter TFnn
+//	  }
+	  if(tbegtof==1 && GCTRAK.destep<=0. && GCKINE.charge>1 && GCTRAK.step>1e-7){
+            cerr<<"SteppingAction-E-DESTEP<=0 "<<GCTRAK.destep<<" "<<GCTRAK.step<<" "<<GCFLAG.IEVENT-1<<endl;
+     cout << "Stepping Pre  "<<" "<<PrePV->GetName()<<" "<<PrePV->GetCopyNo()<<" "<<PrePoint->GetPosition()<<endl;
+     cout << "Stepping  Post"<<" "<<PostPV->GetName()<<" "<<PostPV->GetCopyNo()<<" "<<PostPoint->GetPosition()<<" "<<PostPoint->GetKineticEnergy()/GeV<<" "<<Step->GetStepLength()/cm<<" " <<Step->GetTotalEnergyDeposit()/GeV<<endl;
+     cout << "Part ID " << Step->GetTrack()->GetDefinition()->GetParticleName()<<endl;
+            geant beta=(PostPoint->GetVelocity()+PrePoint->GetVelocity())/2./(29.9792*cm/nanosecond);//covert to beta
+	    AMSTOFMCCluster::sitofhits(numv,GCTRAK.vect,dee,tof,GCTRAK.gekin,beta,0,GCTRAK.step,GCKINE.itra,GCKINE.ipart,gtrkid);
+}
+	  if(tbegtof==1 && GCTRAK.destep>0.){
+	    number rkb=0.0011;
+	    number c=0.52;
+	    number dedxcm=1000*dee/GCTRAK.step;
+//----Birk Retune
+            number cb1=1.1;
+            geant deer=dee;
+            geant beta=(PostPoint->GetVelocity()+PrePoint->GetVelocity())/2./(29.9792*cm/nanosecond);//covert to beta
+	    if(G4FFKEY.TFNewGeant4>0){
+               dee=dee/(1.+cb1*atan(TFMCFFKEY.birk*dedxcm*0.1/cb1));
+//             dee=dee/(1.+TFMCFFKEY.birk*dedxcm*0.1);
+            }
+	    else                     dee=dee/(1+c*atan(rkb/c*dedxcm));
+	    //cout<<"   > continue TOF: part="<<iprt<<" x/y/z="<<x<<" "<<y<<"  "<<z<<" Edep="<<dee<<" numv="<<numv<<"  step="<<pstep<<" dedx="<<tdedx<<endl;
+	    AMSTOFMCCluster::sitofhits(numv,GCTRAK.vect,dee,tof,GCTRAK.gekin,beta,deer,GCTRAK.step,GCKINE.itra,GCKINE.ipart,gtrkid);
+	    //----
+	    if(G4FFKEY.TFNewGeant4%10>1){
+	      number tofdt= Step->GetStepLength()/((PostPoint->GetVelocity()+PrePoint->GetVelocity())/2.)/nanosecond;
+	      integer  parentid=Track->GetTrackID();
+	      TOF2TovtN::covtoph(numv,GCTRAK.vect,dee,tof,tofdt,GCTRAK.step,parentid);
+	    } 
+	  }
+     
+	  //--Trace every photon in PMT //may be already absorb
+	  if(G4FFKEY.TFNewGeant4%10==1){
+/*             if(PostPV->GetName()(0)== 'T' && PostPV->GetName()(1)=='O' && PostPV->GetName()(2)=='F'&&PostPV->GetName()(3)=='L'&&PrePV->GetName()(0)== 'T'&& PrePV->GetName()(1)=='F'){
+              static int cu=0;
+              if(cu++<1000)cout<<"velocitysl="<<PostPoint->GetVelocity()<<","<<PrePoint->GetVelocity()<<" PostPV="<<PostPV->GetName()<<",PrePV="<<PrePV->GetName()<<endl;
+             }*/
+	    if(PrePV->GetName()(0)== 'T' && PrePV->GetName()(1)=='O'&& PrePV->GetName()(2)=='F' && PrePV->GetName()(3)=='L'&&
+	       PostPV->GetName()(0)== 'T' && PostPV->GetName()(1)=='O' && PostPV->GetName()(2)=='F'&&PostPV->GetName()(3)=='P'){
+	      //check boundary           
+	      G4OpBoundaryProcessStatus TOFPMBoundaryStatus=Undefined;
+	      static RichG4OpBoundaryProcess* boundary=NULL;
+#ifdef _OPENMP
+#pragma omp threadprivate (boundary)
+#endif
+	      if(!boundary){
+		G4ProcessManager* pm= Step->GetTrack()->GetDefinition()->GetProcessManager();
+		G4int nprocesses = pm->GetProcessListLength();
+		G4ProcessVector* pv = pm->GetProcessList();
+		G4int i;
+		for( i=0;i<nprocesses;i++){
+		  if((*pv)[i]->GetProcessName()=="OpBoundary"){
+		    boundary = (RichG4OpBoundaryProcess* )(*pv)[i];
+		    break;
+		  }
+		}
+	      }
+	      //----absorption
+	      if(particle==G4OpticalPhoton::OpticalPhotonDefinition()&&PostPoint->GetStepStatus()==fGeomBoundary&&boundary
+		 && Step->GetTrack()->GetCreatorProcess()->GetProcessName()=="Scintillation")
+		{
+		  TOFPMBoundaryStatus=boundary->GetStatus();
+		  switch(TOFPMBoundaryStatus){
+		  case Absorption:
+		    //        G4cout<<"absorption"<<G4endl;
+		    break;
+		  case Detection://detected by pmt
+		    {
+		      integer parentid=Step->GetTrack()->GetParentID();
+		      const G4VTouchable *touch = PostPoint->GetTouchable();
+		      integer       pmtid =touch    ->GetReplicaNumber();
+		      //                   cout<<"pmtid"<<pmtid<<endl;
+		      geant         phtim= PostPoint->GetGlobalTime()/nanosecond;
+		      geant         phtiml=PostPoint->GetLocalTime()/nanosecond;//from gene
+		      geant         phene= PostPoint->GetTotalEnergy()/eV;
+		      geant         phtral=Step     ->GetTrack()->GetTrackLength()/cm;
+		      //                   G4ThreeVector phpos= PostPoint->GetPosition()/cm;
+		      //                   G4ThreeVector phdir= PostPoint->GetMomentumDirection();
+		      G4ThreeVector phpos=Step->GetTrack()->GetVertexPosition();//generatep pos
+		      G4ThreeVector phdir=Step->GetTrack()->GetVertexMomentumDirection();//generatep pos  
+		      G4ThreeVector localpos=touch  ->GetHistory()->GetTopTransform().TransformPoint(phpos);
+		      G4ThreeVector localdir=touch  ->GetHistory()->GetTopTransform().TransformAxis(phdir);//grobal to local
+		      //pmt effciency rely on angle and energy                   
+		      //                   G4double tofsina=sqrt(1.-localdir.z()*localdir.z());
+		      //                   G4double tofsinb=tofsina*TofSimUtil::LGRIND/TofSimUtil::VARIND;//vaccum angle
+		      bool AnPass=1;
+		      //                   if(tofsinb>=1.)AnPass=0;//total reflection in gap
+		      //                   else  AnPass=1.;
+		      if(AnPass==1){
+			if(G4UniformRand()<TofSimUtil::PHEFFC[pmtid/1000%10][pmtid/100%10][pmtid/10%10][pmtid%10]){
+			  geant tfpos[3],tfdir[3];
+			  tfpos[0]=phpos.x();tfpos[1]=phpos.y();tfpos[2]=phpos.z();
+			  tfdir[0]=phdir.x();tfdir[1]=phdir.y();tfdir[2]=phdir.z();
+			  AMSTOFMCPmtHit::sitofpmthits(pmtid,parentid,phtim,phtiml,phtral,phene,tfpos,tfdir);
+			}
+		      }
+		    }
+		    break;
+		  case FresnelReflection:
+		    //G4cout<<"fresnel_reflection"<<G4endl;
+		    break;
+		  case FresnelRefraction:
+                    // G4cout<<"postvol name="<<PostPV->GetName()<<G4endl;
+		    break;
+		  default:
+		    break;
+		  }
+		}
+	      //---end absorption
+	    }//volume
+	  }//TOF geant4
+
+	  //------------------------------------------------------------------
+	  //  ANTI :
+	  //
+	  integer isphys;
+	  if(PrePV->GetName()(0)== 'A' && PrePV->GetName()(1)=='N' &&
+	     PrePV->GetName()(2)=='T' && PrePV->GetName()(3)=='S' && GCTRAK.destep>0.){
+	    dee=GCTRAK.destep;
+	    isphys=PrePV->GetCopyNo();
+	    // islog=floor(0.5*(isphys-1))+1;//not used now
+	    number rkb=0.0011;
+	    number c=0.52;
+	    number dedxcm=1000*dee/GCTRAK.step;
+	    dee=dee/(1+c*atan(rkb/c*dedxcm));
+	    AMSAntiMCCluster::siantihits(isphys,GCTRAK.vect,
+					 dee,GCTRAK.tofg, gtrkid);
+	  }// <--- end of "in ANTS"
+	  //------------------------------------------------------------------
+	  //  ECAL :
+	  //
+	  if(PrePV->GetName()(0)== 'E' && PrePV->GetName()(1)=='C' && 
+	     PrePV->GetName()(2)=='F' && PrePV->GetName()(3)=='C'){
+	    if(GCTRAK.destep>0.){
+	      dee=GCTRAK.destep;
+	      //GBIRK(dee);
+	      //  
+	      //     birks law dirty way
+	      //
+
+	      // number rkb=0.0011;
+	      // number c=0.52;
+	      // number dedxcm=1000*dee/GCTRAK.step;
+	      //      dee=dee/(1+c*atan(rkb/c*dedxcm));
+	      dee=dee/ECMCFFKEY.sbcgn;//correction for too high signal vrt g3
+//	      static unsigned int np=0; if(np==0)cout<<"... in ECAL: numv="<<PrePV->GetCopyNo()<<" "<<dee<<" "<<PrePV->GetMother()->GetCopyNo()<<" "<<PrePV->GetName()<<" "<<GCTRAK.vect[0]<<" "<<GCTRAK.vect[1]<<" "<<GCTRAK.vect[2]<<" "<<PrePV->GetMother()->GetName()<<" "<<PrePV->GetMother()->GetLogicalVolume()<<" "<<GCTRAK.destep<<endl;
+//		  ++np;
+	      AMSEcalMCHit::siecalhits(PrePV->GetMother()->GetCopyNo(),GCTRAK.vect,dee,GCTRAK.tofg);
+	    }
+	  }
+	  //------------------------------------------------------------------
+	  // CJM : RICH (G4 synchronized version)
+	  //
+	  AMSPoint local_position;
+	  int volume=PostPV->GetCopyNo()-1;
+	  if(PostPV->GetName()(0)=='C' && PostPV->GetName()(1)=='A' &&
+	     PostPV->GetName()(2)=='T' && PostPV->GetName()(3)=='O' && 
+	     GCTRAK.inwvol==1){
+
+	    if(GCKINE.ipart==Cerenkov_photon && GCTRAK.nstep==0){
+	      GCTRAK.istop=1;
+
+	      local_position=AMSPoint(GCTRAK.vect);
+	      local_position=RichAlignment::AMSToRich(local_position);
+
+	      geant xl=(RichPMTsManager::GetAMSPMTPos(volume,2)-RICHDB::cato_pos()-RICotherthk/2-local_position[2])/GCTRAK.vect[5];
+
+	      geant vect[3];
+	      vect[0]=GCTRAK.vect[0]+xl*GCTRAK.vect[3];
+	      vect[1]=GCTRAK.vect[1]+xl*GCTRAK.vect[4];
+	      vect[2]=GCTRAK.vect[2]+xl*GCTRAK.vect[5];
+	
+	      AMSRichMCHit::sirichhits(GCKINE.ipart,
+				       volume,
+				       vect,
+				       GCKINE.vert,
+				       GCKINE.pvert,
+				       Status_Window-
+				       (GCKINE.itra!=1?100:0),
+                                       gtrkid,
+                                       GCKINE.itra);
+	    }
+      
+
+	    if(GCKINE.ipart==Cerenkov_photon && GCTRAK.nstep!=0){
+	      GCTRAK.istop=2; // Absorb it
+	      local_position=AMSPoint(GCTRAK.vect);
+	      local_position=RichAlignment::AMSToRich(local_position);
+	      geant xl=(RichPMTsManager::GetAMSPMTPos(volume,2)-RICHDB::cato_pos()-RICotherthk/2-local_position[2])/GCTRAK.vect[5];
+
+	      geant vect[3];
+	      vect[0]=GCTRAK.vect[0]+xl*GCTRAK.vect[3];
+	      vect[1]=GCTRAK.vect[1]+xl*GCTRAK.vect[4];
+	      vect[2]=GCTRAK.vect[2]+xl*GCTRAK.vect[5];
+	
+	      if(GCKINE.vert[2]<RICHDB::RICradpos()-RICHDB::rad_height-RICHDB::rich_height-
+		 RICHDB::foil_height-RICradmirgap-RIClgdmirgap // in LG
+		 || (GCKINE.vert[2]<RICHDB::RICradpos()-RICHDB::rad_height &&
+		     GCKINE.vert[2]>RICHDB::RICradpos()-RICHDB::rad_height-RICHDB::foil_height))
+		AMSRichMCHit::sirichhits(GCKINE.ipart,
+					 volume,
+					 vect,
+					 GCKINE.vert,
+					 GCKINE.pvert,
+					 Status_LG_origin,
+                                         gtrkid,
+                                         GCKINE.itra);
+	      else
+		AMSRichMCHit::sirichhits(GCKINE.ipart,
+					 volume,
+					 vect,
+					 GCKINE.vert,
+					 GCKINE.pvert,
+					 0,
+                                         gtrkid,
+                                         GCKINE.itra);
+	    }else if(GCTRAK.nstep!=0){	 
+	      AMSRichMCHit::sirichhits(GCKINE.ipart,
+				       volume,
+				       GCTRAK.vect,
+				       GCKINE.vert,
+				       GCKINE.pvert,
+				       Status_No_Cerenkov,
+                                       gtrkid,
+                                       GCKINE.itra);
+	    }
+	  }
+  
+
+	  // end of RICH
+	  //----------------------------------------------------------------
+
+    
+	} // <--- end of "try" ---
+	//
+	catch (AMSuPoolError e){
+	  cerr << "GUSTEP  "<< e.getmessage();
+	  GCTRAK.istop =1;
+	  AMSEvent::gethead()->Recovery();
+	  return; 
+	}
+	catch (AMSaPoolError e){
+	  cerr << "GUSTEP  "<< e.getmessage();
+	  GCTRAK.istop =1;
+	  AMSEvent::gethead()->Recovery();
+	  return;
+	}
+      }
+      //   cout <<"leaving stepping "<<endl;
+    }
+    if(GCTRAK.istop){
+      Track->SetTrackStatus(fStopAndKill);
+    }
+
+}
+return;
+}
+
+
+G4ClassificationOfNewTrack AMSG4StackingAction::ClassifyNewTrack(const G4Track * aTrack)
+{ 
+  G4ParticleDefinition* particle =aTrack->GetDefinition();
+    int parinfo;
+  GCKINE.ipart=AMSJob::gethead()->getg4physics()->G4toG3(particle->GetParticleName(),parinfo);
+  if(GCKINE.ipart==Cerenkov_photon){
+    //--new TOF part
+    if(G4FFKEY.TFNewGeant4%10==1){
+      G4ThreeVector phver=aTrack->GetPosition();
+      G4String volnam=aTrack->GetVolume()->GetName();
+      bool IsTof=(volnam(0)=='T'&&(volnam(1)=='O'||volnam(1)=='F'));//not RICH region
+
+      if(IsTof){
+	if(aTrack->GetCreatorProcess()->GetProcessName()!="Scintillation")return fKill;
+	G4PhysicsTable* PMTEffTable=TofSimUtil::Head->TOFPM_Et;
+	G4PhysicsOrderedFreeVector* PMTEnEff=(G4PhysicsOrderedFreeVector*)((*PMTEffTable)(0));
+	G4double phene=aTrack->GetTotalEnergy()/eV;
+	if(phene<2.4||phene>3.35)return fKill;
+	G4double EnEff =PMTEnEff->Value(phene*eV);
+	bool  EnPass=(G4UniformRand()<EnEff/TofSimUtil::Head->QEMAX);
+	if(!EnPass)return fKill;
+	//---verticle direction photon need more cpu time + more absorbtion=big angle cut
+        const G4VTouchable *touch = aTrack->GetTouchable();
+        G4ThreeVector phdir=aTrack->GetMomentumDirection();
+        G4ThreeVector localdir=touch  ->GetHistory()->GetTopTransform().TransformAxis(phdir);//grobal to local
+        G4bool  AnPass;
+        AnPass=(fabs(localdir.y())>TFMCFFKEY.phancut);
+        if(!AnPass){
+	  return fKill;
+	}
+        return fWaiting;
+      }
+    }
+
+    //--Rich part
+    double e=aTrack->GetTotalEnergy()/GeV;
+    if(!RICHDB::detcer(e)) return fKill; // Kill discarded Cerenkov photons
+  }
+  if( !aTrack->GetCurrentStepNumber() ){ //don't fill twice for the same track
+    AMSG4EventAction* evt_act =(AMSG4EventAction*)G4EventManager::GetEventManager()->GetUserEventAction();
+    const G4VProcess* process = aTrack->GetCreatorProcess();
+    int process_id = process ? ( (process->GetProcessType() << 24) | (process->GetProcessSubType() & 0xFFFFFF) ) : 0;
+    evt_act->AddRegisteredParentChild( aTrack->GetTrackID(), aTrack->GetParentID(), process_id );
+    AMSmceventg::FillMCInfoG4( aTrack );
+  }
+
+  return fWaiting;
+}
+
+
+void AMSG4SteppingAction::FillProcessInfo(const G4Step* aStep){
+  const G4StepPoint* endPoint = aStep->GetPostStepPoint();
+  const G4VProcess* process   = endPoint->GetProcessDefinedStep();
+
+  // check that an real interaction occured (eg. not a transportation)
+  G4StepStatus stepStatus = endPoint->GetStepStatus();
+  G4bool transmit = (stepStatus==fGeomBoundary || stepStatus==fWorldBoundary);
+  if (transmit) return;
+
+  //initialisation of the nuclear channel identification
+  G4Track *aTrack = aStep->GetTrack();
+  G4ParticleDefinition* particle = aTrack->GetDefinition();
+  G4String partName = particle->GetParticleName();
+  G4String procName = process->GetProcessName();
+  G4int    AP       = particle->GetBaryonNumber();
+  G4int    ZP       = G4int(particle->GetPDGCharge()/eplus + 0.5);
+  const G4StepPoint* prePoint = aStep->GetPreStepPoint();
+  G4double EkP                = prePoint->GetKineticEnergy()/GeV;
+  G4double EP                 = prePoint->GetTotalEnergy()/GeV;
+  G4double TotalEPost = 0.0;
+  if(procName.contains("RadioactiveDecay")){
+     const std::vector<const G4Track*>* secondary= aStep->GetSecondaryInCurrentStep();
+     int nSec=(*secondary).size();
+     for (G4int j=0; j<nSec; j++) {
+        const G4DynamicParticle *theDParticle = (*secondary)[j]->GetDynamicParticle();
+        G4double      ES = theDParticle->GetTotalEnergy()/GeV;
+        G4double      EkS= theDParticle->GetKineticEnergy()/GeV;
+        G4ThreeVector PS = theDParticle->GetMomentum()/GeV;
+        G4ParticleDefinition *theParticle = theDParticle->GetDefinition();
+        G4double      ZS = theParticle->GetPDGCharge();
+        G4int         AS = theParticle->GetBaryonNumber();
+//        G4cout<<"Decay ZP="<<ZP<<" AP="<<AP<<" ZS="<<ZS<<" AS="<<AS<<G4endl;
+     }
+  }
+  if(procName.contains("Inelastic")||procName.contains("inelastic")){
+    G4HadronicProcess* hproc = (G4HadronicProcess*) process;
+    const G4Isotope* target = hproc->GetTargetIsotope();
+    if(target){
+      G4int ZT   = target->GetZ();
+      G4int AT   = target->GetN();
+      if((aTrack->GetParentID()==0)&& ((ZT==6&&AT==12)||(ZT==13&&AT==27)||(ZT==82&&AT==208))){//only look at first primary->sec+Taget C/Al/Pb(only one istope)
+        G4double MaxES      = 0;
+        G4double MaxEkS     = 0;
+        G4double MaxZS      = 0.;
+        G4int    MaxAS      = 0;
+        const std::vector<const G4Track*>* secondary= aStep->GetSecondaryInCurrentStep();
+        int nSec=(*secondary).size();
+        for (G4int j=0; j<nSec; j++) {
+          const G4DynamicParticle *theDParticle = (*secondary)[j]->GetDynamicParticle();
+          G4double      ES = theDParticle->GetTotalEnergy()/GeV;
+          G4double      EkS= theDParticle->GetKineticEnergy()/GeV;
+          G4ThreeVector PS = theDParticle->GetMomentum()/GeV;
+          G4ParticleDefinition *theParticle = theDParticle->GetDefinition();
+          G4double      ZS = theParticle->GetPDGCharge();
+          G4int         AS = theParticle->GetBaryonNumber();
+          TotalEPost += ES;
+          if(EkS>MaxEkS){MaxZS=ZS; MaxAS=AS; MaxES=ES; MaxEkS=EkS;}
+        }
+        char histn[1000];
+        sprintf(histn,"fragnpar%d",AT);
+        hman.Fill(histn,EP/AP,nSec+0.5);//Etot/N
+        sprintf(histn,"fragen%dv",AT);
+        hman.Fill(histn,EP/AP,TotalEPost/(EP+AT*0.938));
+        sprintf(histn,"fragzmap%dm",AT);
+        hman.Fill(histn,EP/AP,MaxZS+0.5);
+        sprintf(histn,"fragamap%dm",AT);
+        hman.Fill(histn,EP/AP,MaxAS+0.5);
+        sprintf(histn,"frageva%dvm",AT);
+        if(AP>=1&&MaxAS>=1)hman.Fill(histn,EP/AP,MaxEkS/MaxAS/(EkP/AP));
+      } 
+    }
+  }
+  return; 
+}
+
+
+const double AMSG4SteppingAction::facc_pl[21] = {
+  158.92,  141.2, 86.1, 
+  64.425,  65.975, 61.325, 62.875,
+  53.06,   29.228, 25.212, 1.698, -2.318, -25.212, -29.228,
+  -62.875, -61.325, -64.425, -69.975, 
+  -135.882,
+  -142.792,
+  -158.457
+};
+
+
+bool AMSG4SteppingAction::FillPrimaryInfo( const G4Step *Step){
+
+  G4Track * aTrack = Step->GetTrack();
+  G4int parentid=aTrack->GetParentID();
+  if(!(parentid>=0&&parentid<=1))return false;//only allow two generations: parentid=0 or 1
+
+  const G4VProcess *creator=aTrack->GetCreatorProcess();
+  if(parentid>=1){//futher reduce >=2nd generation
+    if(!creator)return false;
+    G4String procName=creator->GetProcessName();
+    if(!(procName.contains("conv")||procName.contains("compt")))return false;//only keep daughter from photon conversion and compton scatering
+  } 
+ 
+  double z_post = Step->GetPostStepPoint()->GetPosition().z();
+  double z_pre = Step->GetPreStepPoint()->GetPosition().z();
+
+
+  int pl = 0;
+  int ipl = -1;
+
+
+  //if partcle is died, or go out of the mother volume, record it
+  if( aTrack->GetTrackStatus()!=fAlive ) ipl = 100;
+
+  while( (pl<21) && (ipl<0) ){
+    if(  ( (z_post < facc_pl[pl]*cm) && (z_pre > facc_pl[pl]*cm ) ) || //top-bottom
+         ( (z_pre < facc_pl[pl]*cm) && (z_post > facc_pl[pl]*cm ) ) ){ //bot-top
+
+      ipl = pl;
+    }
+    pl++;
+  }
+
+  if (ipl < 0 ) return false;
+ 
+  G4double ekin = aTrack->GetKineticEnergy();
+  G4String name = aTrack -> GetDynamicParticle() -> GetDefinition() -> GetParticleName();
+  G4ThreeVector mom = aTrack->GetMomentumDirection();
+    int partinfo;
+    int g3code = AMSJob::gethead()->getg4physics()->G4toG3( name,partinfo );
+    partinfo++;
+  if(g3code==AMSG4Physics::_G3DummyParticle)return ipl==100;
+
+  G4ThreeVector pos = aTrack->GetPosition();
+  AMSPoint point( pos.x(), pos.y(), pos.z() );
+
+  AMSDir dir( mom.x(), mom.y(), mom.z() );
+  G4ThreeVector polar=aTrack->GetPolarization();
+  AMSDir poldir(polar.x(),polar.y(),polar.z());
+  int nskip = -1000*(1+parentid); //indicates acceptanced particle generation,-1000 first,-2000 second, ...
+  nskip -= ipl;
+   G4ParticleDefinition * pdef = aTrack->GetDynamicParticle()->GetDefinition();
+   float charge=pdef->GetPDGCharge();
+   float mass=pdef->GetPDGMass()/GeV;
+
+   
+  AMSEvent::gethead()->addnext(
+                               AMSID("AMSmceventg",0),
+                               new AMSmceventg( g3code,  aTrack->GetTrackID(), aTrack->GetParentID(), ekin/GeV, point/cm, dir,poldir,partinfo,charge,mass,nskip) // negetive code for secondary
+                               );
+return ipl==100;
+}
+
+
+void AMSG4SteppingAction::FillBackSplash( const G4Step *Step){
+  double ECAL_Z = ECALDBc::ZOfEcalTopHoneycombSurface();
+  double z_post = Step->GetPostStepPoint()->GetPosition().z();
+  double z_pre = Step->GetPreStepPoint()->GetPosition().z();
+
+  if( (z_pre < ECAL_Z*cm) && (z_post >  ECAL_Z*cm) ){
+    G4Track * aTrack = Step->GetTrack();
+    G4ParticleDefinition * pdef = aTrack->GetDynamicParticle()->GetDefinition();
+    bool isNeutrino = pdef->GetPDGCharge()==0 and pdef->GetLeptonNumber()!=0;
+    G4double ekin = aTrack->GetKineticEnergy();
+    if( ekin < 1*MeV or isNeutrino ) return;
+    G4String name = aTrack -> GetDynamicParticle() -> GetDefinition() -> GetParticleName();
+    G4ThreeVector mom = aTrack->GetMomentumDirection();
+    // 
+    // ams form of the track/particle information
+    //
+    int partinfo;
+    int g3code = AMSJob::gethead()->getg4physics()->G4toG3( name,partinfo );
+    partinfo++;
+    partinfo=-partinfo;
+    if(g3code==AMSG4Physics::_G3DummyParticle)return;
+    G4ThreeVector pos = aTrack->GetPosition();
+    AMSPoint point( pos.x(), pos.y(), pos.z() );
+    AMSDir dir( mom.x(), mom.y(), mom.z() );
+    G4ThreeVector polar=aTrack->GetPolarization();
+    AMSDir poldir(polar.x(),polar.y(),polar.z());
+    int nskip = -2; //indicates that this is step of backsplashed particle
+   float charge=pdef->GetPDGCharge();
+   float mass=pdef->GetPDGMass()/GeV;
+    AMSEvent::gethead()->addnext(
+                                 AMSID("AMSmceventg",0),
+                                 new AMSmceventg( g3code,  aTrack->GetTrackID(), aTrack->GetParentID(), ekin/GeV, point/cm, dir,poldir,partinfo,charge,mass,nskip) // negetive code for secondary
+                                 );
+    AMSG4EventAction* evt_act = (AMSG4EventAction*)G4EventManager::GetEventManager()->GetUserEventAction();
+    evt_act->AddRegisteredTrack( aTrack->GetTrackID() );
+  }
+}
+
+
+#if G4VERSION_NUMBER  > 999
+
+AMSG4ActionInitialization::AMSG4ActionInitialization(int npart)
+ : G4VUserActionInitialization(),_npart(npart)
+{}
+
+
+AMSG4ActionInitialization::~AMSG4ActionInitialization()
+{}
+
+
+void AMSG4ActionInitialization::BuildForMaster() const
+{
+ //cout <<" build for master"<<endl;
+  SetUserAction(new AMSG4RunAction);
+}
+
+
+void AMSG4ActionInitialization::Build() const
+{
+     AMSG4GeneratorInterface* ppg=new AMSG4GeneratorInterface(_npart);
+  SetUserAction(ppg);
+  SetUserAction(new AMSG4RunAction);
+
+  AMSG4EventAction* eventAction = new AMSG4EventAction;
+  SetUserAction(eventAction);
+
+  SetUserAction(new AMSG4SteppingAction);
+  SetUserAction(new AMSG4StackingAction);
+  AMSJob::addblocktype();
+  RichLIPRec::InitGlobal();
+}
+#endif
+
+extern "C" void rndmg4_(double &ret){
+#ifdef G4MULTITHREADED
+ret=G4MTHepRandom::getTheEngine()->flat();
+#else
+ret=CLHEP::RandFlat::shoot();
+#endif
+/*
+float D;
+ret=RNDM(D);
+*/
+}
+
+extern  "C" void fortran_thread_signalled_(int &mp){
+
+if(mpi.getMPIStatus()==1){
+     mpi.Signalled++;
+}
+mp=mpi.getMPIStatus();
+}
+extern "C" void abend_(){
+fortran_throw_ex_("abend called");
+}
+extern "C" void fortran_throw_ex_(char *mes){
+      G4Exception("fortran_throw_exe_",
+                      mes,
+                    EventMustBeAborted,
+                   mes);
+}

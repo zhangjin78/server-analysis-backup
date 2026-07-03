@@ -1,0 +1,107 @@
+<HTML>
+<HEAD>
+<TITLE>Central HyperNews Subscription Page (originally from STAR/BNL)</TITLE>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!-- hide this
+function help(message) {
+  self.status = message;
+  return true;
+}
+// stop hiding -->
+</SCRIPT>
+</HEAD>
+
+<body bgcolor=cornsilk text=black link=navy vlink=maroon alink=tomato>
+
+     <table border=0   cellpadding=5 cellspacing=0 width="100%">
+        <tr bgcolor="#ffdc9f">
+        <td align=left width="30%"> <font size="-1">
+        <A href="http://ams.cern.ch/AMS"> AMS </a>
+        <A href="http://ams.cern.ch/AMS/Computing/computing.html">Computing</a>
+        </td>
+       <td align=center><b><font color=green> AMS HyperNews</font></b></td>
+       <td align=right width="30%"> <font size="-1">
+    &nbsp;
+        <!-- top right corner  --> </font></td>
+        </tr>
+<tr bgcolor="#ffffcc"><td colspan=3 align=right> <font size="-1"> 
+<center>
+   <A HREF="/index_hnews.html">
+     Forums</a>
+   - <A HREF="/cgi-bin/HyperNews/view-members.pl">
+     Membership</a>
+   - <A HREF="/cgi-bin/HyperNews/SECURED/edit-subscribe.pl">
+     Subscriptions</a>
+   - <A HREF="/cgi-bin/HyperNews/login.pl">
+     Login</a>
+   - <A HREF="/cgi-bin/HyperNews/search">
+     Search</a>
+   - <A HREF="mailto:alexei\@mail.cern.ch">
+     Feedback</A>
+   - <A HREF="/cgi-bin/HyperNews/Admin/top.pl">Admin</a>
+  - <A HREF="/cgi-bin/HyperNews/top.pl">
+     Help</a>
+</center>
+</font></td></tr></table>
+
+
+
+<CENTER>
+<H1>Central HyperNews Subscription Page</H1>
+</CENTER>
+This page will allow you to query which HyperNews forums you or
+another member are subscribed to and also allow you to change your
+subscriptions.<P> 
+
+<HR>
+<H3>Query a Member's Subscriptions</H3>
+To change which member's subscription information is reported below,
+enter the member's nickname below and press the "Query" button.
+<P>
+};
+
+print qq{
+<CENTER>
+
+<TABLE BORDER=0 WIDTH="85%">
+<TR><TD>
+
+<B>NOTE</B>: HyperNews supports another subscription level called "notify"
+which is whether or not you are emailed when someone posts a
+reply to one of your messages.  It is possible for other members to
+add themselves to this "notify" list for any particular message.  This
+is called "subthread subscription".  Subthread subscription status
+cannot be changed here. You must go to the Subscribe page for the
+desired message.  Use the "Forums and Subthreads" option below to find
+<B>ALL</B> the messages in the HyperNews system for which you will be
+"notified". Be warned that a search for subthreads
+may take a <B>VERY</B> long time. 
+</TD></TR></TABLE>
+</CENTER>
+
+<P>
+<FORM ACTION="/cgi-bin/HyperNews/view-members.pl" METHOD="POST">
+
+<STRONG>User ID</STRONG> (nickname):<BR>
+<INPUT NAME="userid" SIZE=35 MAXLENGTH=65 VALUE=""> 
+ <INPUT TYPE="submit" NAME="commandsubmit" VALUE="Query"><P>
+
+<INPUT TYPE="radio" NAME="searchtype" VALUE="Forums and Subthreads">
+Forums and Subthreads
+<INPUT TYPE="radio" NAME="searchtype" VALUE="Forums Only" CHECKED>
+Forums Only
+</FORM>
+<P>
+</FORM>
+<p><HR SIZE=4><p>
+[   <a href="/HyperNews/SECURED/edit-member.pl">
+     Become a Member</a>
+   | <a href="/index_hnews.html">
+     Feedback</A>
+   | <a href="http://www.hypernews.org/HyperNews/get/hypernews/instructions.html">
+     Help</a>
+   ]
+</BODY>
+</HTML>
+

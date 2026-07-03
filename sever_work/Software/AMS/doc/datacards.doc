@@ -1,0 +1,1577 @@
+#  $Id: datacards.doc,v 1.527 2025/05/29 14:36:12 choutko Exp $
+Datacards for AMS02
+
+// Protection from some myst bug
+
+
+TERM
+I 1  TRM(1234567890)     // Ok if == 1234567890 stop otherwise
+
+
+//General
+
+AMSJOB
+I 1  Jobtype(0)      // 1 - Reconstruction ( 0 Simulation)
+                     // 10 - Real Data
+                     // 100 - Tracker Calibration
+                     // 200 - TOF Calibration
+                     // 300 - Anti Calibration
+                     // 400 - Cerenkov/SRD Calibration
+                     // 500 - Magnet Calibration
+                     // 600 - RICH Calibration
+                     // 700 - TRD Calibration
+                     // 800 - AMS Calibration
+                     // 900 - ECAL Calibration
+                     //1000 - Tracker Monitoring
+                     //2000 - TOF Monitoring
+                     //3000 - Anti Monitoring
+                     //4000 - Cerenkov Monitoring
+                     //5000 - LVL1 Monitoring
+                     //6000 - LVL3 Monitoring
+                     //7000 - AxAMS Monitoring
+                     //8000 - Everything Monitoring
+		     //9000 - ECAL Monitoring
+                     //10000- Production
+                     //
+I 2  Debug(1)        // 0 - Off   ; 1 - On
+R 3  CpuLimit(10.)   // CpuLimit in native sec per event
+I 4  Read(0)         // 0 - Off   ; 1 - setup 10 -Mceventg 100 -mc banks
+                     // 1000 - Rec banks
+I 5  Write(0)        // Same as for read
+I 6  Jobname(160*' ')// Jobname == list in db (<160 bytes)
+I46  Setupname(160*' ')  // Setupname == Setup Name (<160 bytes)
+                     // see setup.doc for details
+I86  ZeroSetupOK(0)  // Internal
+I87  Update(0)       // Update(1) or not(0) TDV in DBase
+I88  TDVC(1600*' ')  // TDV Names, separated by |, which will be updated
+                     // if Update(see above) ==1
+R488 ExtAlignErrorThreshold[2](-1,-1) // Maximum error in Madrid external
+                                      //alignment parameters allowed in whole run
+                                      //for layer 1([0]) and layer 9([1]) in microns.
+                                      // Negative values are ignored.
+
+R490 Kill(1000000.)         //   check every Kill second if system(getenv(AMSKILLYOURSELF)) return 0; if yes raise sigint
+
+IOPA
+I 1    hlun(0)                   // hlun lun number for ntuple file (=0 no output)
+I 2    hfile(160*' ')            // ntuple output file name
+                                 // (program will add run.1stevent.hbk clause)
+I42    ntupleId(1)               // Ntuple Id
+I43    WriteAll(2)               // Flag to write objects into the ntuple
+                                 // 1=All; 0=Only "used" objects
+                                 // 2="Used" + tracker hits consistent with TOF
+                                 // 10+X=Dump header, X=0,1,2 as  above
+                                 // but header block in the ntuple is filled
+                                 // also if trigger condition is not matched.
+                                 // 100 +X    write  events with errors,
+                                 // otherwise write only header
+                                 // n*1000+X - always write first n*1000 events
+                                 // from every run
+R44    Portion(1.1)              // Process event if RNDM(d)<Portion)
+I45    TriggerC('AMSParticle')   // Container names, separated by
+                                 // & or | to trigger write
+                                 // the ntuple and/or db
+I85    mode(0)                   // 4th vectors i/0 mode switch
+                                 // 0 - nothing 1 -read 2 - write 3 - append
+                                 // 10+ -> ascii file
+I86   ffile(' ')                 // 4th vectors file name
+I126  MaxNtupleEntries(100000)   // max entries for ntuples( 0==inf)
+I127  WriteRoot(0)               // write (!0) or not write(0) root file
+                                 // the value is used to set Root Compression Level=WriteRoot-1; compression algorthm = zlib if >0
+                                 //                           Root Compression Level=-WriteRoot; compression algorthm = lzma otherwise
+I128  rfile(160*' ')             // root file name
+I168 MaxFileSize(100000000)      // max ntuplefilesize (kbytes)
+I169 MaxFileTime(86400*3)        //  max ntuple time (sec)
+I170 BuildMin(-1)                // min build version (production only)
+I171 HistoMan                    // Enables the HistoMan facility for histograms (1:written in AMSRoot file 2:written in Histos_$RUN.root 3:written in both)
+                                 // 10+X Save also TrOnlineMon histograms, X=1,2,3 as above
+I172 Skip                        // Skip n events in the reconstruction
+I173 WriteTGeometry(0)           // 2 (recommended) write TGeo Geom
+				 //   to use the new method(2) you need to
+				 //   compile gbatch with VGM-AMS library
+				 //   download and compile VGM-AMS
+				 //   (svn checkout svn://svn.code.sf.net/p/vgmams/code/ vgmams)
+				 //   set the env variable VGM_INSTALL to the compiled VMG-AMS directory,
+				 //   recompile GBATCH
+                                 // 1 (deprecated) write TGeo Geom (not fully G4 compatible)
+                                 // 0 do not writeTGo file
+I174 TGeometryFileName('ams02.root')  // TGeometry file name
+I214 WriteTDVDataInRoot(0)             // Write/NotWrite TDVData in Root (not to be mixed with names
+I215 ReadAMI(0)                   //  0,1,2 not read/Read/force read AMI interface with standalone program
+I216 unitimegen(0)                    // dummy datacard entry for future use
+I217 MaxOneMinuteRootFileSize(100000000)  //  in bytes
+I218 BuildRichConfig(1)          // Create Rich Config DB records (>0) and write them in Root (>=0)
+I219 MaxEventsMap  (200)               // Max events to be filled in root file by one thread
+
+//-------------------------------------------------------------------------------
+
+    RICH simulation
+
+
+RICAL
+I 1  ReadFile(0)        // Read calibration file at initialization if 1
+                        // use nominal values for all the PMTs if 0, write
+			// calibration file if /10!=0
+I 2  sec[2](0,0)        // Validity time:
+I 4  min[2](0,0)        //
+I 6  hour[2](0,0)       //
+I 8  day[2](1,1)        //
+I10  mon[2](0,0)        //
+I12  year[2](101,110)   // year-1900
+I14  Input filename(200)  // For PMT calibrations
+I214 Output filename(200) // For PMT calibrations
+
+
+RICCONT
+I 1  iflgk_flag(0)              // Activate the use of the GCTRAK.iflgk=1 in the tracking
+I 2  tsplit(0)                  // 1 Split time spent information (for optimization
+                                // purposes); 0 do no split
+I 3  pmttables[50]       // File to load precomputed single p.e. simulation tables
+                                // If no file is present, the file $AMSDataDir/$version/RichDefaultPMTTables.dat
+                                // is searched. If it is not found, or the calibration values differ
+                                // from the ones used to compute the tables, the tables are recomputed, but not saved
+                                // unless explicitly stated in next key register
+I 53  pmttables_out[50]      // File to svae compute single p.e. simulation tables
+R 103 mcgeomshift[3]         //RICH MC geometry position shift in cm
+
+RICREC
+I 1  recon[0](1)                    //  RICH BETA reconstruction switch + LIP rec main switch
+                                 // 0 -off; 1 RICH beta reconstruction ; 2 RICH beta reconstruction after hot-spot removal
+                                 // 10 LIP reconstruction (detailed switches below);
+                                 // 1000 - store beta per hit for used hits
+                                 // 2000 - store beta per hit for all hits
+				 // x*10000 - x=10*window for beta reconstruction. If x=0 then the default (3) is assumed
+
+I 2  recon[1](1)                    // RICH Z reconstruction switch
+                                 // 0 -off; 1 RICH Z reconstruction
+
+I 3  liprflag[2](1,1)    // detailed flags for RICH LIP reconstructions
+                         // (velocity, charge), for each:
+                           // 1 - conventional reconstructions using track objects
+                           // 10 - constrained reconstructions using track objects
+                           // 100 - constrained reconstruction using TOF data
+                           // 1000 - standalone reconstruction using no track
+
+R 5  lipsigma[4]                    // aerogel and NaF: residuals sigmas
+                                    // (not yet implemented)
+
+R 9  lipdcut[2]                     // aerogel and NaF: hit to ring
+                                    // distance cut in terms of sigmas
+                                    // (not yet implemented)
+
+R 11  lipznorm[2]                   // LIP charge overall factors (aerogel, NaF)
+                                    // (not yet implemented)
+
+R 13  lipdisp(0)                    // LIP event display (interactive mode only):
+                                    // 0=off, 1=on
+
+I 14  store_rec_hits(0)             // Set to 1 to store information about the reconstructed hits
+                                    // for each ring
+I 15 createrichringx(0)             //  create richringx on the fly (0) %1000 minimal charge*100 (/1000)%1000 charge*100 with max dphi/dz 4000/500
+I 16  dz(200)                            // dz array size
+I 17 dphi(200)                          //dphi array size
+ 
+RICSET
+I 1  setup(0)                    // 0 use coarse radiator tables.
+	                         // 1 use fine radiator tables
+
+I 2  tables_in[50]               // File to load radiator parameters.
+                                 // Keep it empty to load default tables
+
+I 52  tables_out[50]             // File to save radiator parameters.
+                                 // Keep it empty to load default tables
+
+I 102  finemesh_in[50]         // File to read finemesh radiator parameters.
+                                // Keep it empty to load default tables
+
+I 152  alignment_in[50]          // File to load alignment settings
+                                 // Keep it empty to load default one
+RICDB
+I 1 dump(0)                     // 0 no action
+                                // >0 Ignore db settings and dump tables to db
+                                // +1  Dump radiator configuration
+                                // +10 Dump alignment settings
+                                // +100 Dump Gain calibrations store in file described in RICAL
+
+I 2  sec[2](0,0)        // Validity time:
+I 4  min[2](0,0)        //
+I 6  hour[2](0,0)       //
+I 8  day[2](1,1)        //
+I10  mon[2](0,0)        //
+I12  year[2](101,110)   // year-1900
+//--------------------------------------------------------------------------------
+
+// Tracker Cluster  Simulation
+
+TRMC
+R 1   alpha(220)            // Cluster shower par (see tkmccl.F)
+R 2   beta(1.0)               // Cluster shower par (see tkmccl.F)
+R 3   gamma(0.08)           // Cluster shower par (see shower in mccluster.C)
+R 4   fastswitch(5.e-5)     // Switch between fast and slow algos
+R 5   dedx2nprel(.33e6)     // dedx to number of primary electrons
+R 6   ped[2](100,100)       // pedestals for x & y
+R 8   sigma[2](4.2,3.)      // noise for x & y
+R10   gain[2](8,8)          // gains for x & y
+R12   cmn[2](50,50)         // common noise for x & y
+I14   adcoverflow(32767)    // 12 bit adc * 8
+I15   NoiseOn(1)            // Generate(1) do not generate(0) noise in tracker
+I16   sec[2](0,0)           //
+I18   min[2](0,0)           //
+I20   hour[2](0,0)          // Validity time
+I22   day[2](1,1)           //
+I24   mon[2](0,0)           //
+I26   year[2](96,98)        //
+I28   CalcCmnNoise[2])(1,3) // Calc(1=1 or not 1=0 cmnnoise properly)
+R30   thr1R[2](2.75,3.5)     // threshold (S/N) to save cluster
+R32   thr2R[2](1.,1.)       // threshold (S/N) to save hits in cluster
+I34   neib[2](2,2)          // number of neibours from one side
+I36   GenerateConst(0)      // generate/not generate tracker const (1 according to real 2 ideal distr)
+I37   RawModeOn[8][2][32](0)// Raw Mode Tracker readout (crate,side,tdr)
+I549  WriteHK(0)            // if > 0 and DAQC write mode will write the static
+                            // HK info after event # WriteHK
+R550  delta(0.8,1)         // relative x/y average gain
+R552  gammaA(0.25,0.1)      // relative x/y gain spread
+R554  NonGaussianPart(0.,0.1) // non gaussian part in noise distr
+R556  BadCh(0.02,0.02)        //  bad channels part for x,y tr sides
+
+
+
+// MC particle generation
+
+MCGEN
+R 1 coo[2][3](3*-195,3*195)   //make the cube surface the particle (cm)
+                                  //originate from
+R 7 dir[2][3](3*-1.,3*1.)         //Particle Direction Cos range
+R13 momr[2](-1.e10,1.e10)         //Particle momentum range
+I15 fixp(0)                       //fix the cube surface for particle
+                                  //generation 1 - top, 2-bottom,
+                                  //3,4,5,6 - others
+I18 npat(1)                       //number of particle to generate in one go
+I19 run(100)                      //run number
+I20 low(5)                        //cosmic(0);  undercutoff(1)
+                                  //sea level muons(2) mev range electrons(3)
+                                  //uniform momentum(4)
+                                  //uniform log(momentum) (5)
+                                  //from flux file(6)
+                                  //(7) uniform on 13 Rigidity values
+				  // [.5,1,2,5,10,20,50,100,200,500,1000,2000,5000] GV
+                                  //(8) Test Beam Mode,
+                                  //                    positive sigma = uniform  generation of parms:
+                                  //                    negative sigma = gaussian generation of parms:
+				  //                    if sigma == 0  fixed value
+                                  //                    1 to 3 postion mean;  4 to 6 position sigma;
+                                  //                    7 8 Theta,Phi  mean; 10 11 Theta,Phi sigma;
+                                  //                    13     Mom     mean; 14 Mom sigma;
+				  //                    if sigma == 0  fixed value
+                                  //
+                                  //(9) Test Beam Mode multiple position from file,
+                                  //                    positive sigma=uniform  generation of parms:
+                                  //                    negative sigma=gaussian generation of parms:
+				  //                    if sigma == 0  fixed value
+                                  //                    1,2,3,6 ignored;
+                                  //                    4,5 beam spot sigma (X,Y);
+                                  //                    7   beam divergence;
+                                  //                    8,9,10,11 ignored;
+				  //                    12 suffix for filename; ex ($AMSDataDir/vX.00/TestBeamPos_$SUFFIX.txt)
+		                  //                                  file format = X Y Z Theta Phi
+                                  //                    13     Mom     mean; 14 Mom sigma;
+                                  //(10) Special Realistic Orbit mode used for ext plane movement simulation
+                                  //                   All position, direction and mom par are ignored
+                                  //
+                                  //
+				  //(19) Scanning of TOF position for photon simulation in scintillators
+                                  //(11)  Natural Fluxes (X*1000+11 ) = different acceptance options
+I21 earth(0)                      // Earth magnetic field modulation stoermer(2) on (1) off(0)
+R22 theta(51.65)                  //Station Theta(deg) at begin
+R23 phi(290.)                     //Station Phi(deg) at begin
+R24 pole(108.392)                 // Pole phi at begin
+I25 begindate(01072010)           // start date (ddmmyyyy)
+I26 begintime(170000)             // start time (hhmmss)
+I27 enddate(01012020)             // end date   (ddmmyyyy)
+I28 endtime(120000)               // end time   (hhmmss)
+I29 dir(1)                        // direction +1 to higher theta (-1 to lower)
+I30 oldformat(0)                  // 1 if oldformat for io read is used
+I31 Fast(0)                       // Fast MC gen is used
+R32 StrCharge(2)                  // stranglet charge  (pid=113)
+R33 StrMass(12)                   // stranglet mass
+I34 SpecialCut(0)                 // special acceptance cut
+                                  // 1: focus on ecal
+                                  // 2: focus on outer trd hc
+                                  // 3: focus on solarpanel/ams (AMS02BIG setup required)
+                                  // 4: focus on layer 1
+                                  // 5: focus on layer 9
+                                  // 6: focus on layer 1 || layer9
+                                  // 7: focus on layer && layer 9
+                                  // 8: focus on "hotspot" on layer5/6
+                                  // 9: ecal || layer1
+                                  // 10+: additional tracker plane on the ecal level
+I35 FluxFile(' ')                 // file with fluxes (creme96 format)
+I75 curtime                      //  aux
+I76 DirFilePositions[2](1,0)             //  number of positions to be read from dire file
+I78 DirFile(' ')                  // file with positions
+R118 Angle(0)                     //  ams rotation angle
+R119 momrsp[2]                //  0,0  Range for spectra
+R121 Z(1000)                  //  stop simulation if particle dies above Z
+I122 PType                        //  0  100(el) 10(pos) 1(gamma) not to write to mceventg
+GMSRC   // to specify a point (gamma) source
+I1 GammaSource(0)              // !=0 activate point source generation
+                           // MCGEN 3 and 7-12 not used with sources
+                          // 1:user defined source (average spectrum)
+                             // 2:Crab 3:Galactic Center 4:Vela
+R2 SourceCoo(1.46,0.384)      // if(GammaSource==1) specify coo
+R4 SourceVisib(0.873)         // when source not in acos(dir(3))<SourceVisib
+                             //count the gamma but don't propagate
+I5 GammaBg(0)             // ==1 activate background generation around source
+R6 BgAngle(0.087)         // amplitude (in radians) of bg around source
+
+KINE
+1 IPART        // Geant particle id
+
+RNDM
+1 nrndm1      // initial random seed1
+2 nrmdm2      // initial random seed2
+
+//----------------------------------------------------------------
+
+// Tracker Clusters Reconstruction
+
+TRCL
+R 1 ThrClA[2](10,10)    // Lower limit for amplitude for cls (x,y)
+R 3 ThrClS[2](20,15)    // Upper limit for sigma     for cls (x,y)
+R 5 ThrClR[2](3,4)    // Lower limit for Amplitude/sigma for cls (x,y)
+R 7 Thr1A[2](8,8)     // Lower limit for ampl for max hit in cluster
+R 9 Thr1S[2](20,15)       // Upper limit for sigma for max hit in cluster
+R11 Thr1R[2](2.75,3.5)       // Lower limit for a/sigma for max hit in cluster
+R13 Thr2A[2](4,3)      // Lower limit for ampl for other hits in cluster
+R15 Thr2S[2](15,10)       // Upper limit for sigma for other hits in cluster
+R17 Thr2R[2](1.,1.)   // Lower limit for a/sigma for other  hits in cluster
+R19 Thr3R[2](-2.,-2.)   // Reserved
+I21 ThrClNMin[2](1,1)   // Min Number of hits satisfied the above limits
+I23 ThrClNEl[2](3,3)    // total number hits in the cluster
+R25 ThrDSide(1)         // Upper threshold to (A_x-A_y)/(A_x+A_y)
+R26 ErrX(30e-4)         // Assumed Error in X dir
+R27 ErrY(10e-4)         // Assumed Error in Y dir
+R28 ErrZ(30e-4)         // Assumed Error in Z dir
+R29 CorFunParA[2][6](400.e-4,65e-4)
+                        // 1st Parameter of correction fun for
+                        // border clusters cofg calculation
+                        // 1st index side(x,y); 2nd - layer
+R41 CorFunParB[2][6](0.85,0.5)
+                        // 2nd parameter
+                        // corr function is of
+                        // 0 if s1/st < ParB;
+                        // ParA*atan(s1/st-ParB) otherwise
+R53 ResFunX[3][6];      //  Parabolic parametrization of resolution
+R71 ResFunX[3][6];      //
+R89 CommonGain[2](1.6,1.)  // Relative gain s/k
+R91 CommonShift[2](4.5,0.)  // Relative Shift s/k
+I93 EtaCor[2](1,0)      // 0/1 no/apply eta corrections (x,y)
+// Tracker pattern recognition
+TRFIT
+I 1 Pattern[42](22*1,20*0)     // not in use any more
+I43  UseTOF(1)                    // Use(>=1 == Min No TOF clusters matched)/
+                                  // Not use(0) TOF  for pattern No 16
+R44  Chi2FastFit(2000)              // Max  chi2 for tkhmd;
+R45  Chi2StrLine(10)              // The same for Straight line fit
+R46  Chi2WithoutMS(50)         // // The same for PI fit withut multiple scattering
+R47  ResCutFastFit(0.5)     // Max residual distance in cm between
+                                  // point and fitted curve (not yet impl)
+R48  ResCutStrLine(0.5)     // --- strline    (not yet impl)
+R49  ResCutCircle(0.5)      // --- circlefit  (not yet impl)
+R50  SearchRegFastFit(1)    // Max distance in cm between point
+                                  // and extrapolated curve to include
+                                  // point in the pattern
+R51  SearchRegStrLine(1.5)  // ------- strline fit
+R52  SearchRegCircle(10)    // ---------- circle fit
+R53  RidgidityMin(0.2)      // Minimal ridgidity in GV
+I54  FullReco(0)            // Use(1) or not use(0) "used "clusters to build
+                            // tracks
+R55  MinRefitCos(0.7,0.5)   // min cos(tr angle) to refit track with wider
+                            // clusters
+I57  FastTracking(1)        // 0-1-2-3-4 faster-faster-faster-faster
+                            //   4 only prescaled events
+                            //   3 + heavy ion
+                            //   2 + everything -(trigger3==3)
+                            //   1 + (trigger3==3)
+                            //   0 + slow down system + better tracking qua
+I58  WeakTracking(0)        // Make(1) do not make(0) weak clusters fitting
+I59  FalseXTracking(1)      // Make(1) do not make(0) 4y + 3x tracking
+R60  Chi2FalseX(10.)        // Max Chi2 for 3point combinations
+I61  ForceFalseTOFX(1)      // Force additional FalseTOFX track in each event
+I62  FalseTOFXTracking(1)   // Try(1) or do not try(0) 4y + TOF tracking
+                            // if anything else fails
+I63  TOFTracking(1)         // Filter out(1) or not(0) hits inconsistent with TOF
+                            // before tracking
+
+I64  ForceAdvencedFit(1)    // Force(1) or not advanced fit for all particles
+
+R65  ThrClA[2](0,0)         // mark trreccl good if ampl > ThrClA
+R67  ThrClR[2](0,0)         // mark trreccl good if ampl/s > ThrClR
+I69  MaxTrRecHitsPerLayer(50) // to try pattern rec
+I70  UseTRD(1)                    // Use(>=1 always use)/
+I71  LowMargin(0)          //  use/not use any 5 planes patterns for track reconstruction
+I72 OnlyGammaVtx(0)       //  Reconstruct vertices up to 2 tracks only
+I73 UseGeaneFitting(0)   //   Use Geane(1) or Yale (0) fitting method
+I74 OldTracking(0)      //  Use Old (VC,1) or New (JA,0) tracker pat rec
+I75 MainALg(541)       //
+I76 AddMS(1)           // add ms err to ext planes if (1) and abs(z)>100
+I77 B23[2](25,20)     //  switch to 3 strip cofg (degree)
+
+// Tracker fitting
+
+TKFIT
+R 1 tmaxf(0.2)    // max angle for grkuta
+R 2 smax(50)      // max step for grkuta
+R 3 fieldm(20)     // max fiels (in kg) for grkuta
+R 4 cconv(5.e-4)  // conv parameter
+I 5 maxcal(8)     // internal
+I 6 nitm(1000)    // internal
+R 7 xtol(1.e-2)   // internal
+I 8 iver(0)       // internal
+I 9 ialg(1)       // reserved
+R10 steps(0.03)   // internal
+I11 npars(5)      // internal
+I12 ims(1)        // 0 -Multiple scattering accounting off; 1 - on
+
+
+
+// AMS Global Reconstruction
+
+BETAFIT
+I 1 Pattern[11](9*1,2*1)
+  //    Number              Descr             Points      Default
+  //    0                   1234              4           on
+  //    1                   123               3           on
+  //    2                   124               3           on
+  //    3                   134               3           on
+  //    4                   234               3           on
+  //    5                   13                2           on
+  //    6                   14                2           on
+  //    7                   23                2           on
+  //    8                   24                2           on
+  //    9                   12                2           on
+  //   10                   34                2           on
+R12 Chi2(10.)       //  Max acceptable chi2 for betafit
+R13 SearchReg[3](3.,3.,3.) // Max distance between track & tof hit in sigma's
+                           // Used also in TOF-track matching for pat # 16
+
+R16 LowBetaThr(0.4)        // below this the refit will be done using pat #7
+                              if possible
+I17 FullReco(0)            // Allows(1) or not(0) share tofcl between particles
+R18 Chi2S(10.)     // Max acceptable chi2 for space matching tof/tracker
+I19 MassFromBetaRaw(0)  // get mass from raw or corrected beta(1/0)
+I20  OldNew(1)            // MN N==0 -> N beta ; N==1 Beta new; N==2 Beta old ;
+                          // N==3 Beta Old & New; M==0 Master New, M==1 Master old
+
+R21 TRDNorm       trd charge  beta norm factor
+R22 TRDP[3]       beta extrapolation to trd region
+R25 HSearchMode   //BetaH sum control search mode
+R26 HSearchLMatch //require LMatch or not for pattern finding
+R27 HSearchReg[2] //Match+LMatch(N Sigma)
+R29 HMinLayer[2]  //require Min Layer//Match Layer+T require Layer
+R31 HBetaCheck    //0 not check 1 check+tag 2 recover(throw tofhit) 3abandon(beta)
+R32 HBetaReg[2];  //check beta is in resonable regin
+R34 HBetaChis     //check Fit chis;
+
+
+CHARGEFIT
+//- AMSCharge Combination options
+I 1 RecEnable[4](1,1111,1,1) // TOF/Tracker/TRD/Rich Charge reconstruction switch (0:disabled)
+                             //     Tracker Charge reconstruction switch :
+                             //        1 : Tracker (all planes)
+                             //       10 : Inner Tracker (planes 2-8)
+                             //      100 : Upper Tracker (plane 1)
+                             //     1000 : Lower Tracker (plane 9)
+I 5 SplitLevel[4](0,0,0,0)   // TOF/Tracker/TRD/Rich split level used in charge combination
+                             // For Tracker, full (0) or Upper/Inner/Lower (1)
+                             // For TOF/TRD/Rich only no split option (0) implemeted
+I 9 ChargeMax[4](-1,-1,6,-1) // Maximum TOF/Tracker/TRD/Rich Charge value for combination
+                             // (0:not used, -1:no limit)
+R13 ProbMin[4](4*0.001)      // Minimum TOF/Tracker/TRD/Rich charge probability for combination
+I17 NormalizeProbs(1)        // do (1) or do not (0) normalize SubD charge prob. to SUMprob(i)=1
+I18 UseLikelihood(0)         // use likelihood (1) or SubD charge probs. (0) for charge combination
+R19 ProbklMin(0.005)         // Minimum RichRing probability for combination
+
+//- TOF & Tracker(v4) Charge Reconstruction Params
+I20 NmembMax(3)             // maximum number of members for TOF clusters
+I21 Tracker(1)              // tracker cluster energies used 0/1/2 (y)/(x+y,y)/(x+y,y,x)
+R22 EtaMin[2](0.05,0.0)     // min eta value for tracker cluster (x,y)
+R24 EtaMax[2](0.95,1.0)     // max eta value for tracker cluster (x,y)
+R26 ProbTrkRefit(0.01)      // refit tracker charge below this cut
+R27 ResCut[2](4.,4.)        // thrsld for incompatible TOF/trk clus exclusion *)
+                            // (-1: no cluster is excluded)
+R29 SigMin(0.1)             // min relative spread of TOF or trk cluster energies
+R30 SigMax(0.3)             // max
+R31 TrMeanRes(1)            // 0/1 n-1/modified*) truncated mean
+I32 TrackerForceSK(0)       // if<>0 force tracker hit energies to be x+y (overwrites
+                            // Tracker datacard defined above)
+R33 TrackerKSRatio(0.67)    // average x/y tracker energy ratio (used if TrackerForceSK<>0)
+R34 TOFMeVperMip(1.8)       // mip in MeV units
+R35 TrkkeVperMip(80.)       // mip in keV units
+I36 TrkPDFileMCVers(1)      // MC vers.number of Trk-ElosPDFFile(trkpdffNNNmc.dat)
+I37 TrkPDFileRDVers(1)      // RD vers.number of Trk-ElosPDFFile(trkpdffNNNrl.dat)
+I38 TrkPDFileRead(1)        // read TrkPDF-info from DB(0) OR RawFile (1)
+I39 sec[2](0,0)             // validity date for TrkChargeCalib(pdf's + ChargeIndexes)
+I41 min[2](0,0)
+I43 hour[2](0,0)
+I45 day[2](1,1)
+I47 mon[2](0,0)
+I49 year[2](101,121)
+
+*) most incompatible cluster is excluded if Ec-<E>_rest>ResCut*sigma(E_rest)
+
+TRCALIB    // trcaker calibration
+I 1 CalibProcedureNo(1)               // 1 - sigma/ped calc; 2 - treacker alignment
+I 2 EventsPerCheck(100)               // checking frequency
+R 3 PedAccRequired[2](0.1,0.07)        // Average ped acc in ADC channels
+I 5 Validity[2](1800,5400)              // +- Validity (sec)
+R 7 RhoThrA(0.7)                       // Av corcoef
+R 8 RhoThrV(0.8)                       // channel corcoef
+I 9 Method(2)
+R10 BadChThr[2];                       // up,p
+I12 Pass;                              // pass
+I13 DPS(1);                               // Dynamic pedestal subtraction off(0)
+                                       // on ( >0)
+I14 UPDF;                               // Dynamic pedestal update freq
+I15 LaserRun(0)
+I16 PrintBadChList(0)                  //
+                                       // TRCALIB # 2 starts here
+I17  EventsPerIteration[4](100,100,100,100)    // Events in one bunch
+I21 NumberOfIterations[4](200,200,200,200)    // number of bunches
+R25 BetaCut[4][2](0.7,1.,0.7,0.7,10.,10.,1.4,1.4)    // Beta limits
+R33 HitsRatioCut[4](2.5,2.5,0.998,0.998)          // Hit Ratio Limits
+R37 MomentumCut[4][2](-inf,inf,3,inf,0.2,2.5,-inf,inf) // momentum ----------
+R45 Chi2Cut[4](3.,3.,100.,100.)                 // chi2 ---------------
+I49 ActiveParamaters[6][6];           // for each plane x,y,z, pitch,yaw,roll
+I85 Ladder[6](6*0)                    // ladder*10+half no for each plane 0=al
+I91 PatStart(0)
+I92 MultiRun(0)
+I93 EventsPerRun(2000)
+};
+
+
+TRALIG     // Tracker Alignment
+I1     InitDB(0);
+I2     ReWriteDB;(0)
+I3     UpdateDB(0);    // main switch
+I4     MaxEventsPerFit(9999);
+I5     MinEventsPerFit(999);
+I6     MaxPatternsPerJob(99);
+R7     Cuts[10][2];    // Cuts (left - right), not yet completely defined
+I27 Algorithm(0)    // 0 - exect mom, 1 - mom from beta 2 chisq
+I28 ActiveParameters[9][6](all 1); //   for each plane: x,y,z, pitch, yaw, roll
+I82 GlobalFit(0)                   // global fit (1) local(0)
+I83 EventsPerRun(1001)
+I84 LayersOnly(0)                     // ladder(0) or layer(1) based alig
+R85 GlobalGoodLimit(0.06)             // invoke local db if beyond
+I86 SingleLadderEntryLimit(10000)
+R87 One(1.025)
+I88 gfile[40]                         //  file with track data
+I128LaddersOnly(1)                    //  Alignment  on ladders(1) sensors(0) level
+I129Skip(0)                           //  Skip first n events
+I130Max(1000000000)                    //  max events to treat
+----------------------------------
+
+L3SIM
+
+R 1 NoiseProbX(3.3e-10)                  // Noise Probability for x side
+R 2 NoiseProbY(2.0e-10)                  // Noise Probability for y side
+
+
+L3REC    // LVL3 Trigger
+
+I 1 MinTOFPlanesFired(3)               // min number of tof planes in trig
+I 2 UseTightTOF(1)                     // Use(1) notUse(0) "Pattern" trigger
+R 3 TrTOFSearchReg(6)                  // Road width to match TOF/Tracker (cm)
+R 4 TrMinResidual(0.03)                // Min Residual to keep event (cm)
+R 5 TrMaxResidual[3](0.9,0.1,0.2)     // Max Residuals to keep event (cm)
+I 8 TrMaxHits(20)                      // Max Number of hits in Tracker
+R 9 Splitting(0.04)                    // Min distance between hits
+I10 Nrep(1)                            // Aux no of rep to calc lvl3 time
+I11 Accept(0)                        // Min value of lvl3 trigger to accept
+I12 RebuildLVL3(2)                   // rebuild/not rebuild(0) lvl3 in reconstruction
+I13 NoK(1)                           // NotMatch(1) Match(0) S & K in lvl3
+R14 TrHeavyIonThr(200)               // Heavy Ion threshold (trunc mean)
+I15 SeedThr(32)                      // S/N *8 threshold for seed
+I16 TRDHmultThr(4720)                // 5.9 kev
+R17 TRDHMultPart(0.249)              //  part of hits with energy>5.9 kev
+I18 Stat(0)                          // book,fill some histos
+I19 histprf(0)                       // fill some histograms(EC-related for the moment)
+L3EXP   // LVL3 Expert
+
+I 1 NEvents(1024)                       // Number of Events in Sequence
+I 2 ToBad(10)                            // Number of conseq sequences to declare bad
+I 3 TryAgain(10)                        // Number of sequences to unlock bad
+R 4 Range[3][2](3,3,100000,3,3,3)       // Bad Range in sigmas
+
+
+
+SELECT   // Choose run & event
+
+I 1 run number                      // Run number
+I 2 event(position) number          // Event (if > 0) Position(<0)
+I 3 File                            // File with selected events
+                                    // format ascii Run Event
+I43 Last Run No(0)                  //  No effect if zero
+I44 Last EventNo(0)                 //  No effect if zero or LastRun!=Run
+I45 EventTime                      //  current event time (0 if not known)
+
+
+
+DAQC    //   DAQ Control
+
+I 1 mode(0)                         // 0 do nothing
+                                    // mode%10 = 1 read daq if isReconstruction()
+                                    // (mode/10)%10 = 1 write daq (noreplace)
+                                    // (mode/10)%10 = 2 write daq (append)
+                                    // mode/100 = >0  compress output format on fly
+                                    //  (1to7: zlib Z_FILTER, Z_LEVEL ; 8: simple zero bytes suppress 9:  jmdc hoffman compression)
+I 2 ifile[40]("")                   // input file(s) name(s)
+                                    // format: path/r1-r2,r3,r4,r5-r6  etc.
+                                    // where path is path to the files directory
+                                    // r1,r2,r4,r4,r5,r6,,,rx are file names
+                                    //
+                                    // eg if last char is "/"
+                                    // all directory will be read
+I42 ofile[40]("")                   // output file name
+I82 BTypeInDaq[2](0,1023)           // block types in daq [0] <= btype <= [1]
+I84 DAQVersion                      // DaqFormatVersion /0: 2008; 1:2009/
+I85 Mode;
+I86 ReadAhead;                      // (1) to workaround bad tof runs
+                                    // should be used with 83=6 datacard
+I87 BlocksDir[40]                       // Monitor only blocks dir (HRDL-A etc)
+I127SkipRec(0)                         //  SkipRec if (mode/10)%10>0
+BMAP   // Magnetic field control
+I  1  mfile                          // mag file name 'fld97int.txt'
+I 41 iniok(1)                       // 0 for update mag field
+
+
+
+TKGEOM   // Read/Write tracker geom control
+I 1 ReadGeomFromFile(1,10 if pgtrack)
+I 2 WriteGeomToFile(0)
+I 3 UpdateGeomFile(0)
+I 4 gfile[40](" ")                    // geometry file
+
+ESTATUS // Select events with corresponding properties ,all statuses combined by AND, all bits inside statuses combined by OR, 0 means select everything  (see status02.doc for details)
+I 1  status[34](34*0)    //
+                             [0] npart
+                             [1-6] trd/tof/tr/rich/ecal/vtx  presented in particles
+                             [7] ntrd tr
+                             [8]  ntofcl
+                             [9] ntr tr
+                             [10] nrich rings
+                             [11] necalshow
+                             [12] nvtx
+                             [13] nanti
+                             [14] ncharge
+                             [15] error bit
+
+I35  sword                   // service word
+I36  base(10)                base to calculate bit<->status correspondance
+
+
+BACKTRACE  // Control back tracing
+I 1  enable  (0)   // 1:Backtrace only for particles with TrTrackR
+	           // 2:Backtrace all the particles
+                   // 3:No backtrace but only pointing (assuming photons)
+I 2  use_att (1)   // 1:Use LVLH,  2:Use INTL, 3: Use STK
+I 3  use_coo (1)   // 1:Use TLE,   2:Use CTRS, 3: Use GTOD, 4: Use AMS-GPS
+I 4  use_time(1)   // 1:UTCTime(), 2:AMSGPS time, 3:AMSGPS Time corrected
+F 5  t_jitter(0.)  // time jitter (sec) for coordinates input
+I 6  out_type(1)   // 1:Galactic coord. 2:Equatorial coord.(R.A. and Dec.)
+                   // 3:GTOD coord.(use_att forced to 1)
+I 7  debug  (0)    // Debug switch of GeoMagTrace
+I 8  nmax   (200)  // Maximum number of steps
+F 9  stepdv (0.1)  // Step size per curvature
+F10  minstep(0.05) // Minimum step size (Re)
+F11  maxstep(2.0)  // Maximum step size (Re)
+F12  thengd (0.5)  // Minimum EnergyD to use EnergyE instead of Momentum
+
+ECAH
+I 1  enable  (0)   // 1:Enable EcalH build
+F 2  emin    (10)  // Minimum energy sum (GeV) needed for FitL
+F 3  ethd    (3)   // Energy threshold (MeV) for apex
+I 6  BadCellFit (1) //  Estimate Bad Cell from Fit
+R 7  BadCellR[2] (0.05,5) // Ratio before/after to apply the correction
+MISC   // misc
+
+I 1 BTempCorrection(0)      // apply(1),not(0) temperature corrections to mfield
+I 2 BeamTest(0)             // BeamTest data(2) cosmic (1) not(0)
+R 3 BZCorr(1.)              // Z scale for b field (test only)
+I 4 G3On(1)                 // 0 off 1 on geant3
+I 5 G4On(0)                 // 0 off 1 on geant4
+I 6 dbwrbeg(0)              // used by Tof[Acc,Ecal]DBWriter when AMSJOB 1 is set to 2[3,9]11 (subd.calib.mode)
+I 7 dbwrend(0)              // ---//---//---//---//---//---//---//---//---
+I 8 NumThreads(1)    //  number of threads if compiled with openmp (-1  == number_of_cores)
+I 9 DynThreads(0)    //   dyn adjustment of thread number w/r proc loading
+I10 ChunkThreads(4096) // number of events per thread in one parallel  clause
+I11 DivideBy(1)        // divide or not cpu spent by number of threads (link dependent)
+I12 RaiseFPE(1)         // enforce-also-on-broken-code(3) enforce(2) raise(1) or not (0) fpe signals
+I13 DoMatScan(0)        // mat scanning   1: Original 2: New (produce g4mscan.root)
+R14 StartScanXstart =0.    // (14) minimum eye z (cm)
+R15 StartScanXstop  =0.    // (15) maximum eye z (cm)
+R16 StartScanXstep  =0.5   // (16)  eye z step (cm) must be positive
+R17 StartScanYstart =0.    // (17) minimum eye z (cm)
+R18 StartScanYstop  =0.    // (18) maximum eye z (cm)
+R19 StartScanYstep  =0.5   // (19)  eye z step (cm) must be positive
+R20 StartScanZstart =195.  // (20) minimum eye z (cm)
+R21 StartScanZstop  =195.  // (21) maximum eye z (cm)
+R22 StartScanZstep  =0.5   // (22)  eye z step (cm) must be positive
+R23 StartScanTheta  =-90.  // (23) Line of View direction (theta=theta +90 )
+R24 StartScanPhi    =0.;   // (24) Line of View direction
+I25 SaveMCTrack(1)      // mat scanning, by saving MCTrack informations at every step
+I26 SaveMCTrackSecondary(1) // 1/0 save/not save also secondary particles above ECAL and above minimum kinetic energy (next datacard)
+R27 MCTrackMinEne(1)        // minimum kinetic energy in MeV to save a secondary particle above ECAL
+I28 ScanElemAbundance(0)    // Activate a scan of element abudance along the track
+I29 NoOrderedWrite(00)       // xy Activate for no ordered write in rootfile y or daqfile x
+I30 G4Allocatorsize(-1)      //  G4AllocatorSize to garbage collactor
+I31 NewCRC(0)                //  Use new crc calculation(cksum) instead old on
+I32 AnyThreadNumber(0)       //  When 0, if maxt/2 < threads < maxt, threads=maxt/2
+R33 G4GbPerThread(1)            //  can be set 0.3 for Z=1 0.5 Z=2 ...
+R34 MPIFinished(0.51)       //  portion of mpi jobs finished to raise sigint
+I35 BTRaise(1)              // number of threads still executing to raise sigint
+I36 ReadEOS(0)				// direct eos mount
+I37 BCast(0)              // Raise bcast in case of SIGSEGV /yes for nersc, no for theta
+R38 MinimalRatioReconstructed(1.)      // The minimal ratio LastEventProcessed / LastEvent for MC reconstruction
+R39 MemReservedWeightPerThread(0.333)  // The weight of reserved memory for finalisation per thread ( 100M*(2+MemReservedWeightPerThread*(nThreads-1)) )
+
+G4FF    // Geant4 Datacards
+I 1 BFOrder(4)       // Runge Kutta order
+R 2 Delta(0.001)     // Runge Kutta delta
+I 3 UniformField(0)  // Use(1)/not use(0) average uniform mag field instead field map
+I 4 Geant3CutsOn(1)  // Use StepLimiter(2) Use(1) not use(0) geant3-like energy cuts
+I 5 PhysicsListUsed(1)  // Physics list = A*100 + B, A for elastic model, B for inelastic model
+                        //--> A
+                        // 0: default from G4HadronElasticPhysics, in gean4.10.1, means CHIPS for proton
+                        // 1: from G4HadronHElasticPhysics, in gean4.10.1, means DiffusiveElastic for proton
+                        //--> B
+                        // (0=Not Use Physics Lists, 1=QGSP, 2=QGSC_CHIPS, 3=QGSP_BIC  // geant<1000 QGSP_BIC geant>999
+                        // 4=QGSP_BERT, 5=QGSP_FTFP_BERT, 6=FTFP_BERT, 7=FTFP_BERT_TRV
+                        // 8=QGSP_INCLXX, 9=QGSP_INCLXX, 10=NuBeam // these three only for geant>999
+                        // 11=QGSP_BIC_AMS // modified from QGSP_BIC, only for geant>999
+I 6 LowEMagProcUsed(0)  // Use(1) not use(0) g4 "low-em-proc" as opposed to "standard-em=proc"
+I 7 IonPhysicsModel(2016) // Physics Model for Ion as UVWZXY
+                         //  U: 0: using DPMJET3 binding energy for deexcitation
+                                1: swith off deexcitation
+                                2: using DPMJET3 total evaporate mass: Excited=DPMMassT-G4Mass0
+  				3: using G4 default PreCompound with G4FermiBreakUpVI (INCXX+BIC+DPMJET3)
+  				4: using PreCompound with G4FermiBreakUp (INCXX+BIC+DPMJET3) 
+				5: using PreCompound with G4FermiBreakUp+GEMEvaporation (INCXX+BIC+DPMJET3)
+                         //  V = 0: default overlap
+		 		 1: no overlap between inclxx and dpmjet; else otherwise
+			         2: BLIC/INCLXX(<12.2 GeV/n)+DPMJET3(>6.1 GeV/n)
+		 		 3: BLIC/INCLXX(<24.4 GeV/n)+DPMJET3(>6.1 GeV/n)
+                         // W: use elastic scattering for ions
+                            1: Standard G4 Gheisha
+                            2: VC parametrization from AMS01
+                            3: G4NuclNuclDiffuse(added by Q.Yan)
+                        //  Z: use gheisha ion proton crossection
+                        //  X: Total inelastic cross section
+                        //     0: Shen
+                        //     1: Glauber-Gribov nucleus-nucleus cross sections 4.9.6 (override by Shen for geant4.9.4)
+                        //     2: general "space" cross sections (best between Tripathi, Tripathi Light and Shen)
+                        //     3: Brandt-Peters cross sections used by HEAO-C2 guys
+                        //     4: DPMJET built-in cross section (5GeV/n,1000TeV/n), only for DPMJET model
+                        //     5: Glauber-Gribov nucleus-nucleus cross section Plus++(with ISS measured XS shape tuning by Q.Yan)
+                        //  Y: Interaction model
+                        //     1: BLIC, Binary Light Ion Cascade (not supposed to be valid after 10 GeV/n)
+                        //     2: QMD, Quantum Molecular Dynamics (not supposed to be valid after 10 GeV/n)
+                        //     3:  BLIC (<5GeV/n) + DPMJET2.5 (5GeV/n,1000TeV/n)
+                        //     4:  INCLXX +FTF
+                        //     5:  INCLXX DPMJET2.5 + FTF
+                        //     6:  INCLXX+DPMJET2.5 +BLIC(ECAL)
+                        //     7:  BLIC  (<6.7 GeV/n)+DPMJET3(>6.1 GeV)
+			//     8:  INCLXX(<6.7 GeV/n)+DPMJET3(>6.1 GeV)
+I 8 UseEMDModel(1)     Use(1)/not use(0) EM Dissociation model
+I 9 SIGTERM   (0)      //  1 immediate sigterm
+I 10 ExEmPhysics (0)   //Use(1) or Not Extra EM Physics //SynchrotronRadiation+ Gamma/Electron/Position/Moun Nuclear Inelastic process
+I 11 NeutronTkCut(0)   //Use(1) or Not Standard Neutron Tracking Cut(tracking global time>10 microsecond),can also self adjustment
+I 12 TFNewGeant4(22)   // TOF new Geant4 Version ZYX (2, 12 or 22)
+                       // X: TOF simulation mode
+                          0: old simulation
+                          1: new online simulation
+                          2: new table mode
+                       // Y: TOF geometry
+                          0: < 2014-07-27 (old support structure)
+                          1: new update geometry on 2014-07-27(new support structure)
+                          2: new update geometry on 2016-02-03(new support structure)
+                       //Z: G4Optical Process
+			  0: RichG4OpBoundaryProcess
+			  1: G4OpBoundaryProcess
+I 13 MemoryLimit(-1)   //Geant4Memory raise in bytes in mallinfo.arena+mallinfo.uordblks to trigger process  termination (-1 == infinity)
+I 14 DetectorCut(0)    // set detector cut,  Tracker+TRD+TOF+RICH+ECAL+AMS(0 cut off,   1 AMSCut).
+                       // 11:  Ecal cut 1*cm, AMS cut 1*mm (Ion suggestion cut  >2 times faster)
+R 15 AMSCut(1)      // general AMS geant4 cut
+R 16 EcalCut(10 )    // Ecal geant4 cut
+I 17 ProcessOff(0)     // Geant4 Process switch off option.
+                       // 111:  Hadron Inelastic+ Ion Inelastic+ Cherenkov (1 process off, 0 process on)
+R 18 OverlapTol(0)     // Tolerance for overlap check (cm); no overlap check if 0
+I 19 DumpCrossSections(0)  // ZYX
+                           // X=0 nothing
+                           // X=1 dump inelastic cross sections for proton, helium and carbon projectiles over carbon
+                           // X=2 make a MC dry-run to calculate partial interaction probabilities 
+                           // X=3 save 1 and 2 to file partial_Zp??_Ap??_Zt??_At??.root 
+                           // Y=0 nothing
+			   // Y=1 fill process
+			   // Z=0 nothing
+			   // Z=1 sample inelastic model
+R 20 HCrossectionBias[7](1,1,1,1,1,1,0)    // Change (hadronic) inelastic/elastic/qelasticcrossection by multiplying by this number; 
+                                           // XY:Y=1 limit q2 by bind energy for z>2(X),X=1 elastic exponent const with energy ; 
+                                           // change muiltiple cross section by division to this value, change elastic exponent,qelastic-XS energy dependence
+I27 DumpCrossSectionsAt(12)  // Target mass   number for DumpCrossSections
+I28 DumpCrossSectionsZt(6)   // Target atomic number for DumpCrossSections
+I29 ApplyCPULimit(1)         // apply or not cpulimt
+I30 GamaPolar(0)             // gamma polarization interaction, default not activated.
+R31 polarrate(-1.)          // particle polarization fraction (percentage), <=0: not polarized, =0.5: 50% polarized, >=1:100% polarized
+R32 HEexcBias[2](1.,1.)      // binding energy bias for hardon/nulear inelastic interaction(L+H) 
+I34 RadDec                   // allow radiative decay
+I35 MergeMCCluster(12)       //YX
+		 	     //X=0 no merge
+			     //X=1 merge TOFMCCluster
+			     //X=2 merge TOFMCCluster+
+			     //Y=0 no merge TRDMCCluster
+                             //Y=1 merge TRDMCCluster
+			     //Y=2 merge TRDMCCluster+
+R36 IonParametrisedLossStep (50.) // 0 old model ; !=0 step in um
+I37 VisFile(160*' ')         // If provided, indicated visualization layout file will be executed in the GEANT4 interactive mode
+
+HISE   // Heavy Ion MC switch (Geant3 only)
+I1 HISW(1)              // heavy ion mc switch (1== abpackage, 2==tripaty)
+I2 HISA(2)              // 0: record collision; 1:0+stop particle; 2:rqmd
+
+TRDMC
+I1 mode(1)                             // 0: saveliev-GenerTransportIoniz
+                                       // 1: saveliev-GenerTransport  pai-Ioniz
+                                       // 2: saveliev-Gener pai-TransportIoniz
+                                       // 3: gaibyan-Gener pai-TransportIoniz
+I2 g3trd                               // g3identifier for trd aware media
+R3 cor
+R4 alpha
+R5 beta
+R6   ped(355)                          // pedestals
+R7   pedsigma(102)                     // sigma
+R8   sigma(6)                          // sigma
+R9   gain(1)                           // gain
+R10   cmn(16)
+R11   f2i(8)                           // float to int convertor in raw format
+I12   adcoverflow(4095)                // 12 bit adc
+I13   NoiseOn(1)                       // Generate(1) do not generate(0) noise in trd
+R14   GeV2ADC(1e8/3*1.26)              // conversion factor from GeVs to ADC counts
+R15   Thr1R(3.)                        // in sigmas
+I16   GenerateConst(0)                 // generate/not generate trd const
+R17   NoiseLevel(0.01)                 // fraction of noisy channels
+R18   DeadLevel(0.01)                  // fraction of dead channels
+I19   sec[2](0,0)                      //
+I21   min[2](0,0)                      //
+I23   hour[2](0,0)                     // validity time
+I25   day[2](1,1)                      //
+I27   mon[2](0,0)                      //
+I29   year[2](101,110)
+I31   multiples                        // Generate multiples with delay
+R32   Gdens(0.00446)                   // Tube Gas density (in g/cm3)
+R33   Pecut(-0.65)                     // Pecut in amsut
+R34   ntrcor(1.4)                      // correction factor to n tr gammas
+R35   etrcor(1.2)                      // correction factor to mean energy of tr gammas
+R36   ndecor(0.85)                     // correction factor to number of ion collisions
+R37   edecor(1.0)                      // correction factor to mean energy loss per collision
+R38   Tmean(287.15)                    // mean temperature in TRD in kelvin
+R39   Pmean(927.0);                    // mean pressure in TRD in mbar
+R40   FibreDiam(12.);                  // mean fibre diameter in um
+R41   RadThick(21.5);                  // mean radiator thickness in mm used in creation of TR tables (does not affect the physical thickness of fleece blocks)
+R42   AlphaFibre(5.);                  // alpha fibre of radiator
+R43   AlphaGas(0.66);                  // alpha gas of radiator
+I44   FleeceGas(1);                    // fleece gas - 0:Air 1:Galactic
+R45   XenonFraction(0.915);            // volume fraction of xenon gas
+R46   ArgonFraction(0.0);              // volume fraction of argon gas
+R47   CO2Fraction(0.085);              // volume fraction of CO2 gas
+R48   GasStep(1.);                     // gas medium step size in mm
+I49   PAIModel(1);                     // enable PAI Model
+I50   debug(0);                        // debug flag
+I51   CreatePDF(0)                     // create or not pdf function
+R52   TRphotonEnergyScalingFactor(1.0) // factor to scale energy of TR photons
+R53   ZShift(0.1);                     //  TRD Global Shift in cm
+R54   MinSigma(3.);                    // minimum sigma used in TRD digi data reduction
+R55   MaxSigma(5.);                    // maximum sigma used in TRD digi data reduction
+R56   photonEnergyCut(0.001)           // photon energy cut inside TRD [MeV]
+R57   electronEnergyCut(0.001)         // electron energy cut inside TRD [MeV]
+R58   tubeEnergyCut(0.000010)          // electron and photon energy cut in straw tube walls [MeV]
+R59   trdProdCut(1.0)                  // production cut in trdRegion and radiatorRegion [mm]
+R60   tubeProdCut(0.001)               // production cut in tubeRegion [mm] (walls of straws)
+R61   electronCutOnTubeWall(0.0)       // secondary e- and e+ below electronCutOnTubeWall [keV] that
+                                       // reaches the inner wall of the tube are killed
+I62   adcCorrection(2)                 // ADC non-linearity correction function
+                                       // 0: no correction applied
+                                       // 1: 2.order polynomial + linear
+                                       // 2: new correction which contains several steps (17-02-2017)
+I64    ThrHC (4094)                    // Overflow
+TRDCL   // TRD clustering
+
+R1 ADC2KeV;         //
+R2 Thr1A(33)          // cluster threshold amp kev
+R3 Thr1S(0.11)           // cluster threshold sigma kev
+R4 Thr1R(6)           // cluster threshold ratio kev
+R5 Thr1H(5)           // cluster threshold high amp kev
+I6 MaxHitsInCluster(3)  //
+R7 RNGP            //  trd path de/dx correction
+R10 RNGB(0.3,0.75) //  ----                       range
+
+TRDREC   // TRD Segment Reconstruction
+
+R1 Chi2StrLine(3)     //  fit max chi2
+R2 ResCutStrLine(1)   // Max acc distance between point and fitted curve cm
+R3 SearchRegStrLine(3);  //  Max distance point/curve to include it the fit err
+R4 ------      ;      //   MM to fillout
+I5 ResolveAmb(1);       //  try (1) or not to resolve amb in case of multiple tracks
+
+TRDFIT  // TRD Fit & other
+
+R1 Chi2StrLine(3)     //  fit max chi2
+R2 ResCutStrLine(1)   // Max acc distance between point and fitted curve cm
+R3 SearchRegStrLine(3);  //  Max distance point/curve to include it the fit err
+I4 MinFitPoints(6);     // min number of hits in str/real fit
+R5 TwoSegMatch(0.05);  // max ang diff allowed while matching segments
+R6 MaxSegAllowed(50)   // max seg allowed
+I7 FitMethod(2)       // old (0) or new (1) or both (2) method or more new 10+
+I8 SaveHistos(0)      // save single tube amplitude spectra (1) or not (0)
+R9 QP                 //  trd charge correction
+I10 UseTOF(2)         //  use USeTOF tof clusters to match with trd track
+TIME (See geant3 manual)
+R1 time        // max time allowd for prog execution
+               // NB NOT included : initialization & termination
+
+TRDCALIB                     // trd calibration
+I 7TrdSCalibVersion(6)       // current version = 6 relesed on July.20th 2012
+I 8 TrdSCalibTrack(1)        // 0: trdS, 1: trdS, 2:trdhtrack, 3:trdtrack, 4:trdK
+I 9 TrdSCalibGainMethod(1)   // 0: no gain, 1:AC, 2:MIT, 3:AC
+I 10 TrdSCalibAlignMethod(1) // 0: no align, 1:AC, 2:MIT, 3:AC
+I 11 TrdSCalibDebug(0)       // debug
+
+//-----------------------------------------------------------------
+
+TGL1    // FT/LVL1 Trigger (see remarks about some parameters(*))
+
+I 1 trtype(127)*       //8 lsbits->LVL1-phys.branches(bit-pattern) requested for Lvl1 OR
+                       //bit(=1)->unbiased TOFtrigger ((TOF "FTC" only)
+		       //bit(=2)->Z>=1("FTC",AntiCuts_in)
+		       //bit(=4)->Z>=2("FTC",AntiCuts_out)
+		       //bit(=8)->SlowZ>=2("FTZ", AntiCuts_out)
+		       //bit(=16)->electrons("FTC","FTE", AntiCuts_out, "ecFand")
+		       //bit(=32)->gammas("FTE", AntiCuts_out, "ecFand", "ecAand")
+		       //bit(=64)->ecalFT(just "FTE")
+		       //bit(=128->External (Replace FT(TOF/EC)-signal, under construction...)
+		       // !!! ***** Lvl1-trig "accept" is set when any of the requested(in trtype bit-pattern)
+		       //     phys.branches are fired("fired" means that the conditions shown in the brackets
+		       //     are fulfiled  ***** !!!
+
+I 2 toflc(0)*              // required TOF-FTCtrig(Z>=1) LAYER configuration
+                              (=0/1/2-> accept at least ANY3of4/ALL4/ANYTopBot2of4 layer coincidence)
+I 3 tofsc(11)*             //required TOF-FTrig Plane-SIDES configuration MN
+                                   (m(n)=0/1-> two-sides-AND/OR selection, n->Z>=1, m->Z>=2
+I 4 toflcsz(0);            //(4)required TOF-FTZ(slowZ>=2) LAYERS configuration IJ(J=0/1/2/3->
+                           //     ->topAND*botAND/topAND*botOR/topOR*botAND/topOR*botOR;
+                           //      I=0/1 => "*"=AND/OR.
+I 5 toflcz(0)*             //required TOF-BZtrig(Z>=2) LAYERS (2-top(2-bot)) configuration(0/1/2/3->
+                                                ->top&bot_OR/topAND/botAND/top&bot_AND
+I 6 tifextwid(640)*        //ext.width(ns,top&bot) in SlowZ>=2 logic
+
+I 7 antismx[0](1)*         //max. acceptable fired ANTI-paddles(logical, in equat.region)
+I 8 antismx[1](0)*         //max. acceptable fired ANTI-paddles(logical, in polar.region)
+I 9 antisc(1)*              //required ANTI-trigger SIDE configuration(=0/1-> two-sides-AND/OR selection)
+
+I 10 cftmask(111)*          //GlobalFTMask (i|j|k=>FTE|FTZ>=2|FTZ>=1; i(j,k)=1(active)/0(disabled))
+
+I 11  RebuildLVL1(0)         // Rebuild/not lvl1 (for RealData) from subdet.RawEvent objects
+R 12 MaxScalersRate(20k)    // max acceptable aver scalers rate
+R 13 MinLifeTime   (0.015)  // min acceptable lifetime
+R 14 TheMagCut(0.7)         // geom.latitude cut for anti-cut selection(below-#7, above-#8)
+
+I 15 ecorand(2)*           // 1/2=>OR/END of 2 proj. requirement on min.multiplicity
+I 16 ecprjmask (1111)*     // proj.mask(lkji: ij=1/0->XYproj act/disab in FT; kl=same for LVL1(angle)
+
+I 17 Lvl1ConfMCVers(1)     // MC def.version number of "Lvl1ConfMC.*" -file
+I 18 Lvl1ConfRDVers(1167606001)//RD def. UTC-extention of "Lvl1ConfRD.***" -file (=> 20070101 0000001)
+I 19 Lvl1ConfRead(0)       // MN, N=0/1->read Lvl1Config-data from DB/raw_file
+                           //     M=0/1->read Lvl1Config raw file from official/private directory
+
+I 20 printfl(0);           //PrintFlg=MN,N=0/1/2->no/stat+hist/+SetupInf(whenChanged)
+//                                       M=0/1/2/3/4->no/ErrWarn/+TrigPatt(ev-by-ev)/+MoreDebug/+BlockBitDump
+
+I 21 Lvl1ConfSave(0)       // If RD LVL1-setup block found, 2/1/0 -> save2file+DB/save2file/mem.update_only
+
+I 22 NoPrescalingInMC(0)   // disable prescaling in MC if set to 1 (in any case prescaling is disabled for
+                           // "Unbiased TOF" and "Unbiased EC" branches of LVL1 trigger when ONLY
+			   // any combination of THESE two branches is requested in trtype (#1) !!!)
+			   // For normal physical trigger(127) presc.factors are set for these two branches
+			   // as 50:1 and 20:1 respectively.
+I 23 NoMaskingInMC(1)      // 1/0=> No/Yes Masking in PhysBrPatt(MC only, =1 to see all fired
+//                                                                             branches, not only requested)
+
+I 24->                     // Begin/End dates for trigger TDVs
+
+ *** <--- For these parameters the default values are recomendations in case of manual control.
+     By default all these params. are set to -99 to use more detailed and up-to-date DB-settings :
+                  trtype (#1)   <0 ==> Lvl1SubTrigMask is taken from DB
+		  toflc  (#2)   <0 ==> TofLayersConf(FTC=>Z>=1) is taken from DB
+                  tofsc  (#3)   <0 ==> TofPlaneSidesOrAndConf is Z/Plane-dependent and taken from DB
+		  toflcsz(#4)   <0 ==> TOF-FTZ(slowZ>=2) layers configuration is taken from DB
+		  toflcz (#5)   <0 ==> TofLayersConf(BZ=>Z>=2) is taken from DB
+		  tofextwid(6)  <0 ==> TofExtWidth(FTZ-logic) is top/bot individual and taken from DB
+		  antismx(#7-8) <0 ==> Max acceptable ANTI-sectors numbers are taken from DB
+		  antisc (#9)   <0 ==> AntiSides_Or/And-Config is logsector-dependent and taken from DB
+		  cftmask(#10)  <0 ==> GlobalFTMask is taken from DB
+		  ecorand(#15)  <0 ==> EcalProj_Or/And flag is taken from DB
+		  ecprjmask(#16)<0 ==> EcalProjMask is taken from DB
+//-----------------------------------------------------------------------------
+
+// AMS02 TOF  Simulation
+
+TFMC
+R  1   TimeSigma(0.24)        //side time resolution(ns,=CounterResol(0.17)*sqrt(2)) spare
+R  2   TimeSigma2(0.45)       // Spare
+R  3   canormf(1.)            //Common(all bar-types) mult.factor for pmt SE MostProb values used for tuning
+R  4   padl(10.5)          // Spare
+R  5   Thr(0.1)            // Sc.bar Elos-thresh(mev) to participate in Simul
+I  6   Print-flag(0)       // to print init arrays if=1
+I  7   Print-flag(0)       // to print PMT pulses if=1
+I  8   Print-flag(0)       // to print MC-histograms if=1
+I  9   Print-flag(0)       // spare
+I 10   Print-flag(0)       // spare
+I 11   trlogic-flag(1)     //  1/0-> do/not (CP+BZ) trpatt-masking in SPT2 (not affect trig-decision)
+I 12   trlogic-flag(0)     //  spare
+I 13   fast(0)             //  0/1/2(for fast gener. in mceventg.C),0->off; 1->require initial
+                               direction not to touch ANTI; 2->+ require to touch top surface of EC
+			       DR(cm) far from EC sides(DR is defined in ECMC 8, i.e. DC<0 decrease
+			       EC sensitive area !!!)
+                               (Don't use fast mode for Acceptance calculation !)
+I 14   daqfmt(1)           // Raw/Reduced(0/1) TDC format for DAQ simulation
+I 15   birks(1)            // apply or not birks correction
+I 16   mcseedo(0)          // 1/0->Use RealDataCalib_Copy(*SD.n)/MCCalib(*MC.n) files as MCSeed
+R 17   blshift(0.)         // base line shift at fast discr.input (mv)
+R 18   hfnoise(5.)         // high freq. noise .......
+//
+I 19   ReadConstFiles(0000)// LPTS(L=TDCLinCorMC,P=PedsMC,T=TimeDistr,S=MCCalibSeeds);L(P,T,S)=0/1->read DB/RawFiles
+I 20   addpeds(0)          // 1/0-> add/not peds into empty(no MC dE/dX) channels
+I 21   calvern(1)          // TofCflistMC-file(barcal_files vers. list) version number
+I 22   tdclin(0)           // 1/0->do/not activate TDC-linearity simulation logic
+I 23   tdcovf(1)           // 1/0->do/not activate TDC-overf.protection logic(= usage of TDC TrigTimeTag subtr)
+
+//TOF new Geant4 part
+R 24   seamref(1.)     (0 2) //PMT single electron spectrum ref to  5mV
+R 25   seamres(0.9)       //PMT single electron spectrum resolution Rms/Mean
+R 26   selampec(0.2)   (0 1) //PMT single electron low amplitude fraction
+R 27   selamref(0.2)   (0 1) //PMT single electron low Amp/normal Amp
+R 28   pheffref(0.45)  (0 4) //photon ref eff
+I 29   refmodel(1)  // (1)new polishbackpaint (2)polishbackpaint (3)groudbackpaint (4)unified dielectric_metal
+R 30   absorp(0.)      (0 1) //Sci-facet absorption prob
+R 31   reflobsc(0.1222)(0 3.14/2) //Sci-facet lob-diffuse angle sigma
+R 32   reflamber(0.)   (0 1) //Sci-facet surf Lambertian reflection prob
+R 33   reflob(0.)      (0 1) //Sci-facet lob-diffuse reflection prob
+R 34   refbac(0.)      (0 1) //Sci-facet back-reflection prob
+R 35   refskin(1.)     (0 1) //Al-skin reflection ref to normal value
+R 36   scskpol(1.)     (0 1) Sc->Al-skin polish quality 1->Total mirror 0->diffuse
+R 37   birk(0.02632)   (0  )//scintillator Birks Constant de/dx/(1+a*de/dx) mm/MeV
+R 38   phancut(0.01)   (0 1) //verticle direction photon need more cpu time
+R 39   phtrlcut(3.)    (1 10) //photon transmit track length cut //5m
+R 40   phstepcut(2.)   (0,)   //photon max steplength cut//2*m
+R 41   maxphcut(0.);   (0,)   //photon max number cut(dummy)
+R 42   refloblg(-1.)          //Lg-facet lob-diffuse reflection prob[0 1] -1 use Sc
+R 43   lgskpol (-1.)          //Lg->Al polish quality 1->Total mirror 0->diffuss
+R 44   phtsmear(0.)    (0,)   //SE-TTS saear
+I 45   g4tfdir (1.)           //New TOF database from local(1) or AMSDataDir(0)
+I 46   g4tfdb                 //New TOFSimUtil database file name
+R 146  g4hfnoise(10.)         //New G4TOF high freq.noise
+R 147  anodesat(1)            //Anode saturation simulation->off(0) readoutsat(1)  pmtsat(2)
+R 148  writeall(0)            //write photon information to rootfile(table mode)->on(1) off(0
+I 149  simfvern(509400)       //simulation DB version/g4DB(5)/PMDB(09)/tsfDB(4)/other use
+R 150  threref(1. 1.19 1.)      //LT HT SHT reference to normal value
+R 153  fladctbref(0.2)         //"flash-ADC" internal time binning reference to normal value(0.1ns*0.2=20ns)
+R 154  dcnoise(0.)             //LT discriminator noise reference to normal value (20ps)
+R 155  lmatref(1.)             //LTOF supporting materials reference to normal value: new adding 0.00805*(lmatref-1)X0
+
+
+// AMS02 TOF Reconstruction
+
+TFRE
+R 1   Thresh(0.2)         //Bar threshold (mev) in tof-cluster algorithm
+R 2   Thresh(0.2)         //Threshold (mev) on total cluster energy(Not used now!)
+I 3   Print-flag(0)       // 0/1/2->not/print/more_print for job statistics tables
+I 4   Print-flag(0)       // 0/1-> not/print reconstruction histograms
+I 5   Print-flag(0)       // 1/0-> print/not channels hits multiplicity histograms
+I 6   Print-flag(0)       // 1/0-> print/not debug info (mstly error messages, for more debug set 7=1)
+I 7   Print-flag(0)       // 0/1-> delailed debug flag(also add low prior. histograms if #4=1, ev-by-ev debug if #6 is set)
+I 8   relogic[0](0)       // Normal_/TDCL_/TDIF_/TZSL_/AMPL_/PedClassic_/PedDownScaled_/OnBoardPed_
+//                           calibr run(if=0/1/2/3/4/5/6/7)
+//                   (when =7 confirm ped-file writing + hist when glob. OnBoard CALIB-flag >1 to be independent on ACC !)
+I 9   relogic[1](1)       // (1)/0-> permit/not LT-SumHT hits matching criterion for multi-LT case
+I 10  relogic[2](0)       // 1/0->use/not TDC NonLin-correction at RECO-stage(RawClust creation)
+I 11  relogic[3](0)       // do/not recovering of missing side
+I 12  relogic[4](1)       // 1/0->create(+write)/not TOF2RawSideObject-info into ntuple
+R 13  DAQ-thresh-1 (50)   // discr.thresh.(mv) for LT (low thresh) channel
+R 14  DAQ-thresh-2 (80)   // discr.thresh.(mv) for HT (hi thr, => z>=1-trig) channel
+R 15  DAQ-thresh-3 (940)  // discr.thresh.(mv) for SHT (super hi thr => z>=2-trig)
+R 16  DAQ-thresh-4 (4)    // Anode-ADC readout threshold in DAQ(in ped's rms units)
+R 17  DAQ-thresh-5 (4)    // Dynode-ADC readout threshold in DAQ(in ped's rms units)
+//
+R 18  cuts[0] (6)       // window(+-ns) around (LT-SumHT)-most.prob for pairing of LT-/sumHT-hits in channels
+R 19  cuts[1] (2000)    // "befor"-cut in time history (ns)(max. integr.time?)
+R 20  cuts[2] (100)     // "after"-cut in time history (ns)
+R 21  cuts[3] (2.8)     // error in longitudinal coordinate (cm, for mip in single TOF-paddle)
+R 22  cuts[4] (70)      // JLV1 globFT decision_time + delay(JLV1-> S-crate, ns), i.e. glFT-time at S-crate
+R 23  cuts[5] (5)       // (LT-SumHT)-most.prob to use with window(cuts[0])  for pairing of LT-/sumHT-hits in channels
+R 24  cuts[6] (0.6)     // 2-bars assim.cut in TOFCluster energy calculation
+R 25  cuts[7] (10)      // T-type def.temperature (see card #29)
+R 26  cuts[8] (5)       // P-type def.temperature
+R 27  cuts[9] (8)       // C-type def.temperature
+//
+I 28  ReadConstFiles(100)   // LQDPC(L->TDCLinCalib(RD/MC),Q->ChargeCalib,D->not used now(No related TDV "Tofvpar" !,
+//                                                      cuts&thresholds are read directly from related data cards not DB)
+//                                                                        P->Peds,C->CalibConst(RD/MC))
+// L=1/0->Take TofTdcLinearityCorrections from RawFiles/DB
+// Q=1/0->Take ChargeCalibDensFunctions from RawFiles/DB
+// D=1/0->Take ThrCuts-set from Data-Cards/DB
+// P=1/0->Take Peds(rd) from RawFiles/DB
+// C=1/0->Take PaddleCalibrCont from RawFiles/DB
+//
+I 29 TempHandlMode(0)     // CPT(Slow:C->SFEC,P->PMT; Fast:T->SFET)=> Temperature Handling Mode
+//                               C(P,T)=1/0->do/not related temperature-corrections at reco-stage
+I 30 calutc(1167606001)   //(20070101 0000001)TofCflistRD-file(barcal_files vers. list) begin UTC-time
+//
+I 31-32   sec[2](0,0)        // Validity time: beg/end
+I 33-34   min[2](0,0)        //
+I 35-36   hour[2](0,0)       //
+I 37-38   day[2](1,1)        //
+I 39-40   mon[2](0,0)        //
+I 41-42   year[2](101,110)   //
+I 43      TFHTDVCalib        //TOFH TDV Version T0P0C0(Time POSITION Charge)
+
+// AMS02 TOF calibration
+
+TFCA
+  TZSL-calibration
+R  1 plow(8.);  // track mom. low limit (gev/c)
+R  2 phigh(50.);// track mom. high limit
+R  3 meanbeta(0.996);// mean proton velocity in this range
+R  4 T0-ref1(6.);   // T0 for ref. counters
+R  5 T0-ref2(6.);   // spare
+R  6 slope(6.5);    // def. slope for slewing-correction
+R  7 meanbeta(.997); // mean muon velocity (for earth calibr.)
+I  8 idref(104);    // LBB for  ref. layer/counter(LBB, set L=2 if layer 1 is dead)
+I  9 idref(0);      // 0/1/2->FitAll/IgnorTrapezCount/FitTrapezCount&FixOthers
+I 10 ifsl(1);       // =0/1 to fix/release slope param.
+I 11 caltyp(0);     // =0/1 space/earth calibration
+I 12 truse(0);     // =-1/0/1 to no/soft/hard usage of tracker info
+I 26 tofcoo(0)     // =0/1 -> use trancv/longit.coordinates from TOF
+  AMPL-calibration:
+I 12 truse(0);     // -1/0/1->(req.TRK|TRD-track,no mom.check)/(req.TRK,no Mom.check)/(TRK with mom.check)
+R 13 plhc[0](2)    // low cut on tracker momentum (Gev/c) for space calibr.
+R 14 plhc[1](100)  // high cut on tracker momentum (Gev/c) ....
+I 15 minev(100)    // min.events needed for measurement in channel or bin
+R 16 trcut(0.90)   // cut to use for "truncated average" calculation
+I 17 spares[0]     // spare (integer)
+   ...             // ......................................
+I 19 spares[2](0)  //(19) 0/1-> UseStrictLPatt(4of4)/not(3of4) for TZSL-calib
+I 20 spares[3]     // spare
+R 21 adc2q (1.)    // adc->charge conv.factor(pC/ADCch, hope = for all ADC chips)
+R 22 plhec[0] (0.1) // mom. low-cut for earth calibr.
+R 23 plhec[0] (10)  // mom. high-cut for earth calibr.
+R 24 bgcut[0] (2)   // beta*gamma low-cut for mip in abs.calibr.
+R 25 bgcut[1] (10)  // beta*gamma high-cut for mip in abs.calibr.
+I 26 tofcoo    (0)  // 0/1-> use transv/longit coord. from TOF
+R 27 tofbetac(0.5)  // if nonzero->low beta cut (own TOF measurements !!!)
+I 28 hprintf   (1)  // Calib-hist print-flag (0(no)/1(hi_importance)/2(+low_importance)
+I 29 cafdir    (0)  // use official/private directory for calibr.files
+I 30 mcainc    (0)  // spare
+// PedCalib:
+R 31 pedcpr[0](0.01)// PedCalibJobClassic: portion of highest ADCs to remove for aver/rms-calculation
+R 32 pedcpr[1](0.1) // PedCalibJobDownScalEvnts: portion of highest ADCs to remove for ..............
+I 33 pedoutf   (2)  // PedCalibJob-output type:0/1/2->HistosOnly/PedWrite2DB+File/PedWrite2File
+R 34 pedlim[0] (10) // Ped low-lim in PedCalibJobs
+R 35 pedlim[1](700) //      hi-lim ...............
+R 36 siglim[0] (0.4)// PedSig low-lim ............
+R 37 siglim[1] (10.)//         hi-lim ............
+//TOFTdcCalib:
+R 38 minstat (100)// min.acceptable statistics per channel
+R 39 tdccum (10)  // tdc-calib usage mode: MN->M=1/0(Economy mode/norm);N=1/0->write/not final calibfile
+//for OnBoardPeds:
+R 40 onbpedspat (63)//ijklmn(bit-patt for peds|dinpeds|pretrs|statws|theshs|widths sections in table),
+//                           i(j,..)-bitset => section present
+I 42 newslew (1) // 0/1 use Old/New Slewing Calibration mode
+
+//---------------------------------------------------------------------------------
+    ECAL simulation:
+
+ECMC
+
+I 1    fastsim(0)                // =1 for fast(non-accurate) simulation(missing now)
+I 2    mcprtf(0)                 // =1 to print MC-histograms
+R 3    cutge(0.0005)             // Geant(cutele=cutgam(Gev)) cut for EC-volumes
+I 4    silogic[0](0)             // =0/1/2->peds+noise(noncor)/no_noise/no_peds
+I 5    silogic[1](1)             // 1/0-> to use RealDataCopy(sd)/MC(mc) RLGA/FIAT-files as MCSeeds
+R 6    mev2mev                   // Geant_de/dx->Emeasured(input) convertion
+R 7    mev2adc                   // (acd/mev) Emeasured->ADCchannel convertion
+R 8    safext                    // extention(>0)/reduction(<0) of EC transv. size
+                                    (is used when TFMC 13=2)
+R 9    mev2pes(55)               // Geant dE/dE(mev) to PM photoelectrons conversion.
+R 10   pmseres(0.8)              // PM single-elecrton ampl.resolution
+R 11   adc2q(0.045)              // Anode(H,L) ADCch->Q(pC) conv.factor(pC/adc)
+R 12   fendrf(0.3)               // fiber end-cut reflection factor
+R 13   physa2d(6.)               // physical(for trigger) an/dyn ratio(mv/mv)
+R 14                             // spare
+R 15   sbcgn(1.241)              // Temporary Etot-normalization factor for Geant4 to match with Geant3 responce
+R 16   pedh(150)                 // Default Ped-HiCh
+R 17   pedvh(30)                 // Default ch-to-ch variation(%)
+R 18   pedl(150)                 // ........Ped-LoCh
+R 19   pedvl(30)                 // ........ch-to-ch variations(%)
+R 20   pedsh(0.55)               // ........PedSig-HiCh
+R 21   pedsvh(30)                // ........ch-to-ch variation(%)
+R 22   pedsl(0.55)               // ........PedSig-LoCh
+R 23   pedsvl(30)                // ........ch-to-ch variation(%)
+R 24   pedd(150)                 // Ped-DyCh
+R 25   peddv(30)                 // ch-to-ch variation(%)
+R 26   pedds(0.55)               // PedSig-DyCh
+R 27   peddsv(30)                // ch-to-ch variation(%)
+//
+I 28   ReadConstFiles(00)        // CP=MCCalibSeeds|Peds:C=1/0->Read MCCalibSeedsFile/DB
+//                                                       P=1/0->GeneratePeds/ReadFromDB
+I 29   calvern(1) //EcalCflistMC-file vers.number(list of RlgaMC(SD),FiatMC(SD),AnorMC-calib.files vers#)
+R 30   mch2root(0)// =1 to write ECmc-hits to root file when 'All' requested, =2 to write in any case
+R 31   Sl_gap(0.01) // Air gap between superlayers in cm
+R 32   HoneyRelDen(1.) // Relative density of the Honeycomb wrt 0.266/2.7
+R 33   SbMassFraction(0.0287) // Percentage in mass of Antimonium (Sb) in Lead: 2.87% corresponds to the old 98% of relative density
+R 34   effmn(0.6) // efficiency at the anode edge
+R 35   deffw(0.333) // width in % (33.3%) of the inefficiency region
+R 36   cladgluex(0.01135) //   fiber clad+glue horizontal thickness (cm)
+R 37   cladgluey(0.01135) //   fiber clad+glue vertical   thickness (cm)
+R 38   gap(0.) // thickness (cm) of segments of glue between fibers of the same fiber layer
+I 39   endplate(1) // Flag for last Aluminum plane replacing last Lead plane in last superlayer : 0=Lead 1=aluminum
+R 40-75 claddxy[36](0.) // Difference of clad+glue thickness in x (even) or y (odd indices) for each layer to change single layer density and get ellyptical holes
+R 76   g4cutge(1.) // Factor to divide the standard minimum range for photons and electrons in g4physics.C
+R 77   Tsim(23.) //  Temperature for MC simulation (equal to the test beam ECREFFKEY.Tref to avoid T corrections)
+R 78   FiberDisplacement[9]
+R 87   TuneMC(0) // 0: original MC, 1: tune MC electromagnetic shower shape, based on A.Kounine and W.Xu's shower model.
+R 88   RelDen(1)   // Relative Ecal density.
+    ECAL reconstruction:
+
+ECRE
+I 1    reprtf[0](0)        // =1/2/.. to print Reco-histograms
+I 2    reprtf[1](0)        // =1 to print profiles for first 5 events
+I 3    reprtf[2](0)        // DAQ-debug prints: 0/1/2/>2 (nodebug/Errors/info_messages/more_details)
+
+I 4    relogic[0](0)       // 1/0->write/not EcalHits into Ntuple
+I 5    relogic[1](0)       // 0/1/2/3/4/5 -> normal/RLGA_/RLGA+FIAT_/ANOR_/PedClassic_/PedDownScaled_calib
+//                                                                                           run
+I 6    relogic[2](0)       // 0/1/2->Nholes/Ebackgr/Both_type cuts in ANOR_calib logic
+I 7,8................        //    spares
+
+R 9    thresh[0](3)        // Anode(High/low-gain chan) readout threshold(in sigmas)
+R 10   thresh[1](120)      // Etot "mip"-trig.thresh(mev tempor)
+R 11   thresh[2](450)      // spare
+R 12   thresh[3](3000)     // spare
+R 13   thresh[4](3)        // Dynode chan. readout thershold(in sigmas)
+R 14   thresh[5](1.)       // Trig. PMDynThr sl1(y) not used (mev, for Pisa algorithm from S. Di Falco)
+R 15   thresh[6](70.)      // Trig. PMDynThr sl2(x)
+R 16   thresh[7](100.)     // Trig. PMDynThr sl3(y)
+R 17   thresh[8](80.)      // Trig. PMDynThr sl4(x)
+R 18   thresh[9](60.)      // Trig. PMDynThr sl5(y)
+R 19   thresh[10](40.)     // Trig. PMDynThr sl6(x)
+R 20   thresh[11](40.)     // Trig. PMDynThr sl7(y)
+R 21   thresh[12](1.)      // Trig. PMDynThr sl8(x) not used
+R 22   thresh[13](1.)      // Trig. PMDynThr sl9(y) not used
+R 23   thresh[14](0.)      // spare
+
+R 24   cuts[0](1.15)       // FT Pisa algorithm:: AngleCut-1
+R 25   cuts[1](2.15)       // FT Pisa algorithm:: AngleCut-2
+R 26   cuts[2](5)          // FT Pisa algorithm:: Xmult-boundary
+R 27   cuts[3](6)          // FT Pisa algorithm:: Ymult-boundary
+R 28   cuts[4](2)          // min.layers(out of 3 per proj) with at least 1 pm having Adynode > thr
+R 29-32.................   // spares
+R 33   cuts[9](0.65)       // LVL3-trig. EC-algorithm: "peak"/"average" methode boundary
+
+I 34   ReadConstFiles(100) // TDCP (Temperature slopes(MC/RD) | ThreshCuts-set | Calib.const(MC/RD) / RDpeds)
+//                            T=1/0-> Take from DataCards/DB
+//                            D=1/0-> Take from DataCards/DB
+//                            C=1/0-> Take from CalibFiles/DB
+//                            P=1/0-> Take from CalibFiles/DB
+
+I 35   calutc(1167606001)//(35)(20070101 0000001)EcalCflistRD-file(rlga,fiat,anor,tslo-files utc-list) begin UTC-time
+// Vitaly's cluster algorithm parameters:
+R 36   Thr1DSeed(10.)     //  minimal energy seed to start cluster search (mev)
+R 37   Thr1DRSeed(0.18)   //  minimal 2nd/1st cluster energy ratio (same row)
+R 38   Cl1DLeakSize(9)    //  search region for energy leraks (+-cells)
+R 39   Cl1DcoreSize(2)    //  max core cluster size(+-cells)
+R 40   Thr2Dmax(1.2)      //  max tangent for shower direction
+R 41   Lenghth2DMin(3)    //  min-1 2d cluster length (planes)
+R 42   Chi22DMax(1000)    //  max chi2 for direction fit
+R 43   PosError1D(0.1)    //  Est error between cluster cofg and shower core (cm)
+R 44   Chi2Change2D(0.33) //  minimal chi2 rel change to remove higest resid hit in dir fit
+R 46   TranShowerSize2d(10) // transwersal shower size (cm) (to add orphaned clusters)
+R 45-49SimpleRearLeak[4](0.01,0.94e-3,3.7*0.8,0.975e-3)  // parameters to correct rear leak (see EcalShower::EnergyFit)
+
+R 50-56 LAPPRearLeak[7](4.234,1.388,1.604,0.01,0.025,1000.,0.3)//LAPP rear-leakage correction parameters (M.P.- C.Goy)
+R 57 ealpha0(-3.0)  // leakage correction: alpha0(averaged on energy) + beta*T +gamma*T^2
+R 58 ebeta(75.2)    // first order coefficient
+R 59 egamma(563.3)  // second order coefficient
+R 60 ealpha_par[0](-5)     // Alpha(E)=par0+par1*Energy
+R 61 ealpha_par[1](0.0143) //
+
+R 62 CalorTransSize(32)   // trans calorimeter size (cm)
+R 63 EMDirCorrection(1.03)// em shower shape direction correction
+R 64 HiEnThr(1650.)       // pmt saturation limit (gev)
+R 65 HiEnCorFac(0.225)    // energy correction as (1-HiEnCorFac)/(1-HiEnCorFac*Energy/HiEnThr)
+R 66 S1S3[0](0.6)
+R 67 S1S3[1](0.25)
+R 68 S1S3[2](0.4)
+R 69 S1S3[3](0.8)
+
+R 70 S1S3X[0](0.529) // (70-75)
+R 71 S1S3X[1](0.753)
+R 72 S1S3X[2](0.922)
+R 73 S1S3X[3](47.25)
+R 74 S1S3X[4](-104.)
+R 75 S1S3X[5](-0.006)
+R 76 S1S3Y[0](0.517) // (76-81)
+R 77 S1S3Y[1](0.743)
+R 78 S1S3Y[2](0.933)
+R 79 S1S3Y[3](49.19)
+R 80 S1S3Y[4](-7.23)
+R 81 S1S3Y[5](-0.193)
+
+//LAPP impact-point correction parameters X and Y sides (M.P. - C.Goy)
+R 82 S1S3XA[0](0.38) // (82-85)
+R 83 S1S3XA[1](0.715)
+R 84 S1S3XA[2](0.75)
+R 85 S1S3XA[3](0.5)
+R 86 S1S3YA[0](0.33) // (86-89)
+R 87 S1S3YA[1](0.7525)
+R 88 S1S3YA[2](0.75)
+R 89 S1S3YA[3](0.5;)
+
+R 90-94 LAPPHitLeak[5](1.05,13.1.32,15.,1.69) //LAPP hit multiplicity correction parameters (M.P.-C.Goy)
+
+I 95 sec[0](0)                // cards below are used as validity time when need to write
+I 96 sec[1](0)                // to DB new calibration/status parameters
+I 97 min[0](0)                //
+I 98 min[1](0)                //
+I 99 hour[0](0)               //
+I 100 hour[1](0)               //
+I 101 day[0](1)                //
+I 102 day[1](1)                //
+I 103 mon[0](0)                //
+I 104 mon[1](0)                //
+I 105 year[0](108)             //
+I 106 year[1](125)             //
+R 107 Tref(23.)                // Reference temperature (from 2010 august TB) for ADC2MeV calculation
+//LAPP impact-point correction parameters for S3/S5 X and Y sides (M.P.-S-Rosier)
+R 108 S3S5XA[0](0.5) // (108-111)
+R 109 S3S5XA[1](0.77)
+R 110 S3S5XA[2](0.883)
+R 111 S3S5XA[3](0.072)
+
+R 112 S3S5YA[0](0.5) // (112-115)
+R 113 S3S5YA[1](0.77)
+R 114 S3S5YA[2](0.873)
+R 115 S3S5YA[3](0.085)
+
+ //LAPP impact-point correction parameters for ShowerLatDisp X and Y sides (M.P.-S-Rosier)
+R 116 VarXA[0](0.5) // (116-119)
+R 117 VarXA[1](0.75)
+R 118 VarXA[2](18.6)
+R 119 VarXA[3](5.8)
+
+R 120 VarYA[0](0.5) // (120-123)
+R 121 VarYA[1](0.75)
+R 122 VarYA[2](41.12)
+R 123 VarYA[3](21.6)
+
+R 124 Ttb(23.)     // (124)   TestBeam reference temperature (obsolete)
+R 125 Tgsl(0.25)   // (125)  Global temperature slope: 1% ecah 4 degrees (obsolete since new calibration based on mip mpv variation)
+
+R 126 mipTB(16.45)        // (126) Average MIP value at test beam
+R 127 mipTB2ISS(1.03)     // (127) Factor to convert TB mip (400 GeV protons, free fit) to ISS mips (R>5 GeV/c, template fit) used for calibration
+
+   ECAL calibration:
+
+ECCA
+(REUN-Calibration  parameters)
+//
+(RLGA/FIAT part:)
+I  1  hprintf (2)        // =0/1/2/3=> no/hi/+mid/+low importance calib-histograms printing
+I  2  cafdir(0)          // 0/1-> use official/private directory for calibr.files
+I  3  prtuse(-1)         // 1/0/-1 -> use He4/proton/mu tracks for calibration
+I  4  refpid(118)        // ref.PM ID (SPP-> S=SupLayer, PP=PM number)
+R  5  trmin(4.)          // presel-cut on min. Rigidity of the track
+R  6  adcmin(3.)         // min ADC cut for indiv. SubCell (to remove noise)
+R  7  adcpmx(1000.)      // max ADC cut for indiv SC to consider Plane as bad(non PunchThrough)
+I  8  ntruncl(2)         // remove this number of scPlanes with highest Edep
+R  9  trxac(0.022)        // TRK->EC extrapolation accuracy in X-proj("3sigma",cm)
+R 10  tryac(0.019)        // TRK->EC extrapolation accuracy in Y-proj............
+R 11  mscatp(1.)         // EC multiple scattering fine tuning parameter
+R 12  nortyp(0)          // normaliz.type 0/1-> by crossed/fired counters
+I 13  badplmx(4)         // Accept max. bad Pix-planes(>2 fired pix/lay, high pix Ed, separated 2 pixels)
+R 14  etrunmn(60.)       // Min ECenergy (Etrunc/sl in mev) to select PunchThrough particle(He)
+R 15  etrunmx(520.)      // Max ECenergy (Etrunc/sl in mev) ...................................
+R 16  nsigtrk(1.)        // ImpPoint accur. extention param. for cell-crossing check
+//
+(ANOR part:)
+R 17  pmin (3.)       // presel-cut on min. mom. of the track(gev/c)
+R 18  pmax (15.)      // presel-cut on max. mom. of the track
+R 19  scmin (3.)      // min ADC for indiv. SubCell (to remove ped,noise)
+R 20  scmax (1500.)   // max ADC .................. (to remove sparks,ovfl,...)
+I 21  spikmx (0)      // max SC's(spikes) with ADC>max  (to remove sparks,ovfl,...)
+I 22  nhtlmx[0] (3)   // max hits in 1st sc-plane (to remove early showering)
+I 23  nhtlmx[1] (4)   // max hits in 2nd sc-plane (to remove early showering)
+I 24  nhtlmx[2] (4)   // max hits in 3rd sc-plane (to remove early showering)
+I 25  nhtlmx[3] (5)   // max hits in 4th sc-plane (to remove early showering)
+I 26  nhtlmx[4] (7)   // max hits in 5th sc-plane (to remove early showering)
+I 27  nhtlmx[5] (7)   // max hits in 6th sc-plane (to remove early showering)
+I 28  lmulmx    (20)  // max hits/sc-plane (to remove events with abn.multiplicity)
+I 29  nholmx[0] (1)   // max holes(betw.fired cells) in 1st sc-plane(early show.prot)
+I 30  nholmx[1] (2)   // max holes(betw.fired cells) in 2nd sc-plane(early show.prot)
+I 31  nholmx[2] (3)   // max holes(betw.fired cells) in 3rd sc-plane(early show.prot)
+I 32  nholmx[3] (3)   // max holes(betw.fired cells) in 4th sc-plane(early show.prot)
+I 33  nholmx[4] (3)   // max holes(betw.fired cells) in 5th sc-plane(early show.prot)
+I 34  nholmx[5] (4)   // max holes(betw.fired cells) in 6th sc-plane(early show.prot)
+I 35  nbplmx (0)      // max bad sc-planes (with spikes or high multiplicity)
+R 36  edtmin (800.)   // min Etot(mev) to remove MIP
+R 37  esleakmx (0.01) // max Eleak(side)/Etot to remove energy side leak
+R 38  ebleakmx (0.02) // max Eleak(back)/Etot
+R 39  edfrmn (300.)   // min Efront(mev)
+R 40  edt2pmx (0.2)   // max Etail/Epeak
+R 41  ed2momc (0.4)   // Edep(EC)/Mom(TRK)-1 cut
+R 42  cog1cut (1.0)   // Track-SCPlaneCOG mismatch cut(cm) for the 1st two SC-planes.
+R 43  scdismx[0] (1.) // max sc-track dist. to consider hit as backgroubd(pl-1)
+R 44  scdismx[1] (1.2)// max sc-track dist. to consider hit as backgroubd(pl-2)
+R 45  scdismx[2] (2.) // max sc-track dist. to consider hit as backgroubd(pl-3)
+R 46  scdismx[3] (1.8)// max sc-track dist. to consider hit as backgroubd(pl-4)
+R 47  scdismx[4] (3.) // max sc-track dist. to consider hit as backgroubd(pl-5)
+R 48  scdismx[5] (3.2)// max sc-track dist. to consider hit as backgroubd(pl-6)
+R 49  scdisrs (8.)    // as above for all other planes(not used really)
+R 50  b2scut[0] (0.1) // max backgr/signal energy(boundaries from above) for pl-1
+R 51  b2scut[1] (0.15)// max backgr/signal energy(bound.from above) for pl-2
+R 52  b2scut[2] (0.2) // max backgr/signal energy(bound.from above) for pl-3
+R 53  b2scut[3] (0.2) // max backgr/signal energy(bound.from above) for pl-4
+R 54  b2scut[4] (0.15)// max backgr/signal energy(bound.from above) for pl-5
+R 55  b2scut[5] (0.15)// max backgr/signal energy(bound.from above) for pl-6
+R 56  pedcpr    (0.04)// PedCal : def portion of highest amplitudes to remove for ped/sig calc
+I 57  pedoutf     (2) // PedCal-output type:0/1/2-> HistosOnly/PedWr2DB+File/PedWr2File
+R 58  pedlim[0] (50.) // Low lim on ped to be accepted as good
+R 59  pedlim[1] (500.)// High lim on ped to be accepted as good
+R 60  siglim[0] (0.5) // Low lim on rms to be accepted as good
+R 61  siglim[1] (10.) // High lim on rms to be accepted as good
+62-74 spare (G.Chen)
+// for OnBoardPeds:
+I 75  onbpedspat(15)  //ijkl(bit-patt for peds|dynpeds|threshs|widths sections in table),
+//                           i(j,..)-bitset => section present
+I 76 useTslope (1) //  1/0: Use/don't use Temperature corrections at cell hit level
+//--------------------------------------------------------------------------------
+
+ AMS02 Anti Geometry
+
+ATGE
+R 1 scradi(54.55)  // internal radious of ANTI sc. cylinder (cm)
+R 2 scinth(0.8)    // thickness of scintillator (cm)
+R 3 scleng(82.65)  // scintillator paddle length (Z-dim)
+R 4 wrapth(0.04)   // wrapper thickness (cm)
+R 5 groovr(0.4)    // groove radious (bump_rad = groove_rad-pdlgap)
+R 6 pdlgap(0.1)    // inter paddle gap (cm)(2*wrapth+extra)
+R 7 stradi(54.235) // inner radious of supp. tube
+R 8 stleng(85.)    // length of supp. tube
+R 9 stthic(0.12)   // thickness of supp. tube
+
+
+
+ AMS02 Anti Simulation
+
+ATMC
+I 1   mcprtf(0)           // MC print flag(0/1/2/3->print:no/histogr/PulseSh_arr/print_pulse)
+R 2   FTdel(10.)          // FT-delay between JLV1 and S-crate(ns)
+R 3   Lspeed(14.7)        // eff. speed of the light in anti paddle (cm/ns)
+I 4   ReadConstFiles(0);  // Seedp|Realp(S[eed]|R[eal] MCPeds), S,R=0/1-> read from DB/RawFiles
+I 4   calvern(1)          // AccCflistMC-file (acc_cal_files memb. list) version number
+
+
+
+ AMS02 Anti Reconstruction
+
+
+ATRE
+I 1 reprtf[0] (0)         // RECO-hist print flag
+I 2       [1] (0)         // 0/1/2->not/printDAQdecoding/printDAQdecoding+encoding
+I 3 relogic   (0)         // 0/1/2/3/4->Normal/AbsCal/PedCal_Clas(randTrg)/PedCal_DwnScal(onData)/OnBoardPeds
+//                  (when =4 confirm ped-file writing + hist when glob. OnBoard CALIB-flag >1 to be independent on TOF !)
+R 4 Edthr(0.1)            // Threshold(mev) for Cluster(Paddle=Sector) creation
+R 5 zcerr1(10.)           // ZCoordError(cm) for "paired" sector
+I 6 nlcorr(0)             // =1/0--> apply/not nonlin.corr to raw amplitudes at cluster-build stage
+R 7 ftdel(120)            // FT-delay wrt correlated history-pulse
+R 8 ftwin(70)             // time-window(+-ns) to check hist-pulse coincidence with FT
+//
+I 9 ReadConstFiles(0)     // PVS(RD_Peds,VariabCalibPar(mc/rd),StabCalibPar(mc/rd)), P(V,S)=0/1-> DB/RawFiles
+I 10 calutc(1167606001)   // (20070101 0000001)AccCflistRD-file(acccal_files vers. list) begin UTC-time
+//
+I 11 sec[0](0)             // cards below are used as validity time when need to write
+I 12 sec[1](0)             // to DB new calibration/peds parameters
+I 13 min[0](0)             //
+I 14 min[1](0)             //
+I 15 hour[0](0)            //
+I 16 hour[1](0)            //
+I 17 day[0](1)             //
+I 18 day[1](1)             //
+I 19 mon[0](0)             //
+I 20 mon[1](0)             //
+I 21 year[0](101)          //
+I 22 year[1](110)          //
+
+ AMS02 Anti Calibration
+
+ATCA
+I 1 trackmode(0)            // 0/1-> use TRK/TRK+TRD for calib
+I 2 cafdir(0)               // 0/1-> use official/private directory for calibr.files
+R 3 pedcpr(0.005)           // PedCalibJobRandom(classic): portion of highest adcs to remove
+R 4 pedcpr(0.035)           // PedCalibJobDownScaled(in trig): portion of highest adcs to remove
+I 5 pedoutf(2)              // --//-- outp.flag: 0/1/2-> HistosOnly/PedWr2DB+File/PedWr2File
+R 6 pedlim(10)              // Ped low-lim in PedCalibJobs
+R 7 pedlim(400)             //      hi-lim ...............
+R 8 siglim(0.4)             // PedSig low-lim ............
+R 9 siglim(15)              //         hi-lim ............
+R 10 mev2mv(150)            // spare, not used now
+I 11 antiPG(0);		    // enable/disable PG reco. Default (0) is no-PG. Previous parameters could lose meaning.
+
+
+ Back tracing
+TBAC
+
+//------------------------------------------------------------------------------
+
+  AMS02 Magnet Simulation/status
+
+MAGS    // !NB superseded by TDV MagneticFieldStatus for the real data
+I 1 magstat (1)     // -1/0/1->warm/cold_OFF/cold_ON
+R 2 fscale  (1.)    // rescale factor (wrt nominal field) (if any)
+R 3 ecutge (0.001)  // e/g ener.cut for tracking in magnet materials(Gev)
+R 4 r0[3]           // mag center
+R 7 pitch
+R 8 yaw
+R 9 roll
+I10 rphi
+I11 begin
+I12 end
+//------------------------------------------------------------------------------
+
+ SubDetector's calibration common flags:
+
+CALIB
+I 1 InsertTimeProc (1)   //DB-insert time setting: 0/1-> job_time/daq_time
+I 2 Ntuple         (0)   //
+I 3 SubDetInCalib (11111) //(ijklm) 5 digits pattern to select SubDets for
+//                        OnBoardPedestals(or other calib) processing job
+//                          (msb->lsb => trd|tof+acc|trk|rich|ec),
+//                        i(j,k,l,m)=0/1/2/3==>no_SubD_processing/proc+DBwriting/
+//                        proc+histogr_only/
+//                        proc+histogr+RawCalibFile(if any)writing;
+//                          i(j,k,l,m)>1 logic is prowided by SubDetectors, but general
+//                        request: i(j,k,l,m)=1 have to be quiet mode (minimal printout)
+//                        i(j,k,l,m)=0 automatically means no_processing(no call from VC
+//                        for related SubDets)
+//------------------------------------------------------------------------------
+I 4 SubDetRequestCalib (111031111) //(aijklm) 6 digits pattern (a for eventstatus, ijklm like  above (SubDetInCalib))  to book (1++) or not (0)  subdet-specific TDV (see also job.C) 3 == trdgains3

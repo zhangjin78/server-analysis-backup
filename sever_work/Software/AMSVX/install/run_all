@@ -1,0 +1,38 @@
+#!/bin/tcsh
+
+source /Offline/vdev/install/amsvar
+
+if ( "$1" != "" )  then
+setenv AMSWD $1
+endif
+
+if ( "$2" != "" )  then
+setenv ADDBUILDNO 1
+else
+unsetenv ADDBUILDNO
+endif
+
+#setenv PREFIX /Offline/vdev/install
+setenv PREFIX ./
+setenv TESTFLAG
+
+unsetenv PGTRACK
+unsetenv ARCH
+
+source $PREFIX/amsvar$TESTFLAG.icc64
+../examples/g3.root.test.job
+
+source $PREFIX/amsvar$TESTFLAG.gcc64
+../examples/g3.root.test.job
+
+unsetenv ARCH
+setenv PGTRACK 1
+
+source $PREFIX/amsvar$TESTFLAG.icc64
+../examples/g3.root.test.job
+
+source $PREFIX/amsvar$TESTFLAG.gcc64
+../examples/g3.root.test.job
+
+unsetenv ARCH
+unsetenv PGTRACK

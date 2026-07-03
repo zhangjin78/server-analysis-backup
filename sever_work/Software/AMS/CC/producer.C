@@ -1,0 +1,2831 @@
+//  $Id: producer.C,v 1.247 2025/04/08 11:35:34 aegorov2 Exp $
+#include <unistd.h>
+#include <stdlib.h>
+#include "producer.h"
+#include "cern.h"
+#include "commons.h" 
+#include "system_bg.h" 
+#include <stdio.h>
+#include <iostream>
+#include "event.h"
+#include "job.h"
+#include<algorithm>
+#include <sys/statfs.h>
+#include <sys/timeb.h>
+#include <sys/stat.h>
+#include <sys/file.h> 
+#include <malloc.h>
+#include <netdb.h>
+#include <sys/utsname.h>
+#include "crclib.h"
+#ifdef G4MULTITHREADED
+#include "G4Threading.hh"
+#endif
+float  AMSProducer::timex[512]={};
+AMSProducer * AMSProducer::_Head=0;
+AString * AMSProducer::_dc=0; 
+
+// [ae]-el9-09.04.2024 new env variable added: OsCmdTimeout,
+// see in the code below
+
+AMSProducer::AMSProducer(int argc, char* argv[], int debug) throw(AMSClientError):AMSClient(),AMSNode(AMSID("AMSProducer",0)),_RemoteDST(false),_OnAir(false),_FreshMan(true),_Local(true),_Solo(false),_Transfer(false),_FreeSpace(-1){
+#ifndef __CORBA_LIGHT__ 
+DPS::Producer_var pnill=DPS::Producer::_nil();
+mallopt(M_CHECK_ACTION,1);
+_plist.push_back(pnill);
+#else
+DPS::Producer_var pnill;
+mallopt(M_CHECK_ACTION,1);
+_plist.push_back(pnill);
+#endif
+if(_Head){
+ FMessage("AMSProducer::AMSProducer-E-AMSProducerALreadyExists",DPS::Client::CInAbort);
+}
+else{
+ char * ior=0;
+ uinteger uid=0;
+ float ClockCor=1;
+ for (char *pchar=0; argc>1 &&(pchar=argv[1],*pchar=='-'); (argv++,argc--)){
+    pchar++;
+    switch (*pchar){
+    case 'I':   //ior
+     ior=pchar;
+     break;
+    case 'D':   //debug
+     _debug=atoi(++pchar);
+     break;
+    case 'M':   //debug
+     __MT=true;
+     break;
+    case 'U':   //uid
+     uid=atol(++pchar);
+     break;
+    case 'H':  // Condor UID
+     setenv("AMSCONDOR",++pchar,1);
+     cout <<"AMSProducer::AMSProducer-I-AMSCONDOR set to "<<getenv("AMSCONDOR")<<endl;
+     break;
+    case 'C':   //correction factor to computer clock 
+     ClockCor=atol(++pchar)/100.;
+     if(ClockCor>0.2 && ClockCor<5){
+      AMSFFKEY.CpuLimit*=ClockCor;
+      if(ClockCor>1)GCTIME.TIMEND*=ClockCor;
+      cout <<" AMSProducer::AMSProducer-I-CPULimitChangedTo "<<AMSFFKEY.CpuLimit<<endl;
+     }
+     else{
+      cerr<<" AMSProducer::AMSProducer-F-ClockCorisOutOfRange"<<ClockCor <<endl;
+      FMessage("AMSProducer::AMSProducer-F-ClockCorisOutOfRange",DPS::Client::CInAbort);
+     }
+     break;
+    case 'G':   //local
+     _Local=false;
+     if(pchar+1 && *(pchar+1)=='R'){
+        _RemoteDST=true;
+        cout<< "AMSProducer::AMSProducer-I-RemoteDSTSelected "<<endl;
+     }
+     break;
+    case 'A': //amsdatadir
+      setenv("AMSDataDir",++pchar,0);
+      break;
+    case 'S':   // Solo, no IOR 
+      if(pchar+1 && *(pchar+1)=='Y'){
+       _Solo=true;
+      }
+      break;
+  }
+ }
+  if(!ior ){ 
+    
+   if(_debug){
+     if(!AMSJob::gethead()->isRealData())_openLogFile("MCProducer",_Solo);
+     else _openLogFile("Producer",_Solo);
+   }
+//   _Head=this;
+// return;
+#ifndef __CORBA_LIGHT__	
+   FMessage("AMSProducer::AMSProducer-F-NoIOR",DPS::Client::CInAbort);
+#endif
+  }
+  argc++;
+  argv--;
+  //cout <<"a rgv "<<argc<<" "<<argv[1]<<endl;
+#ifndef __CORBA_LIGHT__
+  cout << "AMSProducer::AMSProducer-I- do CORBA::ORB_init" << endl;
+  _orb = CORBA::ORB_init(argc,argv,"orbit-local-non-threaded-orb");
+  cout << "AMSProducer::AMSProducer-I- CORBA::ORB_init done OK" << endl;
+  try{
+   CORBA::Object_var obj=_orb->string_to_object(ior);
+   if(!CORBA::is_nil(obj)){
+    DPS::Producer_var _pvar=DPS::Producer::_narrow(obj);
+    if(!CORBA::is_nil(_pvar)){
+     _plist.clear();
+     _plist.push_front(_pvar);
+  if(!_getpidhost(uid)){
+   if(_debug){
+     if(!AMSJob::gethead()->isRealData())_openLogFile("MCProducer",_Solo);
+     else _openLogFile("Producer",_Solo);
+   }
+      FMessage("AMSProducer::AMSProducer-F-UnableToGetHostName", DPS::Client::CInAbort);
+ }
+   if(_debug){
+     if(!AMSJob::gethead()->isRealData())_openLogFile("MCProducer",_Solo);
+     else _openLogFile("Producer",_Solo);
+   }
+     _Head=this;
+     return;
+}
+}
+
+}
+  catch (CORBA::SystemException & a){
+    FMessage("AMSProducer::AMSProducer-F-CORBA::SystemError",DPS::Client::CInAbort);
+  }
+#else
+  DPS::Producer_var _pvar;
+  _pvar = new DPS::Producer();
+  _plist.clear();
+  _plist.push_front(_pvar);
+  if(!_getpidhost(uid)){
+    if(_debug){
+      if(!AMSJob::gethead()->isRealData())_openLogFile("MCProducer",_Solo);
+      else _openLogFile("Producer",_Solo);
+    }
+  }
+  if(_debug){
+     if(!AMSJob::gethead()->isRealData())_openLogFile("MCProducer",_Solo);
+     else _openLogFile("Producer",_Solo);
+  }
+  _Head=this;
+  return;
+#endif
+}
+FMessage("AMSProducer::AMSProducer-F-UnableToInitCorba",DPS::Client::CInAbort);
+
+}
+
+
+void AMSProducer::sendid(int cpuf){
+// condor problem
+//
+// 
+//
+if(!cpuf){
+    cout<<"!!!!!-AMSProducer::sendid-0- "<<this<<","<<&_pid<<endl;
+    _pid.Mips=AMSCommonsI::getmips();
+    _pid.threads=AMSEvent::get_num_threads_pot();
+    _pid.threads_change=0;
+    cout <<"  Mips:  "<<_pid.Mips<<" Threads "<<_pid.threads<<endl;
+   #ifdef _OPENMP
+#ifdef G4MULTITHREADED
+       int maxt=G4Threading::G4GetNumberOfCores();
+#else
+       int maxt=omp_get_num_procs();
+#endif
+    if(!MISCFFKEY.AnyThreadNumber){
+        if(_pid.threads!=maxt && _pid.threads>maxt/2){
+           AMSEvent::set_num_threads(  maxt/2);
+           _pid.threads=AMSEvent::get_num_threads_pot();
+           cout <<"  ThreadsChanged  "<<_pid.Mips<<" Threads "<<_pid.threads<<endl;
+        }
+    }
+#endif    
+   
+    bool ok=SetDataCards();
+     _pid.StatusType=DPS::Producer::OneRunOnly;
+     _pid.Type=DPS::Producer::Generic;
+if (_Solo){
+      _pid.Type=DPS::Producer::Standalone;
+//      _pid.StatusType=DPS::Producer::OneRunOnly;
+      LMessage(AMSClient::print(_pid,"JobStarted"));
+      if(!ok ){
+       cerr<<" AMSProducer::sendid-F-UnableToSetDataCards "<<endl;
+       abort();
+      } 
+      else{
+             LMessage(AMSClient::print(_pid,"MetaDataAdded")); 
+      }
+      return;
+}
+else if(!ok){
+        AString pc="AMSProducer::sendid-F-UnableToSetDataCards ";
+        pc+=(const char*)_pid.Interface;
+        FMessage((const char*)pc,DPS::Client::CInAbort);
+}
+}
+
+again:
+    cout<<"!!!!!-AMSProducer::sendid-1- "<<endl;
+    list<DPS::Producer_var>::iterator li = _plist.begin();
+    time_t cput=6*AMSFFKEY.CpuLimit;
+    time_t cpug=12*3600;
+    if(!IsLocal() && cput<cpug)cput=cpug; 
+    if(cpuf)cput=cpuf; 
+    cout <<"   TimeOut sending "<<cput<<endl;
+    struct hostent* h;
+    h=gethostbyname("pcamss0.cern.ch");
+    if(!_pid.Interface)_pid.Interface="";
+      IMessage(AMSClient::print(_pid,"sendID-I-Before"));
+  try{
+     if(!((*li)->sendId(_pid,_pid.Mips,cput))){
+       if(_pid.uid)sleep(10);
+       else{
+        // dieHard
+        AString pc="Server Requested Termination after sendID Because Of ";
+        pc+=(const char*)_pid.Interface;
+        FMessage((const char*)pc,DPS::Client::SInAbort);
+       }
+      if(!((*li)->sendId(_pid,_pid.Mips,cput))){
+       // dieHard
+       AString pc="Server Requested Termination after sendID Because Of ";
+       pc+=(const char*)_pid.Interface;
+       FMessage((const char*)pc,DPS::Client::SInAbort);
+      }
+     }
+         cout <<"  Mips:  "<<_pid.Mips<<endl;
+     IMessage(AMSClient::print(_pid,"sendID-I-Success"));
+     LMessage(AMSClient::print(_pid,"JobStarted"));
+            cout <<"  Mips:  "<<_pid.Mips<<endl;
+
+      return;       
+     }
+   catch (CORBA::MARSHAL a){
+   if(getior("GetIorExec"))goto again;
+   else FMessage("AMSProducer::AMSProducer-F-CORBA::MARSHAL",DPS::Client::CInAbort);
+  }
+  catch (CORBA::COMM_FAILURE a){
+   if(getior("GetIorExec"))goto again;
+   else FMessage("AMSProducer::AMSProducer-F-CORBA::COMM_FAILURE",DPS::Client::CInAbort);
+  }
+  catch (CORBA::SystemException & a){
+   if(getior("GetIorExec"))goto again;
+   else FMessage("AMSProducer::AMSProducer-F-CORBA::SystemError",DPS::Client::CInAbort);
+  }
+
+}
+
+
+
+
+void AMSProducer::getRunEventInfo(bool solo){
+if(solo && _Solo)return;
+if (_Solo){
+    struct timeb  ft;
+    ftime(&ft);
+    _ST0=ft.time+ft.millitm/1000.;
+    if(_debug)cout <<"ST0 "<<_ST0<<endl;
+    TIMEX(_T0);
+    if(_debug)cout <<"T0 "<<_T0<<endl;
+     _reinfo =new DPS::Producer::RunEvInfo(); 
+     _dstinfo =new DPS::Producer::DSTInfo(); 
+     _dstinfo->UpdateFreq=1000;
+     if(IOPA.WriteRoot)_dstinfo->type = DPS::Producer::RootFile;
+     else if(IOPA.hlun) _dstinfo->type = DPS::Producer::Ntuple;
+     else if(DAQCFFKEY.mode/10>0)_dstinfo->type= DPS::Producer::RawFile;
+      else {
+         cerr<<" AMSProducer::getRuneventInfo-F-NoOutputMediaDefined "<<endl;
+         exit(1);
+       }
+     _reinfo->uid=0;
+     _reinfo->Priority=0;
+     time_t ct;
+     time(&ct);
+     _reinfo->SubmitTime=ct;
+     _reinfo->cuid=_pid.uid;
+     _reinfo->cinfo.LastEventProcessed=0;
+     _reinfo->cinfo.HostName=_pid.HostName; 
+     _reinfo->cinfo.Status=DPS::Producer::Processing;
+     _reinfo->Priority=0;
+   if(AMSJob::gethead()->isSimulation()){
+    _reinfo->DataMC=0;
+    _reinfo->FirstEvent=GCFLAG.IEVENT+1;
+    _reinfo->LastEvent=GCFLAG.NEVENT;
+    _reinfo->Run=CCFFKEY.run;
+    _reinfo->Status=DPS::Producer::Allocated;
+    _reinfo->History=DPS::Producer::Foreign;
+    _reinfo->CounterFail=0;
+   }
+   else{
+   _reinfo->DataMC=1;
+   if(!AMSJob::gethead()->isRealData()){
+   _reinfo->DataMC=0;
+   }
+   _reinfo->uid=_pid.uid;
+    _reinfo->CounterFail=0;
+    _reinfo->Status=DPS::Producer::Allocated;
+    _reinfo->History=DPS::Producer::Foreign;
+    _reinfo->Run=SELECTFFKEY.Run;
+    _reinfo->FirstEvent=SELECTFFKEY.Event;
+    _reinfo->LastEvent=SELECTFFKEY.EventE;
+    SELECTFFKEY.Run=0;
+    SELECTFFKEY.Event=0;
+    SELECTFFKEY.EventE=0;
+   }
+    //SELECTFFKEY.Run=_reinfo->Run;
+    //SELECTFFKEY.Event=_reinfo->FirstEvent;
+    //SELECTFFKEY.RunE=_reinfo->Run;
+    //SELECTFFKEY.EventE=_reinfo->LastEvent;    
+    _cinfo.Mips=AMSCommonsI::getmips();
+    _cinfo.EventsProcessed=0;
+    _cinfo.LastEventProcessed=0;
+    _cinfo.ErrorsFound=0;
+    _cinfo.Status=DPS::Producer::Processing;
+    _cinfo.CPUTimeSpent=0;
+    _cinfo.CPUMipsTimeSpent=0;
+    _CPUMipsTimeSpent=0;
+    _cinfo.TimeSpent=0;
+    _cinfo.HostName=_pid.HostName; 
+    _cinfo.Run=_reinfo->Run;
+    _reinfo->cinfo=_cinfo;
+     if(_reinfo->Run!=0)LMessage(AMSClient::print(_reinfo,"StartingRun"));
+  return;
+}
+
+
+bool mtry=false; 
+_pid.threads=AMSEvent::get_num_threads_pot();
+_pid.threads_change=0;
+#ifndef __CORBA_LIGHT__
+UpdateARS();
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+    (*li)->getRunEvInfo(_pid,_reinfo,_dstinfo);
+         
+    if(_dstinfo->DieHard){
+     if(!mtry){
+      cerr <<" problem with runevinfo sleep 2 sec "<<_dstinfo->DieHard<<endl;
+       sleep(2);
+       mtry=true;
+       goto again;
+    } 
+      cerr <<" DieHard "<<_dstinfo->DieHard<<endl; 
+      if(!_FreshMan && _dstinfo->DieHard==1)FMessage("AMSProducer::getRunEventinfo-I-ServerRequestedExit",DPS::Client::SInExit);
+      else FMessage("AMSProducer::getRunEventinfo-I-ServerRequestedAbort",DPS::Client::SInAbort);
+    }
+    _FreshMan=false;
+    _cinfo.Run=_reinfo->Run;
+    _cinfo.HostName=_pid.HostName; 
+    AMSEvent::set_num_threads((_reinfo->cinfo).CriticalErrorsFound/2097152);
+    cout <<"  ***-*** setting thtreads to "<< (_reinfo->cinfo).CriticalErrorsFound/2097152 << " "<<MISCFFKEY.NumThreads<<endl;
+    SELECTFFKEY.Run=_reinfo->Run;
+    SELECTFFKEY.Event=_reinfo->FirstEvent;
+    SELECTFFKEY.RunE=_reinfo->Run;
+    //SELECTFFKEY.EventE=_reinfo->LastEvent;    
+    _pid.threads=AMSEvent::get_num_threads_pot();
+    _reinfo->cinfo.LastEventProcessed=0;
+   _cinfo.Mips=AMSCommonsI::getmips();
+    _cinfo.EventsProcessed=(_reinfo->cinfo).EventsProcessed;
+    _cinfo.ErrorsFound=(_reinfo->cinfo).ErrorsFound;
+    _cinfo.CriticalErrorsFound=((_reinfo->cinfo).CriticalErrorsFound%2097152);
+    _cinfo.Status=DPS::Producer::Processing;
+    _cinfo.CPUTimeSpent=0;
+    _cinfo.CPUMipsTimeSpent=(_reinfo->cinfo).CPUMipsTimeSpent;
+    _CPUMipsTimeSpent=_cinfo.CPUMipsTimeSpent;
+    cout << "  _cinfo CPUMIPS "<<_cinfo.CPUMipsTimeSpent<<" "<<_cinfo.EventsProcessed<<endl;
+    _cinfo.TimeSpent=0;
+
+   if(AMSJob::gethead()->isSimulation()){
+    GCFLAG.IEVENT=_reinfo->FirstEvent;
+/*
+    if(GCFLAG.IEVENT>1 ){
+     // should call the rndm odnako
+     cerr<<"AMSProducer::getRunEventInfo-W-ChangingRNDMBecauseFirstEventNumberNotOne"<<endl;
+     for(int i=1;i<GCFLAG.IEVENT;i++){
+      geant dum;
+      RNDM(dum);
+     }
+    }
+*/
+    if(GCFLAG.IEVENT>1 ){
+    if(!_reinfo->rndm1 ||  !_reinfo->rndm2){
+
+     cerr<<"AMSProducer::getRunEventInfo-W-FirstEventNumberNotOneButRNDMIsZero"<<endl;
+     for(int i=1;i<GCFLAG.IEVENT;i++){
+      geant dum;
+      RNDM(dum);
+     }
+
+    }
+    else{
+      cout<<"AMSProducer::getRunEventInfo-W-ChangingRNDMBecauseFirstEventNumberNotOne "<<_reinfo->rndm1<<" "<<_reinfo->rndm2<<endl;
+       GCFLAG.NRNDM[0]=_reinfo->rndm1;      
+       GCFLAG.NRNDM[1]=_reinfo->rndm2;
+       AMSmceventg::RestoreSeeds();      
+    }
+    }
+    GCFLAG.NEVENT=_reinfo->LastEvent;
+    CCFFKEY.run=_reinfo->Run;
+   }
+   else{
+
+    if(_dstinfo->Mode==DPS::Producer::RILO || _dstinfo->Mode==DPS::Producer::RIRO){ 
+     if(_pid.StatusType!=DPS::Producer::OneRunOnly){
+      DAQEvent::setfile((const char *)(_reinfo->FilePath));
+     }
+}
+else{
+     AString fpath=(const char *)_dstinfo->OutputDirPath;
+     AString fmake="mkdir -p ";
+     fmake+=fpath;
+     system_bg::system((const char*)fmake);
+     fpath+="/run.";
+     char tmp[80];
+     sprintf(tmp,"%d",_reinfo->Run);
+     fpath+=tmp;
+     fpath+=".";
+     sprintf(tmp,"%d",_pid.uid);
+     fpath+=tmp;
+     DAQEvent::setfile((const char *)(fpath));
+     ofstream fbin;
+     fbin.open((const char*)fpath);
+     if(!fbin){
+       cerr <<fpath<<endl;
+       FMessage("Unable to open tmp run file ", DPS::Client::CInAbort); 
+     }
+     DPS::Producer::TransferStatus st=DPS::Producer::Begin;
+     DPS::Producer::RUN * prun;
+     DPS::Producer::FPath fp;
+     fp.fname=(const char*)_reinfo->FilePath;
+     fp.pos=0;   
+     while(st!=DPS::Producer::End){
+     try{
+      int length=(*li)->getRun(_pid,fp,prun,st);
+      DPS::Producer::RUN_var  vrun=prun;
+      if(length)fbin.write((char*)vrun->get_buffer(),length);      
+      fp.pos+=length;
+     }
+     catch (DPS::Producer::FailedOp & a){
+      FMessage((const char *)a.message,DPS::Client::SInAbort);
+     }
+    }
+    if(!fbin.good()){
+       cerr <<fpath<<endl;
+       FMessage("Unable to write tmp run file ", DPS::Client::CInAbort); 
+    }
+    fbin.close();
+}
+}
+//check ROOTSYS; don;t really need it so put dummy value
+  if(char  *crnr=getenv("ROOTSYS")){
+   }
+   else{
+      cerr<<"AMSPRoducer-W-ROOTSYSNotDefined"<<endl;
+      setenv("ROOTSYS","/afs/cern.ch/exp/ams/Offline/root/Linux/pro",1);
+   }
+//  Check here CERN_ROOT;  put /cern/2001 if no
+// check if proposed dst file is writeable
+   bool writeable=false;
+   if(char  *crnr=getenv("CERN_ROOT")){
+   }
+   else{
+      cerr<<"AMSPRoducer-W-CERN_ROOTNotDefined"<<endl;
+      setenv("CERN_ROOT","/cern/2001",1);
+   }
+ndir:  
+   if(char *ntd=getenv("NtupleDir")){
+     AString cmd=" mkdir -p  ";
+     cmd+=ntd;
+     system_bg::system(cmd);
+     cout <<"AMSProducer::getRunEvInfo-I-CreatingOutputDir "<<cmd<<endl;
+     cmd=" touch ";
+     cmd+=ntd;
+     cmd+="/qq";
+     int i=system_bg::system(cmd);
+     if(i==0){
+      writeable=true;
+      cmd=ntd;
+      cmd+="/qq";
+      unlink((const char*)cmd);
+     }
+     else{
+      cerr<<"AMSProducer::getRunEventInfo-E-UnwritableDir "<<ntd<<endl;
+      if(getenv("NtupleDir2")){
+         char *nt2=getenv("NtupleDir2");
+        if(strlen(nt2)){
+          string nt2_new=nt2;
+          char whoami[255]="";
+		  char *usr = getenv("USER");
+          if(usr && !strstr(usr,"root")){
+              sprintf(whoami,"%s/%u",usr,_pid.pid);
+              cout <<" AMSProducer-I-getlogin() "<<whoami<<endl;
+          }
+          else if(getenv("LOGNAME"))sprintf(whoami,"%s/%u",getenv("LOGNAME"),_pid.pid);
+          int pos=nt2_new.find("whoami");  
+          if(pos>=0 && whoami && strlen(whoami))nt2_new.replace(pos,6,whoami);
+          setenv("NtupleDir",nt2_new.c_str(),1);
+          cout <<"producer-I-RedefinedNtupleDir "<<getenv("NtupleDir")<<endl;
+        } 
+        else setenv("NtupleDir",getenv("NtupleDir2"),1);
+        unsetenv("NtupleDir2");
+        goto ndir;
+      }    
+      else if(getenv("NtupleDir3")){
+        setenv("NtupleDir",getenv("NtupleDir3"),1);
+        unsetenv("NtupleDir3");
+        goto ndir;
+      }    
+   }
+   }
+   LMessage(AMSClient::print(_reinfo,"StartingRun"));
+
+     if(IOPA.WriteRoot)_dstinfo->type = DPS::Producer::RootFile;
+     else if(IOPA.hlun) _dstinfo->type = DPS::Producer::Ntuple;
+     else if(DAQCFFKEY.mode/10>0)_dstinfo->type= DPS::Producer::RawFile;
+      else {
+         cerr<<" AMSProducer::getRuneventInfo-F-NoOutputMediaDefined "<<endl;
+         exit(1);
+       }
+   if(IsLocal() && !writeable){
+    cout <<"AMSProducer-getRunEvInfo-S-NtupleDir "<<getenv("NtupleDir")<<" IsNotWriteable"<<endl; 
+    AString ntpath=(const char *)_dstinfo->OutputDirPath;
+    setenv("NtupleDir",(const char*)ntpath,1);
+//  check if it is writeable
+     AString cmd=" touch ";
+     cmd+=ntpath;
+     cmd+="/qq";
+     int i=system_bg::system(cmd);
+     if(i==0){
+      writeable=true;
+      cmd=ntpath;
+      cmd+="/qq";
+      unlink((const char*)cmd);
+     }
+     else{
+      cerr<<"AMSProducer::getRunEventInfo-F-UnwritableDir "<<ntpath<<endl;
+      FMessage("Unable to write dstfile ", DPS::Client::CInAbort); 
+     }     
+
+    ntpath+="/";
+    char tmp[80];
+    sprintf(tmp,"%d",_reinfo->Run);
+    ntpath+=tmp;
+    ntpath+="/";
+    if(_dstinfo->type == DPS::Producer::RootFile){
+      AMSJob::gethead()->SetRootPath((const char *)ntpath);
+    }
+    else{
+       AMSJob::gethead()->SetNtuplePath((const char *)ntpath);
+    }
+    }
+    else{
+     if(_dstinfo->type == DPS::Producer::RootFile)
+     _dstinfo->OutputDirPath=AMSJob::gethead()->GetRootPath();
+     else
+     _dstinfo->OutputDirPath=AMSJob::gethead()->GetNtuplePath();
+     if(_RemoteDST){
+       if(_dstinfo->Mode==DPS::Producer::LILO)_dstinfo->Mode=DPS::Producer::LIRO;
+       if(_dstinfo->Mode==DPS::Producer::RILO)_dstinfo->Mode=DPS::Producer::RIRO;
+    }
+    else{
+       if(_dstinfo->Mode==DPS::Producer::LIRO)_dstinfo->Mode=DPS::Producer::LILO;
+       if(_dstinfo->Mode==DPS::Producer::RIRO)_dstinfo->Mode=DPS::Producer::RILO;
+    }
+    }
+    struct timeb  ft;
+    ftime(&ft);
+    _ST0=ft.time+ft.millitm/1000.;
+    if(_debug)cout <<"ST0 "<<_ST0<<endl;
+    TIMEX(_T0);
+    if(_debug)cout <<"T0 "<<_T0<<endl;
+    IMessage(AMSClient::print(_reinfo," get reinfo "));
+    IMessage(AMSClient::print(_dstinfo," get dstinfo "));
+    InitTDV(_reinfo->uid);
+    return;
+  }
+  catch  (CORBA::SystemException & a){
+  }
+ }
+ if(getior("GetIorExec"))goto again;
+ else FMessage("AMSProducer::getRunEventinfo-F-UnableToGetRunEvInfo",DPS::Client::CInAbort);
+#endif
+}
+
+void AMSProducer::sendCurrentRunInfo(bool force){
+if (_Solo)return;
+_pid.threads_change=AMSEvent::get_num_threads()-_pid.threads;
+_pid.threads=AMSEvent::get_num_threads();
+if(_OnAir){
+  EMessage("AMSProducer::sendCurrentrunInfo-W-AlreadyOnAir ");
+ return;
+}
+//cout <<" sendcurrentinfo start "<<endl;
+int failure=0;
+#ifndef __CORBA_LIGHT__
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendCurrentInfo(_pid,_cinfo,0);
+    _OnAir=false;
+    break;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+   failure++;
+  }
+}
+if(failure)UpdateARS();
+#endif
+
+if(force){
+  if(IOPA.hlun)sendNtupleUpdate(DPS::Producer::Ntuple);
+  else if(IOPA.WriteRoot)sendNtupleUpdate(DPS::Producer::RootFile);
+  if(DAQCFFKEY.mode/10>0)sendNtupleUpdate(DPS::Producer::RawFile);
+}
+//cout <<" sendcurrentinfo end "<<endl;
+}
+
+void AMSProducer::getASL(){
+}
+
+
+void AMSProducer::sendNtupleEnd(DPS::Producer::DSTType type,int entries, int last, time_t end, bool success){
+cout <<" sendntupleend start "<<endl;
+ _Transfer=true;
+
+DPS::Producer::DST *ntend=getdst(type);
+if(ntend){
+ntend->crc=0;
+if(success && end>0){
+ ntend->Status=DPS::Producer::Success;
+}
+else {
+  if(!end)cerr<<"AMSProducer::sendNtupleEnd-E-LastEventTimeZero "<<endl;
+  ntend->Status=DPS::Producer::Failure;
+}
+//ntend->Status=success?(DPS::Producer::Success):(DPS::Producer::Failure);
+ntend->EventNumber=entries;
+if(last){
+  ntend->LastEvent=last;
+_cinfo.LastEventProcessed=last;
+}
+else ntend->LastEvent =_cinfo.LastEventProcessed;
+ntend->End=end;
+ntend->Type=type;
+AMSmceventg::SaveSeeds();
+ntend->rndm1=GCFLAG.NRNDM[0];
+ntend->rndm2=GCFLAG.NRNDM[1];
+//cout <<"  Sending Last Event " <<ntend->LastEvent<<" "<<ntend->rndm1<<" "<<ntend->rndm2<<endl;
+cout<< " sending last event "<<ntend->LastEvent<<" "<<ntend->End<<endl;
+if(ntend->End==0 || ntend->LastEvent==0)ntend->Status=DPS::Producer::Failure;
+{
+   AString a=(const char*)ntend->Name;
+   int bstart=0;
+   for (int i=0;i<a.length();i++){
+    if(a[i]==':'){
+     bstart=i+1;
+     break;
+    }
+   }
+   int bend=0;
+   for (int i=a.length()-1;i>=0;i--){
+    if(a[i]=='/'){
+     bend=i+1;
+     break;
+    }
+   }
+   int bnt=bstart+(getenv("NtupleDir")?strlen(getenv("NtupleDir")):0);
+   if(a.length()>bnt && a[bnt]=='/')bnt++;
+   
+ if(!_Solo)sendCurrentRunInfo();
+
+
+// add crc to a local file (to save bandwitdh)
+{
+   struct stat64 statbuf;
+   stat64((const char*)a(bstart), &statbuf);
+   ntend->Insert=statbuf.st_ctime;
+   ntend->size=statbuf.st_size/1024./1024.+0.5;
+
+   ifstream fbin;
+   fbin.open((const char*)a(bstart));
+   uinteger crc=0;
+   if(fbin){
+       cout <<"SendNtupleEnd-I-AddingCRC "<<(const char*)a(bstart)<<endl;
+       int buf_size = 65536;
+       unsigned int chunk[buf_size];
+       int i=0;
+       long long fsize, mysize;
+       fsize = mysize = statbuf.st_size;
+       Long64_t pos = 0;
+       for(;;){
+           if(!fsize) break;
+           unsigned int myread=fsize>sizeof(chunk)?sizeof(chunk):fsize;
+           fbin.read((char*)chunk,myread);
+           fsize-=myread;
+           if(fbin.good() && !fbin.eof()){
+               if (MISCFFKEY.NewCRC) {
+                   crc = crc_update(crc, chunk, myread, buf_size, mysize, &pos);
+               } else {
+                   crc = amscrc_update(crc, chunk, myread);
+               }
+               if(i++%8192==0){
+                   cout <<"SendNtupleEnd-I-AddingCRC "<<fsize/1024/1024<< " MB left"<<endl;
+                   if(!_Solo)sendCurrentRunInfo();
+               }
+           }
+           else break;
+       }
+       fbin.close();
+       if (MISCFFKEY.NewCRC) {
+           crc = crc_finalize(crc, mysize);
+       } else {
+           crc = amscrc_finalize(crc);
+       }
+       ntend->crc = crc;
+   }
+   else{
+       cerr <<"SendNtupleEnd-E-UnableToAddCRC "<<(const char*)a(bstart)<<endl;
+       string check("ls -l ");
+       check+= (const char*)a(bstart);
+       check+=" & ";
+       system(check.c_str());
+   }
+   if(!_Solo)sendCurrentRunInfo();
+}
+
+
+// add validation
+if(type!=DPS::Producer::RawFile){
+const char *exedir=getenv("ExeDir");
+const char *nve=getenv("NtupleValidatorExec");
+if(exedir && nve && AMSCommonsI::getosname()){
+ 	AString systemc;
+    if(getenv("OsCmdTimeout")) systemc=getenv("OsCmdTimeout");
+      else systemc="timeout";
+    systemc+= " --signal 9 1030 ";
+  systemc+= exedir;
+  systemc+="/";
+  //systemc+=AMSCommonsI::getosname();
+  systemc+="linux/";
+  systemc+=nve;
+ struct utsname u;
+   uname(&u);
+char *ht=u.machine;
+if(ht && strstr(ht,"k1om")){
+systemc+=".mic";
+}
+  systemc+=" ";
+  systemc+=a(bstart);
+  systemc+=" ";
+  char tmp[80];
+  sprintf(tmp,"%d",ntend->EventNumber);
+  systemc+=tmp;
+  if(IOPA.WriteRoot)systemc+=" 1 ";
+  else systemc+=" 0 ";
+  sprintf(tmp,"%d",ntend->LastEvent);
+   systemc+=tmp; 
+  cout<<"AMSProducer::sendNtupleEnd-I-ValidatingBy "<<systemc<<endl;
+  int i=system_bg::system(systemc);
+  cout<<"AMSProducer::sendNtupleEnd-I-ValidatedBy "<<systemc<<" "<<i<<endl;
+  if( (i == 0xff00) || (i & 0xff)){
+// Unable To Check
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBy "<<systemc<<endl;
+  }
+  else{
+    i=(i>>8);
+    if(i/128 && ( !AMSEvent::_checkUpdate())){
+     cerr<<"  AMSProducer::sendNtupleEnd-E-Ntuple failure "<<i<<" "<< AMSEvent::_checkUpdate()<<endl;
+     ntend->Status=DPS::Producer::Failure;
+    }
+    else{
+     ntend->Status=DPS::Producer::Validated;
+     ntend->ErrorNumber=int(i*ntend->EventNumber/100);
+    }
+  }
+ }
+ else if(!nve){
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseNtupleValidatorExecIsNull"<<endl;
+ }
+ else if(!exedir){
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseExeDirIsNull"<<endl;
+ }
+ else {
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseOsNameIsNull"<<endl;
+ }
+}
+else{
+     ntend->Status=DPS::Producer::Validated;
+}
+
+
+// Move ntuple to the dest directory
+string destdirc="";
+char *destdir=getenv("NtupleDestDir");
+if(getenv("NtupleDir") && destdir && strcmp(destdir,getenv("NtupleDir"))){
+ char *means=getenv("TransferBy");
+ string fmake;
+ AString fcopy;
+
+againcpmeans:
+ string rfio=destdir;
+ if (rfio.find("/eosams")!=-1) {
+ 	string noeos = rfio.c_str()+rfio.find("/",rfio.find("/eosams")+1);
+	rfio = "/eos/ams" + noeos;
+ } 
+ 
+ if (rfio.find("/eos/ams")!=-1){
+  if (getenv("EosTransferMakeDir")) {
+    fmake=getenv("EosTransferMakeDir");
+    fmake+=" ";
+  }
+  else {
+    if(getenv("OsCmdTimeout")) fmake=getenv("OsCmdTimeout");
+      else fmake="timeout";
+    fmake+=" --signal 9 9 ";
+    fmake+="/afs/cern.ch/project/eos/installation/ams/bin/eos.select mkdir -p ";
+  }
+  if (getenv("EosTransferRawBy")) {
+    fcopy=getenv("EosTransferRawBy");
+    fcopy+=" ";
+  }
+  else {
+    if(getenv("OsCmdTimeout")) fcopy=getenv("OsCmdTimeout");
+      else fcopy="timeout";
+    fcopy+=" --signal 9 900 ";
+    fcopy+="/afs/cern.ch/project/eos/installation/ams/bin/eos.select cp ";
+  }
+ }
+ else if (means && strstr(means,"xrdcp")) { 
+   if(getenv("TransferSharedLib")) setenv("LD_LIBRARY_PATH",getenv("TransferSharedLib"),1);
+
+   if(getenv("OsCmdTimeout")) fmake=getenv("OsCmdTimeout");
+     else fmake="timeout";
+   fmake+=" --signal 9 9 ";
+   fmake+="nsmkdir -p ";
+  if(getenv("TransferMakeDir"))fmake=getenv("TransferMakeDir");
+  fcopy=means;
+  fcopy+=" ";
+ }
+ else if(means){
+  fmake+="mkdir -p ";
+  fcopy=means;
+  fcopy+=" ";
+ } 
+ else{
+  fmake="mkdir -p ";
+  fcopy="cp ";
+ }
+
+  string tarch="/eos/ctapublic/archive/ams";
+  if (getenv("TapeArPath")) tarch=getenv("TapeArPath");
+  int fid = rfio.find(tarch);
+  if(fid!=-1){
+    fmake+=rfio.c_str()+fid;
+  }
+  else if ((fid=rfio.find("/eos/ams"))!=-1) {
+    fmake+=rfio.c_str()+fid;
+  }
+  else fmake+=rfio.c_str();
+// fmake+='/';
+// for (int k=bnt;k<bend;k++)fmake+=a[k];
+ 
+ cout<<"AMSProducer::sendNtupleEnd-I-MakingDestDir "<<fmake<<endl;
+ int imake=system_bg::system(fmake.c_str());
+//!!!!! Debug: test mkdir
+//if (!strstr(fmake.c_str(),"/castor") && !strstr(fmake.c_str(),"cta")) imake=1;
+//if (strstr(fmake.c_str(),"/castor") || strstr(fmake.c_str(),"eos")) imake=1;
+//!!!!!
+ if (imake)
+   cerr<<"AMSProducer::sendNtupleEnd-E- Unable create dest  dir "<<fmake<<endl;
+
+ if (rfio.find("/eos/ams")!=-1) {
+   // eos does not like double slash
+   string src = (const char*)a(bstart);
+   string dst;
+   char last = '\0';
+   for (int i=0; i<src.length(); i++) {
+      if (src[i] == '/' && last == '/')
+         continue;
+      last = src[i];
+      dst += last;
+   }   
+   fcopy+=dst.c_str();
+ }
+ else
+   fcopy+=(const char*)a(bstart);
+ fcopy+=" ";
+ fcopy+=rfio.c_str();	//[ae] instead of fcopy+=destdir; 
+// fcopy+='/';
+// for (int k=bnt;k<bend;k++)fcopy+=a[k];
+int tmc=3600;
+if(strstr((const char *)fcopy,"rfcp"))tmc=10800;
+ if(!_Solo)sendid(tmc);
+int ntry=3;
+ bool suc=false;
+ bool retryonce=false;
+
+againcp:
+ for(int j=0;j<ntry;j++){
+  sleep(1<<(j+1));
+  if(!_Solo)sendCurrentRunInfo();
+	// eos option check
+	int i;
+	if (strstr((const char*)fcopy,"/eos/ams")) {
+		string fcopy2 = (const char*)fcopy;
+		if (fcopy2[fcopy2.length()-1] != '/') {
+			fcopy2 += '/';
+			fcopy = fcopy2.c_str();
+		}
+	}
+	cout << "AMSProducer::sendNtupleEnd-I-Copying " << (const char*)fcopy << endl;
+	i = system_bg::system((const char*)fcopy);
+//!!!!! Debug: test cp
+//if (!strstr((const char*)fcopy,"/castor") && !strstr((const char*)fcopy,"cta")) i=1;
+//if (strstr((const char*)fcopy,"/castor") || strstr((const char*)fcopy,"eos")) i=1;
+//!!!!!
+
+  if(!i){
+   suc=true;
+   cout <<"SendNtupleEnd-I-CopiedDSTSuccesfully "<<j<<" Try "<<(const char*)fcopy<<endl;
+ // add more validation here
+ //
+    string file2v="";    
+    string ff=(const char*)fcopy;
+  if(ff.find("/eos/ams")!=-1){
+     file2v+="root://eosams.cern.ch/";
+  }
+  file2v+=rfio;	//[ae] instead of file2v+=destdir;
+  file2v+='/';
+  for (int k=bend;k<a.length();k++)file2v+=a[k];
+if(type!=DPS::Producer::RawFile){
+const char *exedir=getenv("ExeDir");
+const char *nve=getenv("NtupleValidatorExec");
+if (strstr(AMSCommonsI::getosname(), "CNK")) {
+    cout << "AMSProducer::sendNtupleEnd-I-ValidationSkippedBecauseOfOS:" << AMSCommonsI::getosname() << endl;
+}
+else if(exedir && nve && AMSCommonsI::getosname()){
+// AString systemc(exedir);
+ 		AString systemc;
+ 		if(getenv("OsCmdTimeout")) systemc=getenv("OsCmdTimeout");
+   		  else systemc="timeout";
+   		systemc+= " --signal 9 1030 ";
+  systemc+= exedir;
+  systemc+="/";
+  systemc+=AMSCommonsI::getosname();
+  systemc+="/";
+  systemc+=nve;
+  systemc+=" ";
+  systemc+=file2v.c_str();
+  systemc+=" ";
+  char tmp[80];
+  sprintf(tmp,"%d",ntend->EventNumber);
+  systemc+=tmp;
+  if(IOPA.WriteRoot)systemc+=" 1 ";
+  else systemc+=" 0 ";
+  sprintf(tmp,"%d",ntend->LastEvent);
+   systemc+=tmp; 
+  cout<<"AMSProducer::sendNtupleEnd-I-ValidatingBy "<<systemc<<endl;
+  int i=system_bg::system(systemc);
+  cout<<"AMSProducer::sendNtupleEnd-I-ValidatedBy "<<systemc<<" "<<i<<endl;
+  if( (i == 0xff00) || (i & 0xff)){
+// Unable To Check
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBy "<<systemc<<endl;
+  }
+  else{
+    i=(i>>8);
+    if(i/128 && ( !AMSEvent::_checkUpdate())){
+     cerr<<"  AMSProducer::sendNtupleEnd-E-Ntuple failure "<<i<<" "<< AMSEvent::_checkUpdate()<<endl;
+     ntend->Status=DPS::Producer::Failure;
+    }
+    else{
+     ntend->Status=DPS::Producer::Validated;
+     ntend->ErrorNumber=int(i*ntend->EventNumber/100);
+    }
+  }
+ }
+ else if(!nve){
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseNtupleValidatorExecIsNull"<<endl;
+ }
+ else if(!exedir){
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseExeDirIsNull"<<endl;
+ }
+ else {
+   cerr<<"AMSProducer::sendNtupleEnd-E-UnableToValideNtupleBecauseOsNameIsNull"<<endl;
+ }
+if(ntend->Status==DPS::Producer::Failure){
+if(!retryonce){
+retryonce=true;
+cerr<<"AMSProducer::sendNtupleEnd-E-2ndValidationFailedTrytoRecopy"<<endl;
+goto againcp;
+}
+}
+}
+
+
+
+        
+  if(!_Solo)sendCurrentRunInfo();
+   if((_Solo || !(_dstinfo->Mode==DPS::Producer::LIRO || _dstinfo->Mode==DPS::Producer::RIRO)) &&
+    1){
+    AString rm="rm -rf ";
+    rm+=a(bstart);
+    system_bg::system((const char*)rm);
+    cout <<"SendNtupleEnd-I-DeletingDSTBy "<<(const char*)rm<<endl;
+     struct statfs64 buffer;
+     int fail=statfs64((const char*)destdir, &buffer);
+    if(fail){
+      ntend->FreeSpace=-1;
+      ntend->TotalSpace=-1;
+    }
+    else{
+     ntend->FreeSpace= (buffer.f_bavail*(buffer.f_bsize/1024.))/1024;
+     ntend->TotalSpace= (buffer.f_blocks*(buffer.f_bsize/1024.))/1024;
+    }
+
+    _FreeSpace=ntend->FreeSpace;
+    AString b="";
+    for(int k=0;k<bstart;k++)b+=a[k];
+    b+=destdir;
+    b+="/";
+    //b+=a(bnt);
+    b+=a(bend);
+    a=b;
+    ntend->Name=(const char*)a;
+   }
+   break;
+  }
+ }
+ 
+// [ae]-cta- if(!suc && (means || strstr((const char*)fcopy,"/eos/ams"))){
+ if(!suc && (strstr((const char*)fcopy,"/eos/ams")||strstr((const char*)fcopy,tarch.c_str()))) {
+   if(!_Solo)sendid(3600);
+   cerr <<"SendNtupleEnd-E-UnabletoCopyDSTSuccesfully "<<" Tried "<<(const char*)fcopy<<endl;
+  if(getenv("TransferRawByB") && strlen(getenv("TransferRawByB"))){
+    setenv("TransferBy",getenv("TransferRawByB"),1);
+    unsetenv("TransferRawByB");
+             string newdd="";
+             if(strstr(getenv("TransferBy"),"root:")){
+             string cc=getenv("TransferBy");
+              newdd=cc.c_str()+cc.rfind("root:"); 
+
+              cc[cc.rfind("root:")]='\0'; 
+              setenv("TransferBy",cc.c_str(),1);
+              cout <<"AMSProducer::sendNtupleEnd-I-TransferBy SetTo "<<getenv("TransferBy")<<endl;
+              if(!strstr(destdir,"root:")){
+                string sdd(destdir);
+                const string s1("/eosams"), s2("/eos/ams");
+                if (tarch.length()>0) {
+                  int fid=-1;
+                  if ((fid=sdd.find(s1))>=0)
+                    sdd.replace(fid,s1.length(),tarch);
+                  else if ((fid=sdd.find(s2))>=0)
+                    sdd.replace(fid,s2.length(),tarch);
+                }
+                newdd+=sdd;
+                setenv("NtupleDestDir",newdd.c_str(),1); 
+                destdir=getenv("NtupleDestDir");
+                cout <<"AMSProducer::sendNtupleEnd-I-NtupleDestDir SetTo "<<destdir<<endl;
+              }
+             }
+    means=getenv("TransferBy");
+    goto againcpmeans;
+  }
+  
+  char *nd2=getenv("NtupleDestDirBackup");
+  char *nd20=getenv("NtupleDestDir00");
+  char *td2=getenv("TransferRawBy2");
+  means=NULL;
+  if(nd2 &&strlen(nd2)){
+   
+   char tmp[1024];
+   sprintf(tmp,"%s/%d.%d",nd2,_pid.uid,_pid.pid);
+    destdirc=tmp; 
+   unsetenv("NtupleDestDirBackup");
+   fmake="mkdir -p ";
+   fmake+=tmp;  
+   int i=system_bg::system(fmake.c_str());
+   if(!i){
+   fcopy="cp ";
+   fcopy+=(const char*)a(bstart);
+   fcopy+="  ";
+   fcopy+=tmp; 
+//   destdir=nd2;
+   destdir=(char*)destdirc.c_str(); 
+   rfio=destdir;
+   goto againcp;
+   }
+   else{
+     cerr <<"SendNtupleEnd-E-UnabletoMakeDirBy "<<fmake.c_str()<<endl;
+   }
+  }
+  else if(nd20 &&strlen(nd20)){
+    char hostdefault[]="ams.cern.ch";
+    char *host=getenv("AMSRescueHost")?getenv("AMSRescueHost"):hostdefault;
+    fmake="ssh ";
+    fmake+=host;
+    fmake+=" mkdir -p ";
+    fmake+=nd20;
+   int i=system_bg::system(fmake.c_str());
+   if(!i){
+   fcopy="scp ";
+   fcopy+=(const char*)a(bstart);
+   fcopy+=" ";
+   fcopy+=host;    
+   fcopy+=":";
+   fcopy+=nd20; 
+   suc=true;
+   destdir=nd20;
+   rfio=destdir;
+   goto againcp;
+   }
+   else{
+     cerr <<"SendNtupleEnd-E-UnabletoMakeDirBy "<<fmake.c_str()<<endl;
+   }
+  
+
+  }
+  
+ }
+}
+
+  if(!_Solo)sendCurrentRunInfo();
+
+
+
+
+
+char *means=getenv("TransferBy");
+
+if(!means){
+	string flio = (const char*)a(bstart);
+	if (flio.find("/eosams")!=-1) {
+ 		string noeos = flio.c_str()+flio.find("/",flio.find("/eosams")+1);
+		flio = "/eos/ams" + noeos;
+	} 
+	if(flio.find("/eos/ams")==-1){ 
+	    struct stat64 statbuf;
+	    stat64(flio.c_str(), &statbuf);
+	    ntend->Insert=statbuf.st_ctime;
+	    ntend->size=statbuf.st_size/1024./1024.+0.5;
+	}
+	else {
+		char tfnm[80];
+		sprintf(tfnm,"/tmp/raw3.%d",getpid());
+ 		string cmd;
+ 		if(getenv("OsCmdTimeout")) cmd=getenv("OsCmdTimeout");
+   		  else cmd="timeout";
+   		cmd += " --signal 9 30 ";
+		cmd += "/afs/cern.ch/project/eos/installation/ams/bin/eos.select fileinfo ";
+		cmd += flio.c_str();
+		cmd += " >& ";
+		cmd += tfnm;
+		if (system(cmd.c_str()) == 0) {
+			fstream tfs(tfnm,fstream::in);
+			int found_fields = 0;
+			while (!tfs.eof() && found_fields<2) {
+				string txt;
+				std::getline(tfs,txt);
+				if (txt.find("Change:") != -1 && txt.find("Timestamp:") != -1) {
+					string sts = txt.c_str()+txt.find("Timestamp:")+strlen("Timestamp:");
+					ntend->Insert = atol(sts.c_str());
+					found_fields++;
+				}
+				else if (txt.find("Size:") != -1) {
+					string sts = txt.c_str()+txt.find("Size:")+strlen("Size:");
+					ntend->size = atol(sts.c_str())/1024./1024.+0.5;
+					found_fields++;
+				}
+				
+			}
+			tfs.close();
+		}
+		unlink(tfnm);
+	}
+}
+ntend->ErrorNumber=0;
+
+  if(!_Solo)sendCurrentRunInfo();
+
+/*
+//add crc
+   if(!AMSTimeID::_Table){
+     AMSTimeID::_InitTable;
+   }
+   ifstream fbin;
+   sleep(1);
+   fbin.open((const char*)a(bstart));
+   uinteger crc=0;
+   if(fbin){
+         cout <<"SendNtupleEnd-I-AddingCRC "<<(const char*)a(bstart)<<endl;
+          unsigned int chunk[65536]; 
+         int i=0;
+          long long fsize=statbuf.st_size;
+         for(;;){
+           if(!fsize) break;
+           unsigned int myread=fsize>sizeof(chunk)?sizeof(chunk):fsize;
+           fbin.read((char*)chunk,myread);
+           fsize-=myread;
+           if(fbin.good() && !fbin.eof()){
+           int beg;
+           if(i==0){
+            crc=~chunk[0];
+            beg=1;
+           }
+           else{
+            beg=0;
+           }
+           if(i%4096==0){
+               cout <<"SendNtupleEnd-I-AddingCRC "<<fsize/1024/1024<< " MB left"<<endl;
+               if(!_Solo)sendCurrentRunInfo();
+           }
+           for(int m=beg;m<myread/sizeof(chunk[0]);m++){
+            for(int j=0;j<3;j++)crc=AMSTimeID::_Table[crc>>24]^(crc<<8);
+            crc=crc^chunk[m];  
+           }
+           i++;
+          }
+          else break;
+         }
+         fbin.close();
+         ntend->crc=~crc;
+   }
+  if(!_Solo)sendCurrentRunInfo();
+
+*/
+
+
+}
+
+
+LMessage(AMSClient::print(*ntend,"CloseDST"));
+
+cout << " nt end " <<ntend->Insert<<" "<<ntend->Begin<<" "<<ntend->End<<endl;
+ if(!_Solo)sendid(int(6*AMSFFKEY.CpuLimit));
+ _Transfer=false;
+if(_Solo){
+  return;
+}
+UpdateARS();
+#ifndef __CORBA_LIGHT__
+sendDSTInfo();
+#endif
+
+
+if(_dstinfo->Mode==DPS::Producer::LIRO || _dstinfo->Mode==DPS::Producer::RIRO){
+aga1:
+#ifndef __CORBA_LIGHT__
+for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,*ntend,DPS::Client::Delete);
+    _OnAir=false;
+     break;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+ if(getior("GetIorExec"))goto aga1;
+ else FMessage("AMSProducer::sendNtupleEnd-F-UnableToDeleteNtuple ",DPS::Client::CInAbort);
+  }
+}
+#endif
+   AString a=(const char*)ntend->Name;
+   int bstart=0;
+   for (int i=0;i<a.length();i++){
+    if(a[i]==':'){
+     bstart=i+1;
+     break;
+    }
+   }
+   int start=0;
+   for (int i=a.length()-1;i>=0;i--){
+    if(a[i]=='/'){
+     start=i+1;
+     break;
+    }
+   }
+    DPS::Producer::FPath fpath;
+    fpath.fname=(const char*)a(start);    
+    fpath.pos=0;
+    cout <<" file name "<<a<<" "<<start<<endl;    
+    struct stat64 statbuf;
+    int suc=stat64((const char*)a(bstart), &statbuf);
+    if(suc){
+      FMessage("AMSProducer::sendNtupleEnd-F-UnableToStatNtuplein mode RO ",DPS::Client::CInAbort);
+     }
+
+#ifndef __CORBA_LIGHT__
+   ifstream fbin;
+   fbin.open((const char*)a(bstart));
+   if(fbin){
+    DPS::Producer::TransferStatus st=DPS::Producer::Begin;
+    const int maxs=2000000;
+     DPS::Producer::RUN_var vrun=new DPS::Producer::RUN();
+    while(st !=DPS::Producer::End){
+     long long last=statbuf.st_size-fpath.pos;
+     if(last>maxs)last=maxs;
+     else st=DPS::Producer::End;
+     vrun->length(last);
+     fbin.read(( char*)vrun->get_buffer(),last);
+     if(!fbin.good()){
+      FMessage("AMSProducer::sendNtupleEnd-F-UnableToReadNtuplein mode RO ",DPS::Client::CInAbort);
+     }
+      for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+      try{
+       _OnAir=true;
+       (*li)->sendFile(_pid,fpath,vrun,st);
+       _OnAir=false;
+        break;
+       }
+       catch (DPS::Producer::FailedOp & a){
+        _OnAir=false;
+        FMessage((const char *)a.message,DPS::Client::SInAbort);
+       }
+       catch  (CORBA::SystemException & a){
+       _OnAir=false;
+       FMessage("AMSProducer::sendNtupleEnd-F-UnableToSendNtupleBody ",DPS::Client::CInAbort);
+       }
+     }
+     fpath.pos+=last;
+      if(st==DPS::Producer::Begin)st=DPS::Producer::Continue;
+    }
+     fbin.close();
+     unlink( ((const char*)a(bstart)));
+      a=(const char*)_pid.HostName;
+//     a+=":REMOTE:";
+       a+=":";
+     a+=(const char*)fpath.fname;
+     ntend->Name=(const char *)a;
+     if(ntend->Status !=DPS::Producer::Failure)ntend->Status=DPS::Producer::Success;
+     again:
+     for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+      try{
+       if(!CORBA::is_nil(*li)){
+        _OnAir=true;
+        (*li)->sendDSTEnd(_pid,*ntend,DPS::Client::Create);
+         _OnAir=false;
+        return;
+       }
+      }
+      catch  (CORBA::SystemException & a){
+      _OnAir=false;
+     }
+    }
+ if(getior("GetIorExec"))goto again;
+ else FMessage("AMSProducer::sendRunEnd-F-UnableToSendNtupleEndInfo ",DPS::Client::CInAbort);
+}
+   else FMessage("AMSProducer::sendNtupleEnd-F-UnableToSendNtuplein mode RO ",DPS::Client::CInAbort);
+#endif
+
+  }
+
+ 
+
+
+
+
+else{
+#ifndef __CORBA_LIGHT__
+again1:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,*ntend,DPS::Client::Update);
+    _OnAir=false;
+     if( ntend->Status==DPS::Producer::Failure)FMessage("Ntuple Failure",DPS::Client::CInAbort);
+     return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again1;
+ else FMessage("AMSProducer::sendNtupleEnd-F-UnableToSendNtupleEndInfo ",DPS::Client::CInAbort);
+#endif
+}
+}
+else{
+FMessage("AMSProducer::sendNtupleEnd-F-UNknownDSTType ",DPS::Client::CInAbort);
+}  
+}
+
+
+
+void AMSProducer::sendNtupleStart(DPS::Producer::DSTType type,const char * name, int run, int first,time_t begin){
+DPS::Producer::DST *ntend=getdst(type);
+if(ntend){
+AString a=(const char*)_pid.HostName;
+a+=":";
+a+=name;
+ntend->Name=(const char *)a;
+a=AMSCommonsI::getversion();
+char tmp[80];
+sprintf(tmp,"%d",AMSCommonsI::getbuildno());
+a+="/build";
+a+=tmp;
+sprintf(tmp,"%d",AMSCommonsI::getosno());
+a+="/os";
+a+=tmp;
+ntend->Version=(const char*)a;
+ntend->Run=run;
+ntend->crc=0;
+ntend->FirstEvent=first;
+ntend->Begin=begin;
+time_t tt;
+time(&tt);
+ntend->Insert=tt;
+ntend->End=0;
+ntend->LastEvent=0;
+ntend->EventNumber=0;
+ntend->ErrorNumber=0;
+ntend->Status=DPS::Producer::InProgress;
+ntend->Type=type;
+ntend->size=0;
+     struct statfs64 buffer;
+     int fail=statfs64((const char *)name, &buffer);
+    if(fail){
+      ntend->FreeSpace=-1;
+      ntend->TotalSpace=-1;
+    }
+    else{
+     ntend->FreeSpace= (buffer.f_bavail*(buffer.f_bsize/1024.))/1024;
+     ntend->TotalSpace= (buffer.f_blocks*(buffer.f_bsize/1024.))/1024;
+    }
+    _FreeSpace=ntend->FreeSpace;
+	cout <<" SendNtupleStart-I- start name="<<name<<" ntend->Name="<<ntend->Name<<
+    " ntend->FreeSpace="<<ntend->FreeSpace<<" ntend->TotalSpace="<<ntend->TotalSpace<<endl;
+
+
+LMessage(AMSClient::print(*ntend,"OpenDST"));
+if(_Solo)return;
+UpdateARS();
+
+
+#ifndef __CORBA_LIGHT__
+sendDSTInfo();
+#endif
+#ifndef __CORBA_LIGHT__
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,*ntend,DPS::Client::Create);
+    _OnAir=false;
+     goto checkdd;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again;
+else FMessage("AMSProducer::sendNtupleStart-F-UnableToSendNtupleStartInfo ",DPS::Client::CInAbort);
+#endif
+}
+else{
+FMessage("AMSProducer::sendNtupleEnd-F-UNknownDSTType ",DPS::Client::CInAbort);
+}
+
+
+checkdd:
+{
+   AString a=(const char*)ntend->Name;
+   int bstart=0;
+   for (int i=0;i<a.length();i++){
+    if(a[i]==':'){
+     bstart=i+1;
+     break;
+    }
+   }
+   int bend=0;
+   for (int i=a.length()-1;i>=0;i--){
+    if(a[i]=='/'){
+     bend=i+1;
+     break;
+    }
+   }
+   int bnt=bstart+(getenv("NtupleDir")?strlen(getenv("NtupleDir")):0);
+   if(a.length()>bnt && a[bnt]=='/')bnt++;
+   
+
+castortry:
+
+// check if dd writeable 
+
+char *destdir=getenv("NtupleDestDir");
+if(getenv("NtupleDir") && destdir && strcmp(destdir,getenv("NtupleDir"))){
+
+   AString a=(const char*)ntend->Name;
+   int bstart=0;
+   for (int i=0;i<a.length();i++){
+    if(a[i]==':'){
+     bstart=i+1;
+     break;
+    }
+   }
+   int bend=0;
+   for (int i=a.length()-1;i>=0;i--){
+    if(a[i]=='/'){
+     bend=i+1;
+     break;
+    }
+   }
+   int bnt=bstart+getenv("NtupleDir")?strlen(getenv("NtupleDir")):0;
+   if(a.length()>bnt && a[bnt]=='/')bnt++;
+   
+ char *means=getenv("TransferBy");
+ string fmake;
+ string sto;
+ if(getenv("OsCmdTimeout")) sto=getenv("OsCmdTimeout");
+   else sto="timeout";
+
+ string rfio=destdir;
+ if (rfio.find("/eosams")!=-1) {
+ 	string noeos = rfio.c_str()+rfio.find("/",rfio.find("/eosams")+1);
+	rfio = "/eos/ams" + noeos;
+ } 
+ 
+ if (rfio.find("/eos/ams")!=-1) {
+   if (getenv("EosTransferMakeDir")) {
+     fmake=getenv("EosTransferMakeDir");
+     fmake+=" ";
+   }
+   else {
+     fmake=sto;
+     fmake+=" --signal 9 30 ";
+     fmake+="/afs/cern.ch/project/eos/installation/ams/bin/eos.select mkdir -p ";
+   }
+   fmake+=rfio.c_str()+rfio.find("/eos/ams");
+ }
+ else  if (means && strstr(means,"xrdcp")) {
+   if(getenv("TransferSharedLib")) setenv("LD_LIBRARY_PATH",getenv("TransferSharedLib"),1);
+				
+   fmake=sto;
+   fmake+=" --signal 9 90 xrdfs eosctapublic.cern.ch mkdir -p ";
+   if(getenv("TransferMakeDir"))fmake=getenv("TransferMakeDir");
+   string rfio=destdir;
+   string tarch="/eos/ctapublic/archive/ams";
+   if (getenv("TapeArPath")) tarch=getenv("TapeArPath");
+   int fid = rfio.find(tarch);
+   if(fid!=-1) fmake+=rfio.c_str()+fid;  
+   else fmake+=rfio.c_str(); 
+ }
+ else{
+   fmake="mkdir -p ";
+   fmake+=destdir;
+ }
+   
+ cout<<"SendNtupleStart-I- MakingDestDir "<<fmake<<endl;
+ int i = system_bg::system(fmake.c_str());
+//!!!!! Debug: test mkdir
+//if (!strstr(fmake.c_str(),"castor") && !strstr(fmake.c_str(),"cta")) i=1;
+//!!!!!
+ if(i){
+       cerr<<"AMSProducer::sendNtupleStart-E-Unable create dst dest  dir: "<<fmake<<endl;
+       string tarch(getenv("TapeArPath")?getenv("TapeArPath"):"/eos/ctapublic/archive/ams");
+        if(!strstr((const char*)destdir,tarch.c_str())){
+           int bstart=0;
+		   int k = 1;
+		   if (strstr((const char*)destdir,"/eos/ams"))
+		     k++;
+           for(int i=1;i<strlen(destdir);i++){
+            if(destdir[i]=='/')
+			  if (--k <= 0){
+                bstart=i;
+                break;
+              }
+           }
+           if(bstart){
+             string cc=sto+" --signal 9 900 /usr/bin/xrdcp -OSsvcClass=amscdr -ODsvcClass=amscdr -f root://eosctapublic.cern.ch//";
+             if (getenv("TransferRawBy")) cc=getenv("TransferRawBy");
+			 setenv("TransferBy",cc.c_str(),1); 
+             string newdd="";
+             if(strstr(cc.c_str(),"root:")){
+              newdd=cc.c_str()+cc.rfind("root:"); 
+              cc[cc.rfind("root:")]='\0'; 
+              setenv("TransferBy",cc.c_str(),1);
+              cout <<"AMSProducer::sendNtupleStart-I-TransferBy SetTo: "<<getenv("TransferBy")<<endl;
+             }
+             newdd+=tarch.c_str();
+             newdd+=destdir+bstart;
+             setenv("NtupleDestDir00",getenv("NtupleDestDir"),1);
+             setenv("NtupleDestDir",newdd.c_str(),1);
+             setenv("STAGE_HOST","castorpublic",1);
+             setenv("RFIO_USE_CASTOR_V2","YES",1);
+             setenv("STAGE_SVCCLASS","amscdr",1);
+             setenv("CASTOR_INSTANCE","castorpublic",1);
+             goto castortry;
+            }
+          }
+       FMessage("Unable create dst dest  dir ", DPS::Client::CInAbort); 
+ }
+}
+}
+}
+
+void AMSProducer::sendNtupleUpdate(DPS::Producer::DSTType type){
+if(_Solo)return;
+DPS::Producer::DST *ntend=getdst(type);
+if(ntend){
+ntend->Status=DPS::Producer::InProgress;
+   AString a=(const char*)ntend->Name;
+   int bstart=0;
+   for (int i=0;i<a.length();i++){
+    if(a[i]==':'){
+     bstart=i+1;
+     break;
+    }
+   }
+    struct stat64 statbuf;
+    stat64((const char*)a(bstart), &statbuf);
+    
+
+ntend->Insert=statbuf.st_ctime;
+ntend->size=statbuf.st_size/1024./1024.+0.5;
+
+
+     struct statfs64 buffer;
+     int fail=statfs64((const char*)a(bstart), &buffer);
+    if(fail){
+      ntend->FreeSpace=-1;
+      ntend->TotalSpace=-1;
+    }
+    else{
+     ntend->FreeSpace= (buffer.f_bavail*(buffer.f_bsize/1024.))/1024;
+     ntend->TotalSpace= (buffer.f_blocks*(buffer.f_bsize/1024.))/1024;
+    }
+    _FreeSpace=ntend->FreeSpace;
+
+//cout <<" sendntupleupdate start "<<a(bstart)<<" "<<ntend->FreeSpace<<" "<<ntend->TotalSpace<<endl;
+
+UpdateARS();
+
+
+#ifndef __CORBA_LIGHT__
+sendDSTInfo();
+#endif
+cout <<" sendntupleupdate middle "<<endl;
+#ifndef __CORBA_LIGHT__
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,*ntend,DPS::Client::Update);
+    _OnAir=false;
+    cout <<" sendntupleupdate end "<<endl;
+    return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again;
+else FMessage("AMSProducer::sendNtupleUpdate-F-UnableToSendNtupleStartInfo ",DPS::Client::CInAbort);
+#endif
+}
+else{
+FMessage("AMSProducer::sendNtupleUpdate-F-UNknownDSTType ",DPS::Client::CInAbort);
+}  
+
+}
+
+void AMSProducer::Exiting(const char * message){
+if(_Solo)return;
+if(_ExitInProgress)return;
+cout<< " Exiting ...."<<(message?message:" ")<<endl;
+_ExitInProgress=true;
+_pid.Status=AMSClient::_error.ExitReason();
+#ifndef __CORBA_LIGHT__
+for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+try{
+if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+(*li)->Exiting(_pid,(message?message:AMSClient::_error.getMessage()),AMSClient::_error.ExitReason());
+    _OnAir=false;
+cout <<"AMSProducer::Exiting-I- exiting ok, exit status "<<AMSClient::CSE2string(AMSClient::_error.ExitReason())<<endl;
+break;
+}
+}
+catch  (CORBA::SystemException & a){}
+    _OnAir=false;
+}
+#endif
+
+// [ae]-el9- don't create one more pipe to stdout
+// to return back, just set: const char tmpe[]="";
+const char tmpe[]=">&/dev/null";
+char tmp[256];
+if(DAQCFFKEY.BTypeInDAQ[0]<=5){
+  sprintf(tmp," (sleep 60 ; bkill %u ) %s &",_pid.pid,tmpe);
+  system(tmp);
+  sprintf(tmp," (sleep 60 ; condor_rm %u ) %s &",_pid.pid,tmpe);
+  system(tmp);
+  sprintf(tmp," (sleep 60 ; kill -9 %u ) %s &",_pid.pid,tmpe);
+  system(tmp);
+}
+else{
+  sprintf(tmp," (sleep 7200 ; bkill %u ) %s &",_pid.pid,tmpe);
+  system(tmp);
+  sprintf(tmp," (sleep 7200 ; kill -9 %u ) %s &",_pid.pid,tmpe);
+  system(tmp);
+}
+cout <<" Exiting-I-Bkill "<<tmp<<endl;
+}
+
+
+void AMSProducer::UpdateARS(){
+if(AMSJob::gethead()->isSimulation()){
+ return;
+}
+#ifndef __CORBA_LIGHT__
+for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+try{
+if(!CORBA::is_nil(*li)){
+     DPS::Client::ARS * pars;
+    _OnAir=true;
+     int length=(*li)->getARS(_pid,pars,DPS::Client::Any,0,true);
+    _OnAir=false;
+     DPS::Client::ARS_var ars=pars;
+     if(length==0){
+      FMessage("getARS-S-UnableToGetARS ",DPS::Client::CInAbort);
+     }   
+     if(__MT){
+     for(int i=0;i<length;i++){
+        CORBA::Object_var obj=_orb->string_to_object((ars.operator[](i)).IOR);
+        if(!CORBA::is_nil(obj)){
+        DPS::Producer_var _pvar=DPS::Producer::_narrow(obj);
+        if(!CORBA::is_nil(_pvar)){
+         if(i==0)_plist.clear();
+         _plist.push_back(_pvar);
+        }
+        }
+       }
+     }
+     else{
+      bool LocalHostFound=false;
+     for(int i=0;i<length;i++){
+        CORBA::Object_var obj=_orb->string_to_object((ars.operator[](i)).IOR);
+        if(!CORBA::is_nil(obj)){
+        DPS::Producer_var _pvar=DPS::Producer::_narrow(obj);
+        if(!CORBA::is_nil(_pvar)){
+         if(i==0)_plist.clear();
+         double r=double(rand())/RAND_MAX;
+          try{
+           DPS::Client::CID * pcid;       
+             _OnAir=true;
+             _pvar->getId(pcid);
+             _OnAir=false;
+           DPS::Client::CID_var cid=pcid;
+            if(strstr((const char *)cid->HostName, (const char *)_pid.HostName)){
+              if(!LocalHostFound){
+#ifdef __AMSDEBUG__
+              cout <<" LocalHostFound "<<cid->HostName<<endl;
+#endif
+                r=1;
+                LocalHostFound=true;
+              }
+            }
+            else if(LocalHostFound)r=0;
+          }
+          catch  (CORBA::SystemException & a){
+            _OnAir=false;
+            r=0;
+          }
+         if(r>0.5)_plist.push_front(_pvar);
+         else _plist.push_back(_pvar);
+        }
+        }
+       }
+     }
+      break;
+}
+}
+catch  (CORBA::SystemException & a){}
+    _OnAir=false;
+}
+#endif
+}
+
+
+void AMSProducer::sendRunEnd(DAQEvent::InitResult res){
+if(_dstinfo->Mode ==DPS::Producer::LILO || _dstinfo->Mode==DPS::Producer::LIRO){
+unlink( DAQEvent::getfile());
+}
+     if(res!=DAQEvent::OK && (res!=DAQEvent::NoInputFile || _cinfo.LastEventProcessed==0) ){
+ _cinfo.Status=DPS::Producer::Failed;
+if(_reinfo->Run!=0){
+    FMessage("AMSProducer::sendRunEnd-F-RunFailed ",DPS::Client::CInAbort);
+}
+else{
+    FMessage("AMSProducer::sendRunEnd-I-RunFinished ",DPS::Client::CInAbort);
+}
+}
+else _cinfo.Status=DPS::Producer::Finished;
+
+// check event numbers
+   
+    int fail=1;
+    if(!AMSJob::gethead()->isRealData()){
+      fail=(_reinfo->LastEvent-_reinfo->FirstEvent+1)/(_cinfo.EventsProcessed+1)*10  ;      
+     if(fail<1)fail=1;
+      int f2=(_reinfo->LastEvent-_reinfo->FirstEvent+1)/100;
+     if(fail<f2)fail=f2;
+    }
+    if (MISCFFKEY.MinimalRatioReconstructed > 1.0)
+        MISCFFKEY.MinimalRatioReconstructed = 1.0;
+    if(-_cinfo.LastEventProcessed+_reinfo->LastEvent>fail && (float)_cinfo.LastEventProcessed / (_reinfo->LastEvent+1) < MISCFFKEY.MinimalRatioReconstructed){
+       _cinfo.Status=DPS::Producer::Failed;
+        cerr<<"AMSProducer::sendRunEnd-S-NotAllEvetnsProcessed "<<_cinfo.LastEventProcessed<<" "<<_reinfo->LastEvent<<" "<<endl;
+      FMessage("AMSProducer::sendRunEnd-F-RunFailed ",DPS::Client::CInAbort);
+
+    }
+    else if(_cinfo.LastEventProcessed-_reinfo->LastEvent>1){
+        cerr<<"AMSProducer::sendRunEnd-W-TooManyEventsProcessed "<<_cinfo.LastEventProcessed<<" "<<_reinfo->LastEvent<<" "<<endl;
+    }
+    struct timeb  ft;
+    ftime(&ft);
+    double st=ft.time+ft.millitm/1000.;
+_cinfo.TimeSpent=st-_ST0;
+
+TIMEX(_cinfo.CPUTimeSpent);
+_cinfo.CPUTimeSpent=_cinfo.CPUTimeSpent-_T0;
+_cinfo.CPUMipsTimeSpent=_CPUMipsTimeSpent+(_cinfo.CPUTimeSpent)*_cinfo.Mips/1000;
+
+        LMessage(AMSClient::print(_cinfo," RunFinished"));
+        if(_Solo)return;
+#ifndef __CORBA_LIGHT__
+ UpdateARS();
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendCurrentInfo(_pid,_cinfo,0);
+    _OnAir=false;
+
+     return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again;
+else FMessage("AMSProducer::sendRunEnd-F-UnableToSendRunEndInfo ",DPS::Client::CInAbort);
+#endif
+
+}
+void AMSProducer::sendRunEndMC(){
+if (!_Head)return;
+double error=5./sqrt(double(GCFLAG.IDEVT+1));
+if (error<0.01)error=0.01;
+if(error>0.5)error=0.5;
+if(DAQCFFKEY.mode/10>0)error=1;
+if(GCFLAG.NEVENT*(1-error) > GCFLAG.IEVENT+1 || GCFLAG.NEVENT==0 || GCFLAG.IEVENT<2){
+_cinfo.Status= DPS::Producer::Failed;
+}
+else _cinfo.Status= DPS::Producer::Finished;
+    struct timeb  ft;
+    ftime(&ft);
+    double st=ft.time+ft.millitm/1000.;
+_cinfo.TimeSpent=st-_ST0;
+
+TIMEX(_cinfo.CPUTimeSpent);
+_cinfo.CPUTimeSpent=_cinfo.CPUTimeSpent-_T0;
+#ifdef JUQUEEN
+for(int k=0;k<_pid.threads;k++){
+    if(k!=AMSEvent::get_thread_num())_cinfo.CPUTimeSpent+=timex[k];
+}
+cout <<"  JUQUEEN-TIMEL-I- "<<_cinfo.CPUTimeSpent<<" "<<endl;
+_cinfo.CPUMipsTimeSpent=_CPUMipsTimeSpent+(_cinfo.CPUTimeSpent)*_cinfo.Mips/1000;
+#endif
+        if(_cinfo.Status!= DPS::Producer::Finished){
+         LMessage(AMSClient::print(_cinfo," RunIncomplete"));
+         FMessage("RunIncomplete ", DPS::Client::CInAbort); 
+        }
+        else LMessage(AMSClient::print(_cinfo," RunFinished"));
+        if(_Solo)return;
+UpdateARS();
+#ifndef __CORBA_LIGHT__
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendCurrentInfo(_pid,_cinfo,0);
+    _OnAir=false;
+
+     return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again;
+else FMessage("AMSProducer::sendRunEndMC-F-UnableToSendRunEndInfo ",DPS::Client::CInAbort);
+#endif
+
+}
+
+void AMSProducer::AddEvent(){
+if(_cinfo.Run == AMSEvent::gethead()->getrun()){
+ _cinfo.EventsProcessed++;
+ _cinfo.LastEventProcessed=AMSEvent::gethead()->getmid();
+  if(!AMSEvent::gethead()->HasNoErrors())_cinfo.ErrorsFound++;
+  if(!AMSEvent::gethead()->HasNoCriticalErrors())_cinfo.CriticalErrorsFound++;
+}
+    struct timeb  ft;
+    ftime(&ft);
+    double st=ft.time+ft.millitm/1000.;
+double cll=AMSFFKEY.CpuLimit;
+if(cll<20)cll=20;
+if(AMSEvent::gethead()->HasFatalErrors()){
+ FMessage("AMSProducer::AddEvent-F-EventHasFatalError ",DPS::Client::CInAbort);
+}
+else if(!(AMSEvent::gethead()->HasNoCriticalErrors())){
+  TIMEX(_cinfo.CPUTimeSpent);
+  _cinfo.CPUTimeSpent=_cinfo.CPUTimeSpent-_T0;
+_cinfo.CPUMipsTimeSpent=_CPUMipsTimeSpent+(_cinfo.CPUTimeSpent)*_cinfo.Mips/1000;
+
+    _cinfo.TimeSpent=st-_ST0;
+
+  sendCurrentRunInfo();
+}
+else if(_cinfo.EventsProcessed%_dstinfo->UpdateFreq==1 || st-_ST0-_cinfo.TimeSpent>cll){
+  TIMEX(_cinfo.CPUTimeSpent);
+  _cinfo.CPUTimeSpent=_cinfo.CPUTimeSpent-_T0;
+_cinfo.CPUMipsTimeSpent=_CPUMipsTimeSpent+(_cinfo.CPUTimeSpent)*_cinfo.Mips/1000;
+
+    _cinfo.TimeSpent=st-_ST0;
+  cout <<"  sending info "<<endl;
+  sendCurrentRunInfo(true);
+}
+//cout <<" _cinfo.EventsProcessed "<<_cinfo.EventsProcessed<<" "<<_dstinfo->UpdateFreq<<" "<<st<<" "<<_ST0<<" "<<_cinfo.TimeSpent<<" "<<cll<<endl;
+}
+
+AMSProducer::~AMSProducer(){
+const char * a=0;
+cout <<" ams producer destructor called "<<endl;
+
+Exiting(_up?_up->getMessage():a);
+cout <<"  mallopt set "<<endl;
+mallopt(M_CHECK_ACTION,0);
+}
+
+
+void AMSProducer::InitTDV( uinteger run){
+AMSTimeID * head=AMSJob::gethead()->gettimestructure();
+for (AMSTimeID * pser=dynamic_cast<AMSTimeID*>(head->down());pser;pser=dynamic_cast<AMSTimeID*>(pser->next())){
+DPS::Producer::TDVName a;
+if (!pser->Verify())continue;
+a.Name=pser->getname();
+a.DataMC=pser->getid();
+if(pser->Variable())a.Size=-pser->GetNbytesM()+2*sizeof(uinteger);
+else a.Size=pser->GetNbytes();
+a.CRC=pser->getCRC();
+a.File="";
+time_t i,b,e;
+pser->gettime(i,b,e);
+a.Entry.id=0;
+a.Entry.Insert=i;
+a.Entry.Begin=b;
+a.Entry.End=e;
+DPS::Producer::TDVTable * ptdv;
+//IMessage(AMSClient::print(a," INITDV "));
+ int suc=0;
+ int length;
+#ifndef __CORBA_LIGHT__
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  
+  try{
+    _OnAir=true;
+    length=(*li)->getTDVTable(_pid,a,run,ptdv);
+    _OnAir=false;
+    suc++;
+    break;
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+ }
+if(!suc){
+ if(getior("GetIorExec"))goto again;
+ else FMessage("AMSProducer::getinitTDV-F-UnableTogetTDVTable",DPS::Client::CInAbort);
+}
+DPS::Producer::TDVTable_var tvar=ptdv;
+uinteger *ibe[5];
+
+if(a.Success){
+for(int i=0;i<5;i++){
+ ibe[i]=new uinteger[length];
+}
+ for(int j=0;j<length;j++){
+    ibe[0][j]=tvar.operator[](j).id;
+    ibe[1][j]=tvar.operator[](j).Insert;
+    ibe[2][j]=tvar.operator[](j).Begin;
+    ibe[3][j]=tvar.operator[](j).End;
+  }
+  pser->fillDB(length,ibe);
+}
+else{
+FMessage("AMSProducer::getinitTDV-F-tdvgetFailed",DPS::Client::CInAbort);
+}
+#endif
+}
+}
+
+bool AMSProducer::getTDV(AMSTimeID * tdv, int id){
+#ifndef __CORBA_LIGHT__
+cout <<" trying to get tdv "<<tdv->getname()<<" "<<tdv->getid()<<endl;
+DPS::Producer::TDVbody * pbody;
+DPS::Producer::TDVName name;
+name.Name=tdv->getname();
+name.DataMC=tdv->getid();
+name.CRC=tdv->getCRC();
+name.Size=tdv->GetNbytes();
+name.Entry.id=id;
+name.File="";
+time_t i,b,e;
+tdv->gettime(i,b,e);
+name.Entry.Insert=i;
+name.Entry.Begin=b;
+name.Entry.End=e;
+cout <<" time ibe "<<i<<" "<<b<<" "<<e<<endl;
+ int length=0;
+ int suc=0;
+ bool oncemore=false;
+ bool exhausted=false;
+
+
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  
+  try{
+    _OnAir=true;
+    length=(*li)->getTDV(_pid,name,pbody);
+    _OnAir=false;
+    suc++;
+    break;
+  }
+  catch  (const CORBA::SystemException &  a){
+//     cerr<< "Problems with TDV "<<endl;
+     cerr<< "Problems with TDV "<< a._orbitcpp_get_repoid()<<endl;
+    _OnAir=false;
+  }
+ }
+if(!suc){
+ if(oncemore){
+ if(getior("GetIorExec") && !exhausted){
+    exhausted=true;
+    goto again;
+ }
+  else FMessage("AMSProducer::getTDV-F-UnableTogetTDV",DPS::Client::CInAbort);
+  return false;
+ }
+ else{
+  oncemore=true;
+  sleep(5);
+   UpdateARS();
+  goto again;
+ }
+}
+DPS::Producer::TDVbody_var vbody=pbody;
+if(name.Success){
+if(tdv->Variable()){
+tdv->SetNbytes(length*sizeof(integer));
+}
+
+ int nb=tdv->CopyIn(vbody->get_buffer());
+ if(nb){
+  tdv->SetTime(name.Entry.Insert,name.Entry.Begin,name.Entry.End);
+  return true;
+ }
+}
+#endif
+return false;
+}
+
+bool AMSProducer::getSplitTDV(AMSTimeID * tdv, int id){
+cout <<" trying to get split tdv "<<tdv->getname()<<" "<<tdv->getid()<<" "<<id<<endl;
+DPS::Producer::TDVbody * pbody;
+DPS::Producer::TDVName name;
+name.Name=tdv->getname();
+name.DataMC=tdv->getid();
+name.CRC=tdv->getCRC();
+if(tdv->Variable()){
+ cout<<" AMSProducer::getSplitTDV-IVarTDV found "<<tdv->getname()<<" "<<tdv->GetNbytes()<<" "<<tdv->getfile()<<endl;
+}
+ name.Size=tdv->GetNbytes();
+name.Entry.id=id;
+name.File="";
+time_t i,b,e;
+tdv->gettime(i,b,e);
+name.Entry.Insert=i;
+name.Entry.Begin=b;
+name.Entry.End=e;
+ int length=0;
+ uinteger pos=0;
+//!!!!!#ifndef __CORBA_LIGHT__
+ DPS::Producer::TransferStatus st=DPS::Producer::Begin;
+ DPS::Producer::TDVbody_var vb2=new DPS::Producer::TDVbody();
+ uinteger totallength=0;
+#ifndef __CORBA_LIGHT__
+ while (st!=DPS::Producer::End){
+ int suc=0;
+ bool exausted=false;
+ again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  
+  try{
+    _OnAir=true;
+    length=(*li)->getSplitTDV(_pid,pos,name,pbody,st);
+    _OnAir=false;
+    suc++;
+    break;
+  }
+  catch  (CORBA::SystemException & a){
+  cerr<< "Problems with TDV "<< a._orbitcpp_get_repoid()<<endl;
+
+    _OnAir=false;
+  }
+}
+if(!suc){
+ if(getior("GetIorExec")&& !exausted){
+   exausted=true;
+   goto again;
+}
+ else FMessage("AMSProducer::getSplitTDV-F-UnableTogetTDV",DPS::Client::CInAbort);
+ return false;
+}
+if(!totallength){
+  vb2=pbody;
+}
+else{
+ DPS::Producer::TDVbody_var vbody=pbody;
+ vb2->length(totallength+length);
+ for(int i=0;i<length;i++){
+  vb2[i+totallength]=vbody.operator[](i);
+ }
+}
+totallength+=length;
+}
+if(name.Success){
+cout <<"AMSProducer::getSplitTDV-I-get time ibe "<<i<<" "<<b<<" "<<e<<" "<<totallength*sizeof(integer)<<" "<<tdv->GetNbytes()<<endl;
+if(tdv->Variable()){
+tdv->SetNbytes(totallength*sizeof(integer));
+}
+int nb=tdv->CopyIn(vb2->get_buffer());
+tdv->setfile((const char*)name.File);
+cout <<"TDVFileNameRead "<<tdv->getfile()<<endl; 
+ if(nb){
+  tdv->SetTime(name.Entry.Insert,name.Entry.Begin,name.Entry.End);
+  cout <<"  gettdv success "<<" "<<name.Entry.Begin<<" "<<name.Entry.End<<endl;
+  return true;
+ }
+}
+  cout <<"  gettdv failure "<<endl;
+FMessage("AMSProducer::sendTDV-F-UnableTogetTDV",DPS::Client::CInAbort);
+#endif
+return false;
+}
+
+bool AMSProducer::sendTDV(AMSTimeID * tdv){
+cout <<" Send tdv get for "<<tdv->getname()<<endl;
+        if(_Solo){
+cerr <<" SendTDV-F-SoloModeDetectedWhileSendTDV "<<tdv->getname()<<endl;
+abort();
+}
+
+DPS::Producer::TDVName name;
+name.Name=tdv->getname();
+name.DataMC=tdv->getid();
+name.CRC=tdv->getCRC();
+if(tdv->Variable())name.Size=-tdv->GetNbytesM()+2*sizeof(uinteger);
+else name.Size=tdv->GetNbytes();
+time_t i,b,e;
+tdv->gettime(i,b,e);
+name.Entry.Insert=i;
+name.Entry.Begin=b;
+name.Entry.End=e;
+name.File="";
+ int suc=0;
+#ifndef __CORBA_LIGHT__
+DPS::Producer::TDVbody_var vbody=new DPS::Producer::TDVbody();
+vbody->length(tdv->GetNbytes()/sizeof(integer));
+tdv->CopyOut(vbody->get_buffer());
+ bool transienterror=false;
+ bool again=false;
+AGAIN:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  
+  try{
+    _OnAir=true;
+    cout<<"AMSProducer::sendTDV-I- size="<<vbody->length()*sizeof(integer)<<endl;
+    (*li)->sendTDV(_pid,vbody,name);
+    _OnAir=false;
+	if (!name.Success) {
+		if (AMSFFKEY.Update > 1) {
+			FMessage("AMSProducer::sendTDV-F-UnableToWriteTDV",DPS::Client::CInAbort);
+			return false;
+		}
+		else {
+			cout<<"AMSProducer::sendTDV-F-UnableToWriteTDV"<<endl;
+			suc++;
+		}
+	}
+    else suc++;
+    break;
+  }
+  catch (CORBA::TRANSIENT &tr){
+    _OnAir=false;
+    if(!again){
+      transienterror=true;
+      again=true;
+      EMessage("AMSProducer::sendTDV-E-TransientErrorOccurs");
+    }
+    sleep(1);    
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+ }
+// [ae 22.Oct.2015] commented for debugging for a while
+if(!name.Success)FMessage("AMSProducer::sendTDV-F-ServerUnableToWriteTDV",DPS::Client::CInAbort);
+
+if(!suc && !transienterror){
+ FMessage("AMSProducer::sendTDV-F-UnableToSendTDV",DPS::Client::CInAbort);
+ return false;
+}
+else if(!suc){
+transienterror=false;
+goto AGAIN;
+}
+return true;
+#else
+return false;
+#endif
+}
+
+void AMSProducer::sendEventTagEnd(const char * name,uinteger run,time_t insert, time_t begin,time_t end,uinteger first,uinteger last,integer nelem, bool fail){
+//_evtag.Status=fail?DPS::Producer::Failure:DPS::Producer::Success;
+if(_Solo)return;
+if(fail){
+ _evtag.Status=DPS::Producer::Failure;
+}
+else  _evtag.Status=DPS::Producer::Success;
+AString a=(const char*)_pid.HostName;
+a+=":";
+a+=name;
+a+=".";
+char tmp[80];
+sprintf(tmp,"%d",run);
+a+=tmp;
+a+=".";
+sprintf(tmp,"%d",first);
+a+=tmp;
+_evtag.Name=(const char *)a;
+_evtag.EventNumber=nelem;
+_evtag.FirstEvent=first;
+_evtag.LastEvent=last;
+_evtag.Insert=insert;
+_evtag.Begin=begin;
+_evtag.End=end;
+_evtag.Run=run;
+_evtag.Version="";
+_evtag.Type=DPS::Producer::EventTag;
+    struct stat64 statbuf;
+    stat64((const char*)name,&statbuf);
+_evtag.size=statbuf.st_size;
+LMessage(AMSClient::print(_evtag,"CloseDST"));
+if(_Solo)return;
+
+UpdateARS();
+bool notagain =true;
+#ifndef __CORBA_LIGHT__
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,_evtag,DPS::Client::Update);
+    _OnAir=false;
+    if( _evtag.Status==DPS::Producer::Failure)FMessage("EventTag Failure",DPS::Client::CInAbort);
+    return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+     cerr<< "Problems with SendEventTsagEndInfo "<< a._orbitcpp_get_repoid()<<endl;
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec") && notagain){
+   notagain=false;
+   goto again;
+ }
+else FMessage("AMSProducer::sendRunEnd-F-UnableToSendEventTagEndInfo ",DPS::Client::CInAbort);
+#endif
+
+
+}
+
+
+void AMSProducer::sendEventTagBegin(const char * name,uinteger run,uinteger first){
+if(_Solo)return;
+AString a=(const char*)_pid.HostName;
+a+=":";
+a+=name;
+a+=".";
+char tmp[80];
+sprintf(tmp,"%d",run);
+a+=tmp;
+a+=".";
+sprintf(tmp,"%d",first);
+a+=tmp;
+_evtag.Name=(const char *)a;
+_evtag.Status=DPS::Producer::InProgress;
+_evtag.EventNumber=1;
+_evtag.FirstEvent=first;
+_evtag.LastEvent=first;
+_evtag.Insert=0;
+_evtag.Begin=0;
+_evtag.End=0;
+_evtag.Run=run;
+_evtag.Version="";
+_evtag.size=0;
+_evtag.Type=DPS::Producer::EventTag;
+
+
+LMessage(AMSClient::print(_evtag,"OpenDST"));
+if(_Solo)return;
+#ifndef __CORBA_LIGHT__
+UpdateARS();
+again:
+ for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+  try{
+   if(!CORBA::is_nil(*li)){
+    _OnAir=true;
+    (*li)->sendDSTEnd(_pid,_evtag,DPS::Client::Create);
+    _OnAir=false;
+    if( _evtag.Status==DPS::Producer::Failure)FMessage("EventTagBegin Failure",DPS::Client::CInAbort);
+    return;
+   }
+  }
+  catch  (CORBA::SystemException & a){
+    _OnAir=false;
+  }
+}
+ if(getior("GetIorExec"))goto again;
+else FMessage("AMSProducer::sendRunEnd-F-UnableToSendEventTagBeginInfo ",DPS::Client::CInAbort);
+#endif
+
+
+}
+
+
+
+void AMSProducer::sendDSTInfo(){
+
+     struct statfs64 buffer;
+     int fail=statfs64((const char *)_dstinfo->OutputDirPath, &buffer);
+    if(fail){
+      _dstinfo->FreeSpace=-1;
+      _dstinfo->TotalSpace=-1;
+    }
+    else{
+     _dstinfo->FreeSpace= (buffer.f_bavail*(buffer.f_bsize/1024.))/1024;
+     _dstinfo->TotalSpace= (buffer.f_blocks*(buffer.f_bsize/1024.))/1024;
+    }
+#ifndef __CORBA_LIGHT__
+    for( list<DPS::Producer_var>::iterator ni = _plist.begin();ni!=_plist.end();++ni){
+      try{
+    _OnAir=true;
+       (*ni)->sendDSTInfo(_dstinfo,DPS::Client::Update);
+    _OnAir=false;
+      }
+      catch  (CORBA::SystemException & a){
+      cerr<<" sendDSTInfo-E-UnableToSend "<<endl; 
+    _OnAir=false;
+      }
+    }
+#endif
+
+
+}
+
+bool AMSProducer::Progressing(){
+static integer total=-1;
+static float xt=0;
+static double xte=0;
+#pragma omp threadprivate (total,xt,xte)
+float lt;
+    struct timeb  ft;
+    ftime(&ft);
+    double st=ft.time+ft.millitm/1000.;
+TIMEX(lt);
+cerr <<"AMSPRoducer::Progressing "<<total<<" "<<lt-xt<<" "<<AMSFFKEY.CpuLimit*2<<" "<<_cinfo.EventsProcessed<<" "<<st-xte<<endl;
+ if(_Transfer)return true;
+ if(total>=0 && total == _cinfo.EventsProcessed && (lt-xt>AMSFFKEY.CpuLimit*2.5 || st-xte>AMSFFKEY.CpuLimit*100)){
+   total=-1;   
+   return false;
+ }
+ else if(total<0){
+  total=_cinfo.EventsProcessed;
+  TIMEX(xt);
+    struct timeb  ft;
+    ftime(&ft);
+    xte=ft.time+ft.millitm/1000.;
+  return true;
+ }
+ else if(total != _cinfo.EventsProcessed){
+  total=-1;
+  return true;
+ }
+ else{
+  return true;
+ }
+}
+
+DPS::Producer::DST* AMSProducer::getdst(DPS::Producer::DSTType type){
+switch (type){
+case DPS::Producer::Ntuple:
+return &(_ntend[0]);
+break;
+case DPS::Producer::RootFile:
+return &(_ntend[1]);
+break;
+case DPS::Producer::RawFile:
+return &(_ntend[2]);
+break;
+default:
+return 0;
+}
+}
+
+bool AMSProducer::getior(const char * getiorvar){
+_OnAir=false;
+ struct utsname u;
+   uname(&u);
+char *ht=u.machine;
+if(ht && strstr(ht,"k1om")){
+cerr<<"AMSProducer::getior-E-UnableToGetIOR for "<<ht<<endl;
+return false;
+}
+char iort[1024];
+const char *exedir=getenv("ExeDir");
+const char *nve=getenv(getiorvar);
+const char *version=AMSCommonsI::getversion(); 
+const char *nvr=AMSCommonsI::getosversion(); 
+int maxtries=1200;
+int delay=1;
+if(exedir && nve && AMSCommonsI::getosname()){
+ char t1[1024];
+ strcpy(t1,exedir);
+ strcat(t1,"/../prod");
+ setenv("TNS_ADMIN",t1,0);
+ if(getenv("AMSOracle")){
+ setenv("LD_LIBRARY_PATH",getenv("AMSOracle"),1);
+}
+else{
+ setenv("LD_LIBRARY_PATH","/afs/cern.ch/ams/oracle/10205/lib",1);
+}
+
+ for (int tries=0;tries<maxtries;tries++){
+  sleep(delay);
+  delay*=8;
+  if(delay>60)delay=60;
+  AString systemc(exedir);
+  systemc+="/";
+  systemc+=AMSCommonsI::getosname();
+  systemc+="/";
+  systemc+=nve;
+  if(strstr(nvr,".el6")){
+   systemc+=".so";
+  }
+  else if(strstr(nvr,"2.6")){
+   systemc+=".so";
+  }
+  if(strstr(version,"v4.00")){
+    systemc+=" -m ";
+  }
+  else if(getenv("AMSServerNo")){
+    systemc+=" -s";
+    systemc+=getenv("AMSServerNo");
+  }
+  systemc+=" > /tmp/getior.";
+  char tmp[80];
+  sprintf(tmp,"%d",getpid());
+  systemc+=tmp;
+  int i=system(systemc);
+  if(i){
+   cerr <<" AMSProducer::getenv-E-UnableTo "<<systemc<<endl;
+   systemc="rm /tmp/getior."; 
+   systemc+=tmp;
+//   system(systemc);
+   continue;
+  }
+  else{
+   systemc="/tmp/getior."; 
+   systemc+=tmp;
+   ifstream fbin;
+   fbin.open(systemc);
+   iort[0]='\0';
+   fbin>>iort;
+   fbin.close();
+   systemc="rm /tmp/getior."; 
+   systemc+=tmp;
+   system(systemc);
+   if(iort[0]=='-'){
+    cerr <<" AMSProducer::getenv-E-UnableToGetIOR "<<iort<<endl;
+    continue;
+   }
+   else{
+#ifndef __CORBA_LIGHT__
+   try{
+    cout <<" AMSProducer::getenv-I-GetIOR "<<iort<<endl;
+    CORBA::Object_var obj=_orb->string_to_object(iort);
+    if(!CORBA::is_nil(obj)){
+     DPS::Producer_var _pvar=DPS::Producer::_narrow(obj);
+     _pvar->pingp();
+     _plist.clear();
+     _plist.push_front(_pvar);
+     return true;
+    }
+   }
+  catch (CORBA::SystemException & a){
+    EMessage("AMSProducer::getior-E-UnableToUpdateIOR");
+    continue;
+  }
+#endif
+   }
+  }
+}
+}
+else{
+    EMessage("AMSProducer::getior-E-UnableToTryToGetIORBecauseSomeVarAreNull");
+}
+return false;
+}
+
+bool AMSProducer::SetDataCards(){
+  _dc=new AString("");
+  char tmp[80];
+  char tmpp[80];
+  char tmpu[80];
+  sprintf(tmpp,"%d",_pid.ppid);
+  sprintf(tmp,"%d",_pid.pid);
+  if(PRODFFKEY.Job>0 && _pid.uid!=PRODFFKEY.Job){
+   cerr<<" AMSProducer::SetDataCards-W-JobPidDiscrepance "<<PRODFFKEY.Job<<" "<<_pid.uid<<endl;
+  sprintf(tmpu,"%d",PRODFFKEY.Job);
+}
+else sprintf(tmpu,"%d",_pid.uid);
+  AString fout="/tmp/";
+  fout+=tmp;
+  fout+=".dc"; 
+  AString cmd="ps -elfw --cols 400 | grep ";
+  cmd+=tmpp;
+  cmd+=" 1>";
+  cmd+=(const char*)fout;
+  cmd+=" 2>&1 ";
+  AString dc="";
+  AString fscript="";
+  bool found=false;
+  int i=system((const char*)cmd);
+  if(i==0 ){
+   ifstream fbin;
+   fbin.open((const char*)fout);
+   cout <<"looking for "<<tmpu<<endl;
+    while(fbin.good() && !fbin.eof()){
+     fbin.ignore(1024,' ');
+     char tmpbuf[1024];
+     fbin>>tmpbuf;
+     if(strstr(tmpbuf,tmpu) && strstr(tmpbuf,".job")){
+      cout <<"   Found job "<<tmpbuf<<endl;
+      int beg=-1;
+      for(int k=0;k<strlen(tmpbuf);k++){
+         if(tmpbuf[k]=='('){  
+           beg=k;
+           break;
+         }
+      }
+        
+      fscript+=tmpbuf+beg+1;
+      found=true;
+      break;
+     } 
+    }
+    fbin.close();
+    if(found)unlink((const char*)fout);
+  }
+  if ( i != 0 || !found )  {
+      cout << " AMSProducer-W-UsingAMSFSCRIPT "<<endl;
+      fscript=getenv("AMSFSCRIPT");
+    }
+
+{
+//
+// Check if submitted via lsf 
+// set up hostname  and pid as lxplus/ams job_entry
+//
+              vector <int>id;
+               id.clear();
+              char atmpu[80];
+              sprintf(atmpu,"%d",_pid.pid);
+              AString afout="/tmp/";
+              afout+=tmpu;
+              afout+=".bjobs";
+              AString afscript="bjobs -J '";
+              afscript+=(const char *)fscript;
+              afscript+="*'     1>";
+              afscript+=(const char*)afout;
+              afscript+=" 2>&1";
+             cout << "AMSClient-I-Trying "<<(const char*)afscript<<endl;
+              // cern lxplus6 id
+              bool lxplus6=strstr(_pid.HostName,"cern.ch")!=0;
+              lxplus6=true;
+              bool lxplus6_1=((const char*)_pid.HostName)[0]=='b' && ((const char*)_pid.HostName)[1]=='6';
+              bool lxplus6_2=((const char*)_pid.HostName)[0]=='p';
+         if(lxplus6_2){
+                bool oncemore=false;
+                for(int k=1;k<strlen(_pid.HostName);k++){
+                  if(((const char*)_pid.HostName)[k]=='.')break;
+                  if(!isdigit( ((const char*)_pid.HostName)[k])){
+                    if(oncemore)lxplus6_2=false;
+                    else oncemore=true;
+                  }
+                }
+              }
+
+              lxplus6=lxplus6 && (lxplus6_1 || lxplus6_2); 
+              if(lxplus6){
+                cout <<" AMSProducer-I-lxplus6 Detected"<<endl;
+              }
+               //  not if pcamsf4
+              int i=!(lxplus6 || strstr(_pid.HostName,"lsb") || strstr(_pid.HostName,"lxb") || strstr(_pid.HostName,"vmb"))?1:system((const char*)afscript);
+              char line[1024];
+              bool amsprod=false;
+              if(i==0){
+                ifstream afbin;
+                afbin.open((const char*)afout);
+                while(afbin.good() && !afbin.eof()){
+                afbin.getline(line,1023);
+                if(strstr(line,"amsprod")){
+                 amsprod=true;
+                 break;
+                }
+                }
+                afbin.close();
+                afbin.clear();
+                afbin.open((const char*)afout);
+                while(afbin.good() && !afbin.eof()){
+                afbin.getline(line,1023);
+                if(strstr(line,"JOBID")){
+                  int idd;
+                  afbin>>idd;
+                   
+                  id.push_back(idd);
+                  cout << "AMSProducer-I-bsubDetected "<<idd<<endl;
+                }
+               }
+                afbin.close();
+               }
+               unlink ( (const char*)afout); 
+                for(int i=0;i<int(id.size())-1;i++){
+                      cerr<<"AMSProducer-E-bsubduplicatediddetected "<<id[id.size()-1]<<" "<<id[i]<<endl;
+             }
+// condor
+              char *s=getenv("AMSCONDOR");
+              if(id.size()==0 && s && strlen(s)){
+                  char *pch=strtok(s,",");
+                                   
+                 _pid.HostName=pch;
+                 pch=strtok(NULL,",");
+                 if(pch){
+                 _pid.pid=atol(pch);
+                 }
+                 else{
+                  cerr<<"AMSProducer::SetDataCards-F-UnableToSetClusterIdCONDOR "<<getenv("AMSCONDOR")<<endl;
+                   FMessage("AMSProducer::SetDataCards-F-UnableToSetClusterIdCONDOR",DPS::Client::SInAbort);
+                 }
+                 pch=strtok(NULL,".");
+                 if(pch){
+                 _pid.ppid=atol(pch);
+                 }
+                 else{
+                  cerr<<"AMSProducer::SetDataCards-W-UnableToSetProcIdCONDOR "<<getenv("AMSCONDOR")<<endl;
+                  _pid.ppid=0;
+                 }
+//				 cout<<"AMSProducer::SetDataCards-I-CondorDetected "<<_pid.pid<<" "<<_pid.ppid<<" "<<getpid()<<" "<<getppid()<< endl;
+                 // CID::coid field added
+                 cout<<"AMSProducer::SetDataCards-I-CondorDetected "<<_pid.pid<<" "<<_pid.coid<<" "<<_pid.ppid<<" "<<getpid()<<" "<<getppid()<< endl;
+              }
+              else if(id.size()>0){
+               char *lxplus5=getenv("AMSPublicBatch");
+               if(!lxplus5 || !strlen(lxplus5))setenv("AMSPublicBatch","lxplus5.cern.ch",1);
+              lxplus5=getenv("AMSPublicBatch");
+                  if(strstr(_pid.HostName,"lsb") || strstr(_pid.HostName,"lxb")|| strstr(_pid.HostName,"vmb") || lxplus6){
+
+                    _pid.HostName=amsprod?"lxplus.cern.ch":lxplus5;
+                    if(lxplus6)_pid.HostName="lxplus6.cern.ch";
+                    _pid.pid=id[id.size()-1];
+                    _pid.ppid=0;
+                  }
+                  else if(strstr(_pid.HostName,"pcamss0")){
+                    _pid.HostName="pcamss0.cern.ch";
+                    _pid.pid=id[id.size()-1];
+                    _pid.ppid=0;
+}
+                  else if(strstr(_pid.HostName,"ams")){
+                    _pid.HostName="pcamsf2.cern.ch";
+                    _pid.pid=id[id.size()-1];
+                    _pid.ppid=0;
+                  }
+                 } 
+           }
+
+
+
+
+
+    ifstream f1;
+    f1.open((const char *)fscript);
+    if(f1){
+    char tmpbuf[1024];
+     (*_dc)+="ScriptName=";
+     (*_dc)+=(const char *)fscript;
+     (*_dc)+='\n';
+    while(f1.good() && !f1.eof()){ 
+     f1.getline(tmpbuf,1023);
+     (*_dc)+=tmpbuf;
+     (*_dc)+='\n';
+     //cout <<"  *************************8  ******************8"<<endl;
+     //cout<<(const char *)(*_dc)<<endl;
+    }
+    }
+    else{
+     cerr<<" AMSProducer::SetDatacards-S-UnableToOpenFile "<<(const char *)fscript<<"|"<<endl;
+     return false; 
+    }
+  return true;
+} 
+void AMSProducer::SendTimeout(int tmout){
+if(_Solo)return;
+    sendid(tmout);
+}
+
+bool AMSProducer::SendFile(const char *Remote, const char *Local, bool erase){
+    if(_Solo)return false;
+#ifndef __CORBA_LIGHT__
+    sendCurrentRunInfo(true);
+    DPS::Producer::FPath fpath;
+    fpath.fname=Remote;
+    fpath.pos=0;
+   ifstream fbin;
+    struct stat64 statbuf;
+    int suc=stat64(Local, &statbuf);
+   if(suc){
+      EMessage("AMSProducer::SendFile-S-UnableToStatFile");
+      return false;
+    }
+   fbin.open(Local);
+   if(fbin){
+    DPS::Producer::TransferStatus st=DPS::Producer::Begin;
+    const int maxs=2000000;
+     DPS::Producer::RUN_var vrun=new DPS::Producer::RUN();
+    while(st !=DPS::Producer::End){
+     long long last=statbuf.st_size-fpath.pos;
+     if(last>maxs)last=maxs;
+     else st=DPS::Producer::End;
+     vrun->length(last);
+     fbin.read(( char*)vrun->get_buffer(),last);
+     if(!fbin.good()){
+      EMessage("AMSProducer::sendFile-F-UnableToReadNtuplein mode RO ");
+      return false;
+     }
+      for( list<DPS::Producer_var>::iterator li = _plist.begin();li!=_plist.end();++li){
+      try{
+       _OnAir=true;
+       (*li)->sendFile(_pid,fpath,vrun,st);
+       _OnAir=false;
+        break;
+       }
+       catch (DPS::Producer::FailedOp & a){
+        _OnAir=false;
+        FMessage((const char *)a.message,DPS::Client::SInAbort);
+       }
+       catch  (CORBA::SystemException & a){
+       _OnAir=false;
+       FMessage("AMSProducer::sendFile-UnableToSendNtupleBody ",DPS::Client::CInAbort);
+       }
+     }
+     fpath.pos+=last;
+      if(st==DPS::Producer::Begin)st=DPS::Producer::Continue;
+    }
+     fbin.close();
+     if(erase)unlink(Local);
+     return true;
+}
+else {
+cerr<<"AMSProducer::SendFile-E-UnableToOpen "<<Local<<endl;
+return false;
+}
+#endif
+}

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+export SRC=$1
+
+export CLEAN=""
+if [ "$2" == "clean" ] ; then
+ export CLEAN=$2
+fi
+
+export EXEAPP=$3
+
+#export VICC=2019
+#-----(please change to yours)
+source /afs/cern.ch/user/q/qyan/public/DSTvdev/amsvar_all.sh
+
+
+make -f /afs/cern.ch/user/q/qyan/public/DSTvdev/QTool2/subjobcondor/Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN

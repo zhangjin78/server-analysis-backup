@@ -1,0 +1,61 @@
+#!/bin/tcsh
+#Author Qi Yan
+
+setenv CLEAN ""
+if ( "$1" == "clean" )  then
+  setenv CLEAN $1
+endif
+
+
+#----SRC
+#setenv SRC analysis_amsd66n
+#setenv SRC analysis_amsd67n
+setenv SRC analysis_amsd68n
+#----APP
+#set EXEAPP=V10
+set EXEAPP=V11
+#----
+setenv USEPRHEION 1
+unsetenv USEEVENTORDER
+unsetenv USEPRL1
+unsetenv USEHEL1
+unsetenv USEHEINNER
+unsetenv USENEWL1L9G
+unsetenv USEMCTKRAW
+unsetenv USEONEEV
+unsetenv USEADDTKHIT
+unsetenv USESAVENEG
+unsetenv USENOLINEARCOR
+unsetenv USECALIB
+#-------
+#setenv USEIONINNER 1
+#setenv USENOLINEARCOR 1
+#setenv USECALIB 1
+#setenv USEMCTKRAW 1
+#setenv USEONEEV 1
+#setenv USEADDTKHIT 1
+#setenv USEHEL1 1
+setenv USEHEINNER 1
+setenv USESAVENEG 1
+setenv USEPRL1 1
+#echo
+#echo "build Pass4..."
+#echo
+#unsetenv USEPASS7
+#make -f Makefile534_1SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN
+
+echo
+echo "build Pass8ORD..."
+echo
+setenv  USEEVENTORDER 1
+setenv  USEPASS7 1
+make -f Makefile534_1SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN
+
+exit
+
+echo
+echo "build Pass8..."
+echo
+unsetenv USEEVENTORDER
+setenv   USEPASS7 1
+make -f Makefile534_1SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN

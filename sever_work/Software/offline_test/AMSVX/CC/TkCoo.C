@@ -1,0 +1,667 @@
+/// $Id: TkCoo.C,v 1.26 2018/04/06 13:14:05 qyan Exp $ 
+
+//////////////////////////////////////////////////////////////////////////
+///
+///\file  TkCoo.C
+///\brief Source file of TkCoo class
+///
+///\date  2008/02/21 PZ  First version
+///\date  2008/03/19 PZ  Add some features to TkSens
+///\date  2008/04/10 AO  GetLocalCoo(float) of interstrip position 
+///\date  2008/04/22 AO  Swiching back some methods  
+///$Date: 2018/04/06 13:14:05 $
+///
+/// $Revision: 1.26 $
+///
+//////////////////////////////////////////////////////////////////////////
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "TkDBc.h"
+#include "TkCoo.h"
+#include "tkdcards.h"
+#include "TrInnerDzDB.h"
+#include "TrExtAlignDB.h"
+
+
+
+void print_trace();
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalN(int tkid,float X, float Y){
+  // if(X<0||X > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",X);
+  //   return AMSPoint();
+  // }
+  if(Y<0 || Y>TkDBc::Head->_ssize_active[1]){
+    printf("TkCoo::GetGlobalN Error Y is outside the ladder size %f\n",Y);
+    return AMSPoint();
+  }
+  AMSPoint loc(X,Y,0.);
+  return TkCoo::GetGlobalN(tkid, loc);
+}
+
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalN(int tkid, AMSPoint& loc){
+  // if(loc[0]<0||loc[0] > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",loc[0]);
+  //   return AMSPoint();
+  // }
+  if(loc[1]<0 || loc[1] > TkDBc::Head->_ssize_active[1]){
+    printf("TkCoo::GetGlobalN Error Y is outside the ladder size %f\n",loc[1]);
+    return AMSPoint();
+  }
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetGlobalN: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint(0,0,0);
+  }
+  AMSPoint loc2(loc);
+  // Set ladder local coo Z to zero
+  loc2[2]=0;
+  
+  // Get the Global coo on the plane
+  AMSPoint  oo = ll->GetRotMat()*loc2+ll->GetPos();
+  
+  // Get The Plane Pointer
+  TkPlane*  pp = ll->GetPlane();
+
+  // Convolute with the Plane pos in the space and Get the global Coo
+  AMSPoint oo2 = pp->GetRotMat()*oo + pp->GetPos();
+
+  return oo2;
+}
+
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalA(int tkid,float X, float Y){
+  // if(X<0||X > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",X);
+  //   return AMSPoint();
+  // }
+ // if(Y<0 || Y>TkDBc::Head->_ssize_active[1]){
+//    printf("TkCoo::GetGlobalA Error Y is outside the ladder size %f\n",Y);
+//    return AMSPoint();
+//  }
+  AMSPoint loc(X,Y,0.);
+  return TkCoo::GetGlobalA(tkid, loc);
+}
+
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalA(int tkid, AMSPoint& loc){
+  // if(loc[0]<0||loc[0] > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",loc[0]);
+  //   return AMSPoint();
+  // }
+  if(loc[1]<0 || loc[1]>TkDBc::Head->_ssize_active[1]){
+ // PZ FIXME!!!   printf("TkCoo::GetGlobalA Error Y is outside the ladder size %f\n",loc[1]);
+    return AMSPoint();
+  }
+  TkLadder* ll=TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+   //PZ FIXME!!!!  printf("GetGlobalA: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint(0,0,0);
+  }
+  AMSPoint loc2(loc);
+  // Set ladder local coo Z to zero
+  loc2[2]=0;
+
+  AMSRotMat RotG0  = ll->GetRotMatA();
+
+  // Strip pitch correction
+  if (TkLadder::version >= 3) {
+    double aa, ab, ac;
+    RotG0.GetRotAngles(aa, ab, ac); loc2[1] *= ac+1;
+    RotG0.SetRotAngles(aa, ab, 0);
+  }
+
+  // Alignment corrected Ladder Rotation matrix
+  AMSRotMat RotG  = RotG0*ll->GetRotMat();
+
+  // Alignment corrected Ladder postion
+  AMSPoint  PosG  = ll->GetPosA()+ll->GetPos();
+
+  // Get the Global coo on the plane
+  AMSPoint  oo    = RotG*loc2+PosG;
+
+  // Get The Plane Pointer
+  TkPlane*  pp    = ll->GetPlane();
+  int layJ=ll->GetLayerJ();
+  // Alignment corrected Plane Rotation matrix
+  AMSRotMat PRotG0;
+  if(layJ!=1&& layJ!=9) 
+     PRotG0 = pp->GetRotMatA();
+  else 
+     PRotG0.SetRotAngles(TrExtAlignDB::GetDynCorr(layJ,3),
+                         TrExtAlignDB::GetDynCorr(layJ,4),
+                         TrExtAlignDB::GetDynCorr(layJ,5));
+
+  AMSRotMat PRotG = PRotG0*pp->GetRotMat();
+
+  int Layer=ll->GetLayer();
+  float dzcorr=0.;
+  if (Layer<=7) dzcorr=TrInnerDzDB::LDZA[Layer-1]; 
+  AMSPoint LayerZCorrection(0,0,dzcorr);
+
+  // Time dependent Layer 2(J) correction (2014.06.27, SH)
+  if (Layer==1 && TkLadder::version >= 4) {
+    uint utime = TrInnerDzDB::UTIME;
+    if (utime > 1305000000) {
+      float *par = TKGEOMFFKEY.L2AlignPar;
+      double y2s = 3600*24*365;
+      LayerZCorrection[1] += (par[1]+(utime-par[0])/y2s*par[2])*1e-4;
+    }
+  }
+
+  // Alignment corrected Plane postion
+  AMSPoint planeA = pp->GetPosA();
+
+  if(layJ==1|| layJ==9) 
+   planeA=AMSPoint(TrExtAlignDB::GetDynCorr(layJ,0),
+	            TrExtAlignDB::GetDynCorr(layJ,1),
+	            TrExtAlignDB::GetDynCorr(layJ,2));
+  
+  AMSPoint  PPosG = planeA+pp->GetPos()+LayerZCorrection;
+
+  // Covolute with the Plane pos in the space and Get the global Coo
+  AMSPoint  oo2   = PRotG*oo + PPosG;
+
+  // Sensor alignment correction
+  double Ax= (TkDBc::Head->_ssize_inactive[0]-TkDBc::Head->_ssize_active[0])/2;
+  int sens = (int)(fabs(loc[0]+Ax)/TkDBc::Head->_SensorPitchK);
+  if (TRCLFFKEY.UseSensorAlign==1 && 
+      0 <= sens && sens < trconst::maxsen) {
+    oo2[0] -= ll->_sensx[sens];
+    oo2[1] -= ll->_sensy[sens];
+    oo2[2] -= ll->_sensz[sens];
+  }
+
+  return oo2;
+}
+
+
+//--------------------------------------------------
+int TkCoo::GetMaxMult(int tkid, float readchann){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetMaxMult: ERROR cant find ladder %d into the database\n",tkid);
+    return -1;
+  }
+  int max = 1;
+  if(readchann<=639.) return 0;
+  if( (ll->IsK7()) ) 
+    max=(int) ceil((ll->GetNSensors()*TkDBc::Head->_NReadStripK7-readchann+640)/384.);
+  else
+    max=(int) ceil((ll->GetNSensors()*TkDBc::Head->_NReadStripK5-readchann+640)/384.);
+  
+  return (max-1);
+}
+
+
+//--------------------------------------------------
+float TkCoo::GetLocalCoo(int tkid, int readchann,int mult){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetLocalCoo: ERROR cant find ladder %d into the database\n",tkid);
+    return -1;
+  }
+  int mmult=GetMaxMult(tkid,readchann);
+  if(mult>mmult||mult<0) mult=mmult;
+  // float out=0.;
+  if(readchann<640) return GetLocalCooS(readchann);
+  else{
+    if(ll->IsK7()) return GetLocalCooK7(readchann,mult);
+    else return GetLocalCooK5(readchann,mult);
+  }
+}
+
+//--------------------------------------------------
+float TkCoo::GetLocalCoo(int tkid, float readchann,int mult){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetLocalCoo: ERROR cant find ladder %d into the database\n",tkid);
+    return -1;
+  } 
+  int mmult=GetMaxMult(tkid,readchann);
+  if(mult>mmult||mult<0) mult=mmult;
+  // float ou/=0.;
+  int channel = (int) round(readchann);
+  if(readchann<640) {
+    number cooY1,cooY2;  
+    cooY1=TkCoo::GetLocalCooS(channel);
+    if((readchann-channel)>=0)
+      cooY2=TkCoo::GetLocalCooS(channel+1);
+    else
+      cooY2=TkCoo::GetLocalCooS(channel-1);
+    return cooY1 + (readchann-channel)*fabs(cooY1-cooY2);
+  }
+  else{
+    if(ll->IsK7()) {
+      number cooX1,cooX2;  
+      cooX1=TkCoo::GetLocalCooK7(channel,mult);
+      if((readchann-channel)>=0)
+	cooX2=TkCoo::GetLocalCooK7(channel+1,mult);
+      else
+	cooX2=TkCoo::GetLocalCooK7(channel-1,mult);
+      return cooX1 + (readchann-channel)*fabs(cooX1-cooX2);
+    }
+    else {
+      number cooX1,cooX2;  
+      cooX1=TkCoo::GetLocalCooK5(channel,mult);
+      if((readchann-channel)>=0)
+	cooX2=TkCoo::GetLocalCooK5(channel+1,mult);
+      else
+	cooX2=TkCoo::GetLocalCooK5(channel-1,mult);
+      return cooX1 + (readchann-channel)*fabs(cooX1-cooX2);
+    }
+  }
+}
+
+//--------------------------------------------------
+// The gaps between 0 and 1 and 638 to 639 are doubled
+float TkCoo::GetLocalCooS(int readchann){
+  if(readchann>639||readchann<0) return -1;
+  float out= readchann*TkDBc::Head->_PitchS;
+  if(readchann!=0)    out+=TkDBc::Head->_PitchS;
+  if(readchann==639)  out+=TkDBc::Head->_PitchS;
+  return out;
+}
+
+
+//--------------------------------------------------
+// The gap between the 190 and 191 is one and half
+float TkCoo::GetLocalCooK5(int readchann,int mult){
+  if(readchann>1023||readchann<640) return -1;  
+  int chann=readchann-640;
+  int Sensor=((chann+mult*TkDBc::Head->_NReadoutChanK)/TkDBc::Head->_NReadStripK5);
+  int chann2=chann;
+  //  printf("Sensor %d  %d\n",Sensor,mult);
+  if(chann2>191) chann2-=192;
+  return TkDBc::Head->_SensorPitchK*Sensor+ chann2 * TkDBc::Head->_PitchK5
+    + ((chann2 == 191) ? TkDBc::Head->_PitchK5*0.5 : 0);
+}
+
+
+//--------------------------------------------------
+// The implantation of the strips in K7 is not uniform
+// ImplantedFromReadK7 evaluate the implanted strips in terms of _ImplantPitchK unit
+float TkCoo::GetLocalCooK7(int readchann,int mult){
+  if(readchann>1023||readchann<640) return -1;  
+  int chann=readchann-640;
+  int Sensor=((chann+mult*TkDBc::Head->_NReadoutChanK)/TkDBc::Head->_NReadStripK7);
+  int readstrip= (chann+mult*TkDBc::Head->_NReadoutChanK) - Sensor * TkDBc::Head->_NReadStripK7;
+  return TkDBc::Head->_SensorPitchK*Sensor+ ImplantedFromReadK7(readstrip) * TkDBc::Head->_ImplantPitchK;    
+}
+
+//--------------------------------------------------
+// - from   0 to  64: readout pitch is 2 1 2 1 2 1, ...
+// - from  64 to 160: readout pitch is 2
+// - from 160 to 224: readout pitch is 2 1 2 1 2 1, ... 
+int TkCoo::ImplantedFromReadK7(int channel){
+  // this is the conversion for sensor 1
+  //NOTA: channel = 0 to 383..
+  int pitch=0;
+  int start=0;
+  int strip=0;
+  int diff=0;
+  int startch=0;
+  if (channel<64) { // subgroups 1 and 2, 64 channels
+    pitch=3;
+    startch=channel%2;
+    start=2*startch;
+
+    diff=(channel-startch)/2; // the difference is always even
+    strip=start+diff*pitch;         
+  } else if (channel<160) { // subgroups 3 to 5, 96 channels
+    pitch=2;
+    start=96;
+    startch=64;
+    diff=(channel-startch);
+    strip=start+diff*pitch;
+  } else if (channel<224) {
+    pitch=3;
+    startch=channel%2;
+    start=48+2*startch;
+    //    startch+=160;
+    diff=(channel-startch)/2; // the difference is always even
+    strip=start+diff*pitch; 
+  }
+  return strip;
+}
+
+//--------------------------------------------------
+// Conversion (Readout Channel, Multiplicity) -> (Sensor, StripInSensor)
+//             0, 1024          0, MaxMult      0, MaxSens   S:0,640 K5:0,192 K7:0,224
+// Once more the readout scheme:
+// S: No multiplicity     
+// K5: NReadoutChannels = 384, NReadoutPerSensor = 192
+//     Sens #0       Sens #1         Sens #2       Sens #3
+//     | 0, ..., 191 |   0, ..., 191 | 0, ..., 191 |   0, ..., 191 | ...
+//     | 0, ..., 191 | 192, ..., 383 | 0, ..., 191 | 192, ..., 383 | ...
+//     | 0, ..., 191,  192, ..., 383 | 0, ..., 191,  192, ..., 383 | ... 
+//     | 0, ...,            ..., 383 | 0, ...,            ..., 383 | ...
+//     Mult #0                       Mult #1       
+// K7: NReadoutChannels = 384, NReadoutPerSensor = 224
+//     Sens #0       Sens#1                        Sens #2                                      Sens #3
+//     | 0, ..., 223 |   0, ...,          ..., 223 |  0, ...,                          ..., 223 | ...
+//     | 0, ..., 223 | 224, ..., 383,  0, ...,  63 | 64, ..., 287 | 288, ..., 383,  0, ..., 127 | ...
+//     | 0, ..., 223,  224, ..., 383 | 0, ...,  63,  64, ..., 287,  288, ..., 383 | 0, ..., 127,  ...
+//     | 0, ...,                 383 | 0, ...,                           ..., 383 | 0, ...,       ...
+//     Mult #0                       Mult #1                                      Mult #2
+// Sensor = int( (Channel + Multiplicity*NReadoutChannels)/NReadoutPerSensor) 
+// Strip  = Channel + Multiplicity*NReadoutChannels - Sensor*NReadoutPerSensor
+int TkCoo::GetSensorAddress(int tkid, int readchann, int mult, int& sens, int verbose) {
+  // default for failure
+  sens = -1;
+  // if S nothing to do 
+  if ((readchann>=0)&&(readchann<640)) { sens = 0; return readchann; }
+  // K address between 0 and 383
+  readchann -= 640;
+  // take ladder to decide K5 or K7 
+  TkLadder* ladder = TkDBc::GetHead()->FindTkId(tkid);
+  if (!ladder) {  
+    if (verbose>0) printf("TkCoo::GetSensorAddress-W cannot find ladder %d into the database. Return -1.\n",tkid); 
+    sens = -1; 
+    return -1; 
+  }
+  // check multiplicity
+  int max_mult = GetMaxMult(tkid,readchann+640); // needed channel 0-1023
+  if ( (mult<0)||(mult>max_mult) ) { 
+    // this could actually happen for last sensors of K7 (max multiplicity is taken from first strip, not from seed strip), disable error message
+    // if (verbose>0) printf("TkCoo::GetSensorAddress-W requested multiplicity %d out of range (0,%d), for channel %d on ladder %+04d. Return -2.\n",
+    //   mult,max_mult,readchann+640,tkid);   
+    sens = -2;
+    return -2; 
+  }
+  // calculate sensor 
+  int nread = TkDBc::GetHead()->_NReadoutChanK;
+  int nread_per_sens = (ladder->IsK7()) ? TkDBc::GetHead()->_NReadStripK7 : TkDBc::GetHead()->_NReadStripK5;
+  sens = int((readchann + mult*nread)/nread_per_sens);
+  // check sensor_number
+  int max_sens = ladder->GetNSensors();
+  if ( (sens<0)||(sens>max_sens) ) { 
+    if (verbose>0) printf("TkCoo::GetSensorAddress-W calculated sensor number %d out of range (0,%d). Return -3.\n",sens,max_sens); 
+    sens = -3; 
+    return -3; 
+  }
+  // calculate strip on sensor 
+  int strip = readchann + mult*nread - sens*nread_per_sens;
+  if ( (strip<0)||(strip>nread_per_sens) ) { 
+    if (verbose>0) printf("TkCoo::GetSensorAddress-W calculated strip number %d out of range (0,%d). Return -4.\n",strip,nread_per_sens); 
+    sens = -4; 
+    return -4; 
+  }
+  return strip;
+}
+
+//--------------------------------------------------
+double TkCoo::GetLadderLength(int tkid) {
+  // Get ladder length along the X-coordinate in cm
+  if(!TkDBc::Head) return -9999.;
+  TkLadder* pp=TkDBc::Head->FindTkId(tkid);
+  if(!pp) return -9999.;
+  
+  return (TkDBc::Head->_SensorPitchK*pp->GetNSensors()-0.004);
+}
+
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetLadderCenter(int tkid,int isMC) { 
+// Get central position of the ladder in the X-coordinate in cm
+  if(!TkDBc::Head) return AMSPoint(-9999.,-9999.,-9999.);
+  TkLadder* pp=TkDBc::Head->FindTkId(tkid);
+  if(!pp) return AMSPoint(-9999.,-9999.,-9999.);
+
+  double hlen = GetLadderLength(tkid)/2-(TkDBc::Head->_ssize_inactive[0]-TkDBc::Head->_ssize_active[0])/2;
+  double hwid = TkDBc::Head->_ssize_active[1]/2;
+  if(isMC)  
+    return TkCoo::GetGlobalT(tkid, hlen, hwid);
+  else 
+    return TkCoo::GetGlobalA(tkid, hlen, hwid);
+}
+
+
+
+AMSPoint TkCoo::GetGlobalNC(int tkid,float readchanK, float readchanS,int mult){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetGlobalNC: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint(-1,-1,-1);
+  }
+  if(ll->IsK7())
+    return GetGlobalN(tkid,GetLocalCooK7((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+  else 
+    return GetGlobalN(tkid,GetLocalCooK5((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+}
+
+AMSPoint TkCoo::GetGlobalAC(int tkid,float readchanK, float readchanS,int mult){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetGlobalAC: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint(-1,-1,-1);
+  }
+  if(ll->IsK7())
+    return GetGlobalA(tkid,GetLocalCooK7((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+  else 
+    return GetGlobalA(tkid,GetLocalCooK5((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+}
+
+
+/* Obtain a backtrace and print it to stdout. */
+  void
+print_trace (void)
+{
+
+  void *array[100];
+  size_t size;
+  char **strings;
+  size_t i;
+
+  size = backtrace (array, 10);
+  strings = backtrace_symbols (array, size);
+  printf ("Obtained %zd stack frames.\n", size);
+
+  for (i = 0; i < size; i++)
+    printf ("%s\n", strings[i]);
+
+  free (strings);
+}
+
+AMSPoint TkCoo::GetGlobalTC(int tkid,float readchanK, float readchanS,int mult){
+  TkLadder* ll = TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+    printf("GetGlobalAC: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint(-1,-1,-1);
+  }
+  if(ll->IsK7())
+    return GetGlobalT(tkid,GetLocalCooK7((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+  else 
+    return GetGlobalT(tkid,GetLocalCooK5((int)readchanK, mult),  GetLocalCooS((int)readchanS));
+}
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalT(int tkid,float X, float Y){
+  // if(X<0||X > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",X);
+  //   return AMSPoint();
+  // }
+ // if(Y<0 || Y>TkDBc::Head->_ssize_active[1]){
+//    printf("TkCoo::GetGlobalA Error Y is outside the ladder size %f\n",Y);
+//    return AMSPoint();
+//  }
+  AMSPoint loc(X,Y,0.);
+  return TkCoo::GetGlobalT(tkid, loc);
+}
+
+
+//--------------------------------------------------
+AMSPoint TkCoo::GetGlobalT(int tkid, AMSPoint& loc){
+  // if(loc[0]<0||loc[0] > TkDBc::Head->_ssize_active[0]){
+  //   printf("TkCoo::GetGlobalN Error X is outside the ladder size %f\n",loc[0]);
+  //   return AMSPoint();
+  // }
+  if(loc[1]<0 || loc[1]>TkDBc::Head->_ssize_active[1]){
+ // PZ FIXME!!!   printf("TkCoo::GetGlobalT Error Y is outside the ladder size %f\n",loc[1]);
+    return AMSPoint();
+  }
+  TkLadder* ll=TkDBc::Head->FindTkId(tkid);
+  if(!ll){
+   //PZ FIXME!!!!  printf("GetGlobalT: ERROR cant find ladder %d into the database\n",tkid);
+    return AMSPoint();
+  }
+  AMSPoint loc2(loc);
+  // Set ladder local coo Z to zero
+  loc2[2]=0;
+
+  // Alignment corrected Ladder Rotation matrix
+  AMSRotMat RotG0  = ll->GetRotMatT();
+  AMSRotMat RotG  = RotG0*ll->GetRotMat();
+
+  // Alignment corrected Ladder postion
+  AMSPoint  PosG  = ll->GetPosT()+ll->GetPos();
+
+  // Get the Global coo on the plane
+  AMSPoint  oo    = RotG*loc2+PosG;
+
+  // Get The Plane Pointer
+  TkPlane*  pp    = ll->GetPlane();
+
+  // Alignment corrected Plane Rotation matrix
+  AMSRotMat PRotG0 = pp->GetRotMatT();
+  AMSRotMat PRotG = PRotG0*pp->GetRotMat();
+
+  // Alignment corrected Plane postion
+  AMSPoint  PPosG = pp->GetPosT()+pp->GetPos();
+
+  // Covolute with the Plane pos in the space and Get the global Coo
+  AMSPoint  oo2   = PRotG*oo + PPosG;
+
+  
+  return oo2;
+}
+
+int TkCoo::GetSensorGridID(AMSPoint p)
+{
+  if (fabs(p.z()) < 15) {
+    int sl = TMath::Floor(p.y()/TkDBc::Head->_ladder_Ypitch)+5;
+    if (sl < 0) sl = 0;
+    if (sl > 9) sl = 9;
+    int tk = 413-sl; if (tk <= 408) tk--;
+    int sn = TMath::Floor((TkCoo::GetGlobalA(tk, 0, 3.53).x()-p.x())
+			    /TkDBc::Head->_SensorPitchK);
+
+    if (sn >= TkDBc::Head->FindTkId(tk)->GetNSensors()) {
+      tk = -tk;
+      sl = 19-sl;
+      sn = TMath::Floor((p.x()-TkCoo::GetGlobalA(tk, 0, 3.53).x())
+			 /TkDBc::Head->_SensorPitchK);
+    }
+    if (sn <  0) sn = 0;
+    if (sn <  9) return sn*20+sl;
+    if (sn < 10) return 180+((sl < 10) ? sl-1 : sl-3);
+    if (sn < 11) return 196+((sl < 10) ? sl-2 : sl-5);
+                 return 210+((sl < 10) ? sl-2 : sl-7);
+  }
+  else if (p.z() > 0) {
+    int sl = TMath::Floor(p.y()/TkDBc::Head->_ladder_Ypitch+0.5)+5;
+    if (sl <  0) sl = 0;
+    if (sl > 10) sl = 10;
+    int tk = 113-sl;
+    int sn = TMath::Floor((TkCoo::GetGlobalA(tk, 0, 3.53).x()-p.x())
+			    /TkDBc::Head->_SensorPitchK);
+
+    if (sn >= TkDBc::Head->FindTkId(tk)->GetNSensors()) {
+      tk = -tk;
+      sl = 21-sl;
+      sn = TMath::Floor((p.x()-TkCoo::GetGlobalA(tk, 0, 3.53).x())
+			 /TkDBc::Head->_SensorPitchK);
+    }
+    if (sn <  0) sn = 0;
+    if (sn < 13) return 1000+sn*22+sl;
+    if (sn < 14) return 1286+((sl < 10) ? sl-1 : sl-3);
+                 return 1304+((sl < 10) ? sl-2 : sl-7);
+
+  }
+  else if (p.z() < 0) {
+    int sl = TMath::Floor(p.y()/TkDBc::Head->_ladder_Ypitch)+6;
+    if (sl <  0) sl =  0;
+    if (sl > 11) sl = 11;
+
+    int tk = 714-sl; if (tk <= 708) tk--; if (tk == 702) tk = -702;
+    int sn = TMath::Floor((TkCoo::GetGlobalA(tk, 0, 3.53).x()-p.x())
+			    /TkDBc::Head->_SensorPitchK);
+    if (tk == -702 || sn >= TkDBc::Head->FindTkId(tk)->GetNSensors()) {
+      if (tk != -702) tk = -tk;
+      sl = 23-sl;
+      sn = TMath::Floor((p.x()-TkCoo::GetGlobalA(tk, 0, 3.53).x())
+			 /TkDBc::Head->_SensorPitchK);
+    }
+    if (sn <  0) sn =  0;
+    if (sn > 15) sn = 15;
+    int gid = 2000+sn*24+sl;
+    int gg[34] = { 2012, 2036, 2048, 2060, 2072, 2084, 2096, 2108, 2120,
+		   2132, 2144, 2156, 2168, 2180, 2192, 2204, 2216, 2218,
+		   2228, 2230, 2240, 2243, 2252, 2254, 2264, 2267, 2276,
+		   2280, 2288, 2300, 2312, 2324, 2348, 2372 };
+    int dg[34] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		   13, 14, 15, 16, 17, 18, 20, 21, 23, 25, 28,
+		   29, 31, 33, 36, 39, 43, 54, 65, 76, 99, 122 };
+    for (int i = 33; i >= 0; i--) if (gid >= gg[i]) return gid-dg[i];
+    return gid;
+  }
+  return 0;
+}
+
+void TkCoo::ConvertGridID(int gid, int &tkid, int &sensor)
+{
+  if (gid < 1000) {
+    int sn = -1, sl = -1;
+    if      (gid < 180) { sn = gid/20; sl = gid%20; }
+    else if (gid < 196) { sn =  9; sl = gid-180+1; sl += (sl > 8) ? 2 : 0; }
+    else if (gid < 210) { sn = 10; sl = gid-196+2; sl += (sl > 7) ? 3 : 0; }
+    else                { sn = 11; sl = gid-210+2; sl += (sl > 7) ? 5 : 0; }
+
+    tkid   = (sl < 10) ? 413-sl : -(413-(19-sl));
+    sensor = sn;
+    if ( 403 <= tkid && tkid <=  408) tkid--;
+    if (-403 >= tkid && tkid >= -408) tkid++;
+  }
+  else if (gid < 2000) {
+    int sn = -1, sl = -1;
+    if      (gid < 1286) { sn = (gid-1000)/22; sl = (gid-1000)%22; }
+    else if (gid < 1304) { sn = 13; sl = gid-1286+1; sl += (sl > 9) ? 2 : 0; }
+    else                 { sn = 14; sl = gid-1304+2; sl += (sl > 8) ? 5 : 0; }
+
+    tkid   = (sl < 11) ? 113-sl : -(113-(21-sl));
+    sensor = sn;
+  }
+  else if (gid < 3000) {
+    int gg[34] = { 2012, 2036, 2048, 2060, 2072, 2084, 2096, 2108, 2120,
+		   2132, 2144, 2156, 2168, 2180, 2192, 2204, 2216, 2218,
+		   2228, 2230, 2240, 2243, 2252, 2254, 2264, 2267, 2276,
+		   2280, 2288, 2300, 2312, 2324, 2348, 2372 };
+    int dg[34] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+		   13, 14, 15, 16, 17, 18, 20, 21, 23, 25, 28,
+		   29, 31, 33, 36, 39, 43, 54, 65, 76, 99, 122 };
+    for (int i = 33; i >= 0; i--) 
+      if (gid+dg[i] >= gg[i]) { gid += dg[i]; break; }
+
+    int sn = (gid-2000)/24, sl = (gid-2000)%24;
+    tkid   = (sl < 11) ? 714-sl : -(714-(23-sl));
+    sensor = sn;
+    if ( 702 <= tkid && tkid <=  708) tkid--;
+    if (-702 >= tkid && tkid >= -708) tkid++;
+    if (tkid == -714 && sn == 0) { tkid = 714; sensor = 14; }
+  }
+}
+
+AMSPoint TkCoo::SensorGridIDPos(int gid)
+{
+  int tkid, sen;
+  ConvertGridID(gid, tkid, sen);
+  return GetGlobalA(tkid, TkDBc::Head->_SensorPitchK*(sen+0.5),
+		          TkDBc::Head->_ssize_active[1]/2);
+}
+

@@ -1,0 +1,282 @@
+#  $Id: Makefile.linuxppcbgxlc,v 1.18 2023/12/21 16:38:49 qyan Exp $
+
+# General clean up and reorganization
+#
+#  ibm bg  
+
+VER          := $(shell $(ROOTSYS)/bin/root-config --version | grep 5.14)
+
+VERGCC       := $(shell gcc --version | grep 4.1)
+
+ifdef VER
+NEW = 
+else
+NEW = _new
+endif
+
+
+SLC4system=
+ifneq "$(wildcard /etc/redhat-release)" ""
+ SLC4system := $(shell cat /etc/redhat-release | grep "Scientific Linux CERN SLC release 4")
+endif
+
+ifdef SLC4system
+else
+ifneq "$(wildcard /etc/redhat-release)" ""
+ SLC4system := $(shell cat /etc/redhat-release | grep "Scientific Linux SL release 4")
+endif
+endif
+
+SLC4system=1
+RH9=1
+RH9add=
+ifdef RH9
+ RH9add= -lnsl /usr/lib/nsswitch.o -Wl,--start-group -lnss_files -lnss_dns -lresolv -Wl,--end-group  
+endif
+RH9add=
+ifdef DEBUGFLAG
+RH9add+= -g9 -O0 
+endif
+ifdef AMSPARALLEL
+	PARALLEL=  -D__AMSPARALLEL__ -qthreaded -qsmp=omp$(NOOSTLS)  
+else
+  PARALLEL=  
+endif
+ifdef AMSP
+	PARALLEL+=-D__AMSP__  -qtls -qthreaded -qsmp=omp$(NOOSTLS)  
+	PARALLELF=-WF,-D__AMSP__  -qtls -qthreaded -qsmp=omp$(NOOSTLS) -qnosave 
+ifdef JUQUEEN
+	PARALLEL+= -qtune=qp
+endif	
+endif
+
+
+
+
+########################################################################
+#Compilers
+########################################################################
+ifdef JUQUEEN
+  	CXX=mpixlcxx_r -DJUQUEEN
+	LD=mpixlcxx_r  -L/usr/local/bg_soft/clang/r284961-stable-1-5/libc++/lib -lc++
+      #   LD=bgxlC_r	
+	CXXFLAGS +=  $(SPI_INC_DIRS)
+else
+ifdef JUQUEEND
+    CXX=mpixlcxx_r -DJUQUEEN -DJUQUEEND
+    LD=mpixlcxx_r -qnostaticlink -qstaticlink=libgcc
+	CXXFLAGS +=  $(SPI_INC_DIRS)
+else
+	CXX=bgxlC_r
+	LD=xlC_r -q64  
+endif
+endif
+  CXXG=mpiclang++ -std=c++11 
+CFLAGSG= -O -I$(ROOTSYS)/include -I../../include -D__PPC64 -DJUQUEEN -D_PGTRACK_ -DUSEGENFIT
+  CXXFLAGSF=-O -I$(ROOTSYS)/include  -I../../include
+ifdef  G4AMS
+	CFLAGSG+= -DG4MULTITHREADED -I$(G4INCLUDEDIR)
+else
+	CFLAGSG+= -D_OPENMP
+endif
+INTELDIR=/opt/intel/
+  INTELVER=Compiler/11.1/080/
+  INTELOPT=  -qstrict -qmaxmem=-1  
+ifdef JUQUEEN
+FF=bgxlf_r  $(INTELOPT) $(PARALLELF) -WF,-D__PPC64
+	else
+FF=xlf_r -q64 -qtune=auto $(INTELOPT) $(PARALLELF) -WF,-D__PPC64
+endif
+ifdef NOOSTLS
+	FF+= -g5
+endif
+CXX+=  $(INTELOPT)    $(PARALLEL) -D__PPC64
+  CC=bgxlc_r    $(INTELOPT) $(PARALLEL)  -I/usr/include
+ifdef JUQUEEN
+CC+= -DJUQUEEN
+endif	
+LD+=   $(INTELOPT) $(PARALLEL)     -Wl,--allow-multiple-definition 
+  ROOTDICT_CPPFLAGS+=  
+  PFLAG= -lpthread
+  FFOLD=$(FF)  -qsave
+  FFLAGSSAVE= -qsave
+ifdef JUQUEEN
+FORTRAN_LIBS=-L/opt/ibmcmp/xlsmp/bg/3.1/bglib64 -L/opt/ibmcmp/xlmass/bg/7.3/bglib64 -L/opt/ibmcmp/xlf/bg/14.1/bglib64  -lxlopt -lxlf90_r  -lxl -lxlfmath  
+else
+FORTRAN_LIBS= -L/opt/ibmcmp/xlf/14.1/lib64  -lxlopt -lxlf90_r  -lxl -lxlfmath
+
+endif
+FORTRAN2_LIBS= 
+
+ifndef __CORBA_LIGHT__
+ORBIT2DIR=$(AMSDEPLIB)/ORBit2-ia64
+IDL=$(ORBIT2DIR)/bin/orbit-idl-2
+IDLCPP=$(ORBIT2DIR)/bin//orbit-idl-2 --backenddir=$(ORBIT2DIR)/lib/orbit-2.0/idl-backends  -l cpp
+endif
+
+
+########################################################################
+# Libraries
+########################################################################
+
+# change defaults if intel compiler 
+CERN_LEVEL =2005.bgxlf
+CERN_LEVEL=2006
+CERNLIBS= -lgeant321 -lgeant321_b -lminuit_tls -lpacklib -lminuit_tls   -lmathlib -lkernlib -lgfortran 
+
+
+ifndef CERNDIR
+CERNDIR =$(Offline)/CERN/$(CERN_LEVEL)
+endif
+
+
+CERNSRCDIR = $(CERNDIR)
+
+ifndef AMSLIB
+AMSLIB =  $(Offline)/lib/linux/ppc64
+endif
+ifndef NAGDIR
+NAGDIR  = $(Offline)/CERN/NagLib
+endif
+
+########################################################################
+# Compilers FLAGS
+########################################################################
+
+ifdef AMSDEBUG
+DEFINES+=  -D__AMSDEBUG__
+endif
+
+ifdef TFADBW
+DEFINES+=  -D__TFADBW__
+endif
+
+ifdef TFAPEDC
+DEFINES+=  -D__TFAPEDC__
+endif
+
+
+CFLAGSB= -qpic  
+DEFINES+= -D__root_$(NEW) -D__LINUXNEW__ 
+
+ifdef AMSPROFILE
+  CFLAGSB+=-pg
+endif
+
+CFLAGS=       $(CFLAGSB)   
+CFLAGSTOFSIM= $(CFLAGSB) 
+CFLAGSn=      $(CFLAGSB)
+CFLAGSDAQ=    $(CFLAGSB) 
+CFLAGSDICT=  -qmaxmem=-1
+FFLAGS+= -qextname    
+ifdef G4MULTITHREADED
+	FFLAGS+= -WF,-DG4MULTITHREADED
+endif
+ifdef AMSPROFILE 
+  FFLAGS+=-pg
+  FFLAGSn+=-pg
+endif
+
+ifdef DEBUGFLAG
+    CFLAGS       += -g9 -O0      
+    CFLAGSTOFSIM += -g9 -O0 
+    CFLAGSn      += -g9  -O0  
+    CFLAGSDAQ    += -g9  -O0 
+    FFLAGS       += -g9    -O0 
+    FFLAGSn      += -g9  -O0 
+    LDFLAGS      += -g9	-O0 
+else
+    CFLAGS       += -O      
+    CFLAGSTOFSIM += -O
+    CFLAGSLVL3SIM += -O0
+    CFLAGSn      += -O2    
+    CFLAGSDAQ    += -O2 
+    FFLAGS       += -O2    
+    FFLAGSn      += -O2 
+	LDFLAGS      +=-Wl,--relax
+endif
+FFLAGSUS3=$(FFLAGS)
+SPI_INC_DIRS = -I/bgsys/drivers/ppcfloor -I/bgsys/drivers/ppcfloor/spi/include/kernel/cnk
+CXXFLAGS=$(CFLAGS)
+
+
+
+
+
+ SOFLAGS=  -qmkshrobj -L$(ROOTSYS)/lib  -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -qthreaded  -lRIO -lTree -lThread -lGpad   -lHist -lMinuit -lHistPainter -lGraf -lMatrix -lTMVA -lTreePlayer -lGeom 
+ #-lRoot 
+ #$(FORTRAN_LIBS) -Wl,--allow-shlib-undefined
+
+
+ SHLDFLAGS= -q64 -L$(NAGDIR) -lnag_fpic_ppcbgxlc  
+
+########################################################################
+# Output dirs
+########################################################################
+
+#----------------------------------------------------
+
+
+# Library list 
+
+TIMEL=
+
+
+LDFLAGSI=    -static $(G4LIBS)  $(FORTRAN2_LIBS) \
+-L$(NAGDIR) -lnag64 \
+-L$(AMSLIB) -lamsut \
+-L$(CERNDIR)/lib     $(CERNLIBS) -lpawlib   -llapack3 -lblas -lgraflib  -lgrafX11 $(CERNLIBS)  \
+-L$(ROOTLIBDIR)  $(LROOT) -llzma -lfreetype\
+ -L/usr/X11R6/lib64  -lXmu -lXt -lXext -lX11 \
+-lcrypt -lcrypto -ldl -lpcre   \
+ $(FORTRAN2_LIBS) $(FORTRAN_LIBS) $(RH9add)
+LDFLAGS+=  -q64 -qsmp=omp -qthreaded -qtls   $(G4LIBS)  $(FORTRAN2_LIBS) \
+-L$(NAGDIR) -lnag_fpic_ppcbgxlc   \
+-L$(AMSLIB)  -lamsut   \
+-L$(CERNDIR)/lib   $(CERNLIBS) \
+-L$(ROOTLIBDIR)  $(LROOT) $(LZMAL) -lcrypt -lfreetype  -lpcre\
+$(FORTRAN2_LIBS) $(FORTRAN_LIBS)  $(PFLAGS)  
+#-lpami-gcc 
+
+ifdef AMSPROFILE
+  LDFLAGS+=-pg
+endif
+
+LDFLAGSSTATIC:=    $(LDFLAGS) $(RH9add) 
+
+
+
+LDFLAGS+= -lcxa -lcprts
+
+
+
+
+#--------------------------------------------------------------------------------------------------
+#------- Client/server ORbIt/CORBA part
+#--------------------------------------------------------------------------------------------------
+
+TIMEL=
+
+
+LDFLAGSIDL=    -L$(ORBIT2DIR)/lib -pthread -lORBit-2-cpp
+
+LDFLAGSSTATICIDL= -static  $(LDFLAGSIDL) -lORBit-2  -L/opt/gnome/lib -lgobject-2.0 -lgthread-2.0 -lgmodule-2.0 -ldl  -lglib-2.0 -lORBit-imodule-2  -lrt
+
+CXX_ORBIT=$(CXX)  -Wno-deprecated  -fpermissive -I/$(ORBIT2DIR)/include/orbit-2.0 -I/usr/include/glib-2.0  -I/usr/lib/glib-2.0/include  -I/$(ORBIT2DIR)/include/orbitcpp-2.0 -I$(BIN)
+CC_ORBIT=$(CC) -I$(ORBIT2DIR)/include/orbit-2.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I$(BIN)
+
+
+ifdef DEBUGFLAG
+CXX_ORBIT+= -g
+CCC_ORBIT+= -g
+else
+CXX_ORBIT+= -O
+CCC_ORBIT+= -O
+endif
+
+
+#endif
+
+# end of Linux icc case
+
+#########################################################

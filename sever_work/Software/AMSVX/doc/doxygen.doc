@@ -1,0 +1,18 @@
+doxygen  do.config.txt
+cd /var/www/html/AMS/Analysis/hpl3itp1/root02
+cd latex
+make
+pdflatex refman.tex
+
+For Genral GBATCH class doc do:
+
+doxygen AMSDoc.doxygen
+
+open  html/index.html  with yor browser
+
+or:
+
+cd latex
+make
+
+for the a pdf version (huge)

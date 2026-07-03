@@ -1,0 +1,68 @@
+#! /usr/bin/env bash
+
+if [[ "$AMSWD" == "" ]]; then
+    echo "AMSWD is not defined, trying to set it to be the parent directory (..)"
+    export AMSWD=..
+fi
+
+RH_Version=`cat /etc/redhat-release | awk -F'[^0-9]+' '{ print $2 }'`
+if [[ "$RH_Version" != "" ]] && [[ $RH_Version -gt 7 ]]; then
+    EXE=$AMSWD/exe/linuxx8664icx5.34_9/gbatch-orbitPG.exe
+else
+    EXE=$AMSWD/exe/linuxx8664icc5.34_6/gbatch-orbitPG.exe
+fi
+if ! [[ -f $EXE ]]; then
+    echo "Executable $EXE not found, giving up..."
+    exit 1
+else
+    echo "Found executable $EXE, checking its build number..."
+fi
+BUILDNO=`echo "" | $EXE 2>/dev/null | grep '^AMS Software version' | awk '{print $4}' | awk -F/ '{print $2}'`
+if [[ $BUILDNO -lt 1 ]] || [[ $BUILDNO -gt 100000 ]]; then
+    echo "Build number $BUILDNO does not seem to be correct, giving up..."
+    if [[ "$1" != "" ]]; then
+        echo "Found build number from argument ($1)."
+        BUILDNO=$1
+    else
+        exit 1
+    fi
+else
+    echo "Build number is found to be $BUILDNO, start to copy files..."
+    BUILDNO=B$BUILDNO
+fi
+cp -rdpu $AMSWD/exe/linuxx8664icc5.34_6/gbatch-orbitPG.exe $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO.64
+cp -rdpu $AMSWD/exe/linuxx8664icx5.34_9/gbatch-orbitPG.exe $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9
+#cp -rdpu $AMSWD/exe/linuxx8664icc5.34/gbatch-orbitPG.exe.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6
+
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO.64.lxplus6 
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO.lxplus6 
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO.lxplus6 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO.64 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO.64.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.0.$BUILDNO.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.00.1.$BUILDNO.alma9
+
+
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO.64.lxplus6 
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO.64.lxplus6 
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO.lxplus6 
+#ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.lxplus6 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO.lxplus6 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO.64 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO.64 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO.64.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO.64.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.0.$BUILDNO.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v5.02.1.$BUILDNO.alma9
+
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.0.$BUILDNO.64 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.1.$BUILDNO.64 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.0.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.1.$BUILDNO 
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.0.$BUILDNO.64.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.1.$BUILDNO.64.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.0.$BUILDNO.alma9
+ln -sf gbatch-orbit.exe.v5.00.1.$BUILDNO.64.alma9 $AMSDataDir/DataManagement/exe/linux/gbatch-orbit.exe.v6.00.1.$BUILDNO.alma9

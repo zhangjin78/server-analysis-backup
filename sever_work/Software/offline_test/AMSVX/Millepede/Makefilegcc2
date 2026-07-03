@@ -1,0 +1,160 @@
+# #################################################################
+# Makefile with gcc for MillePede II (Fortran90) with possible input from C
+# 
+# Author Q.Yan, qyan@cern.ch
+#
+# #################################################################
+#
+# ### Define gcc to be used ###
+#
+GCC=g++
+GCCVERS=$(shell $(GCC) -dumpversion)
+# On SL5 replace default (gcc41) by gcc44
+ifeq ($(findstring 4.1., $(GCCVERS)), 4.1.)
+  GCC=g++44
+  GCCVERS=$(shell $(GCC) -dumpversion)  
+endif
+$(info Using gcc version $(GCCVERS))
+#
+# #################################################################
+#
+# ### Options ###
+#
+# All but 'yes' disables support of reading C-binaries:
+SUPPORT_READ_C = yes
+# If yes (and if SUPPORT_READ_C is yes), uses rfio, i.e. shift library, for IO,
+# requires shift library and header to be installed at places defined here:
+#
+SUPPORT_C_RFIO =
+# default path (by '=') to RFIO - overwrite if needed...
+RFIO_INCLUDES_DIR = =
+RFIO_LIBS_DIR = =
+# yes
+#
+# If yes (and if SUPPORT_READ_C is yes and SUPPORT_C_RFIO is not yes),
+# use zlib to read gzipped binary files:
+#SUPPORT_ZLIB = yes
+SUPPORT_ZLIB = no
+# default path (by '=') to ZLIB - overwrite if needed
+# requires z library and header to be installed at places defined here:
+#ZLIB_INCLUDES_DIR = =
+ZLIB_INCLUDES_DIR =/cvmfs/ams.cern.ch/Offline/AMSDataDir/mic/xrootd.mic-icc64-13/include
+#ZLIB_LIBS_DIR = =
+ZLIB_LIBS_DIR =/cvmfs/ams.cern.ch/Offline/AMSDataDir/mic/xrootd.mic-icc64-13/lib
+#
+# If yes use multithreading with OpenMP (TM)
+SUPPORT_OPENMP = yes
+# ompP profiler (http://www.ompp-tool.com, needs Opari for source-to-source instrumentation)
+OMPP =
+# kinst-ompp
+#
+# make install copies the binary to $(PREFIX)/bin
+PREFIX = .
+BINDIR=$(PREFIX)/gccbin2/
+#
+# #################################################################
+#
+FCOMP = $(OMPP) $(GCC)
+F_FLAGS = -Wall -fautomatic -fno-backslash -O3 -cpp
+#
+CCOMP = $(OMPP) $(GCC) 
+C_FLAGS = -Wall -O3 -Df2cFortran
+#C_INCLUDEDIRS =  # e.g. -I
+C_INCLUDEDIRS = -I${AMSWD}/GenFit/include -I$(ROOTSYS)/include
+MODULEDIRS = -I$(BINDIR) -J$(BINDIR)
+#.
+ifeq ($(findstring 4.4., $(GCCVERS)), 4.4.)
+# gcc44: 
+  C_LIBS = -lgfortran -lgfortranbegin -lstdc++ -lgomp
+else  
+# gcc45, gcc46:
+  C_LIBS = -lgfortran -lm -lstdc++ -lgomp
+# math library -lm or -lquadmath may be required  
+endif
+DEBUG =          # e.g. -g
+#
+ifeq ($(SUPPORT_OPENMP),yes)
+# Multithreading with OpenMP (TM)
+  C_FLAGS += -fopenmp
+  F_FLAGS += -fopenmp
+endif
+#
+LOADER = $(OMPP) $(GCC)
+L_FLAGS = -Wall -O3
+#
+# objects for this project
+#
+USER_OBJ_PEDE = mpdef.o mpdalc.o mpmod.o mpbits.o mpqldec.o mptest1.o mptest2.o mille.o mpnum.o mptext.o mphistab.o \
+	minresDataModule.o minresModule.o minresqlpDataModule.o minresqlpBlasModule.o minresqlpModule.o \
+        randoms.o vertpr.o linesrch.o Dbandmatrix.o pede.o
+#
+# Chose flags/object files for C-binary support:
+#
+ifeq ($(SUPPORT_READ_C),yes)
+  F_FLAGS += -DREAD_C_FILES
+  USER_OBJ_PEDE += rootdict.o
+  USER_OBJ_PEDE += MilleBinary.o
+  USER_OBJ_PEDE += readc.o
+  C_LIBS += `root-config --libs` -lMinuit -lNetx -lMathMore
+#  C_LIBS += -L$(ZLIB_LIBS_DIR) -lz
+#  C_INCLUDEDIRS +=-I$(ZLIB_INCLUDES_DIR)
+  ifeq ($(SUPPORT_C_RFIO),yes)
+    C_FLAGS += -DUSE_SHIFT_RFIO -I$(RFIO_INCLUDES_DIR)
+    C_LIBS += -L$(RFIO_LIBS_DIR) -lshift
+  else
+    ifeq ($(SUPPORT_ZLIB),yes)
+      C_FLAGS += -DUSE_ZLIB
+    endif
+  endif
+endif
+#  
+#
+USER_OBJ_PEDE2=$(patsubst %, $(BINDIR)%, $(USER_OBJ_PEDE))
+# Make the executables
+EXECUTABLES = $(BINDIR)pede 
+#
+all:    $(EXECUTABLES)
+#
+install: $(EXECUTABLES) #clean
+	mkdir -p $(BINDIR)
+	mv $(EXECUTABLES) ${USER_OBJ_PEDE} *.mod $(BINDIR)
+#
+$(BINDIR)pede : 	${USER_OBJ_PEDE2}
+	$(LOADER) $(F_FLAGS) \
+		-o $@ ${USER_OBJ_PEDE2} $(C_LIBS) $(MODULEDIRS)
+#	@mv *.mod $(BINDIR)
+#
+clean:
+	rm -f $(BINDIR)*.o  $(BINDIR)*.mod $(BINDIR)pede $(BINDIR)rootdict*
+#
+clobber: clean 
+	rm -f $(EXECUTABLES)
+
+# Make the object files - depend on source and include file 
+#
+$(BINDIR)%.o : %.f90
+	@if ! [ -d $(BINDIR) ] ; then mkdir -p $(BINDIR); fi
+	${FCOMP} ${F_FLAGS} $(MODULEDIRS) -c $< -o $@ 
+$(BINDIR)%.o : ${AMSWD}/GenFit/src/%.cc
+	@if ! [ -d $(BINDIR) ] ; then mkdir -p $(BINDIR); fi
+	$(CCOMP) -c $(C_FLAGS) $(DEFINES) $(C_INCLUDEDIRS) $(DEBUG) -o $@ $<
+$(BINDIR)rootdict.o : $(BINDIR)rootdict.C
+	@if ! [ -d $(BINDIR) ] ; then mkdir -p $(BINDIR); fi
+	$(CCOMP) -c $(C_FLAGS) $(DEFINES) $(C_INCLUDEDIRS) $(DEBUG) -o $@ $^
+$(BINDIR)rootdict.C : ${AMSWD}/GenFit/include/MilleBinary.h ${AMSWD}/include/fittersLinkDef.h
+	@if ! [ -d $(BINDIR) ] ; then mkdir -p $(BINDIR); fi
+	rootcint -f $(BINDIR)rootdict.C -c -p $(C_INCLUDEDIRS) $^ 
+$(BINDIR)%.o : %.c
+	@if ! [ -d $(BINDIR) ] ; then mkdir -p $(BINDIR); fi
+	$(CCOMP) -c $(C_FLAGS) $(DEFINES) $(C_INCLUDEDIRS) $(DEBUG) -o $@ $<
+# ##################################################################
+# Module dependencies
+mpbits.o:  mpdef.o mpdalc.o
+mpdalc.o:  mpdef.o
+mpmod.o:   mpdef.o
+mpnum.o:   mpdef.o
+mpqldec.o: mpdef.o mpdalc.o
+pede.o:    mpdef.o mpmod.o mpdalc.o mptest1.o mptest2.o mptext.o
+# ##################################################################
+# END
+# ##################################################################

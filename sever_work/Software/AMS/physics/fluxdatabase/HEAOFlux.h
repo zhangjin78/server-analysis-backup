@@ -1,0 +1,193 @@
+//  $Id: HEAOFlux.h,v 1.5 2020/04/26 09:29:26 qyan Exp $
+//////////////////////////////////////////////////////////////////////////
+///
+///\file  HEAOFlux
+///\data  2016/06/28 Q.Yan Created
+///
+//////////////////////////////////////////////////////////////////////////
+#ifndef _HEAOFlux_
+#define _HEAOFlux_
+#include "TGraphErrors.h"
+/// TGraphErrors*  CFLUXEHEAO    : HEAO3-C2 carbon flux VS Ekin
+/// TGraphErrors*  BFLUXEHEAO    : HEAO3-C2 boron  flux VS Ekin
+/// TGraphErrors*  BCRATIOEHEAO  : HEAO3-C2 boron/carbon ratio VS Ekin
+/// TGraphErrors*  NFLUXEHEAO    : HEAO3-C2 nitrogen flux VS Ekin
+/// TGraphErrors*  OFLUXEHEAO    : HEAO3-C2 oxygen flux VS Ekin
+/// TGraphErrors*  CORATIOEHEAO  : HEAO3-C2 carbon/oxygen ratio VS Ekin
+/// TGraphErrors*  SIFLUXEHEAO   : HEAO3-C2 silicon flux VS Ekin
+/// TGraphErrors*  FEFLUXEHEAO   : HEAO3-C2 iron(Fe) flux VS Ekin
+
+//#  Carbon Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaocnb=14;
+
+double HEAOCENX[heaocnb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOCENXE[heaocnb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOCENY[heaocnb]={
+2.97528,2.44468,1.82508,1.64252,1.2169,0.808195,0.533894,0.363374,0.228756,0.138468,0.0757302,0.0324493,0.0101527,0.00124605
+};
+
+double HEAOCENYE[heaocnb]={
+0.057632,0.0448512,0.036429,0.0298361,0.021186,0.0146205,0.00709047,0.0047404,0.00333796,0.00222006,0.00211192,0.000619797,0.000390442,0.000191941
+};
+
+TGraphErrors*  CFLUXEHEAO= new TGraphErrors(heaocnb,HEAOCENX,HEAOCENY,HEAOCENXE,HEAOCENYE);
+
+
+//#  Boron Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaobnb=14;
+
+double HEAOBENX[heaobnb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOBENXE[heaobnb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOBENY[heaobnb]={
+0.955108,0.798872,0.612045,0.54881,0.388723,0.241713,0.15252,0.098758,0.058102,0.0332244,0.0164542,0.00633325,0.0017172,0.0001508,
+};
+
+double HEAOBENYE[heaobnb]={
+0.0246699,0.0181671,0.0145369,0.0115407,0.00752049,0.00485682,0.00243377,0.00154937,0.00100359,0.000624512,0.000489126,0.000141793,7.21823e-05,2.33756e-05,
+};
+
+TGraphErrors*  BFLUXEHEAO= new TGraphErrors(heaobnb,HEAOBENX,HEAOBENY,HEAOBENXE,HEAOBENYE);
+
+
+//#  Boron/Carbon ratio in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaobcnb=14;
+
+double HEAOBCENX[heaobcnb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOBCENXE[heaobcnb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOBCENY[heaobcnb]={
+0.321,0.3267,0.3353,0.3341,0.3194,0.299,0.2856,0.2717,0.2539,0.2399,0.2172,0.1951,0.1691,0.121
+};
+
+double HEAOBCENYE[heaobcnb]={
+0.0075,0.0061,0.006,0.0049,0.0036,0.0034,0.0033,0.0031,0.0029,0.0029,0.0027,0.0027,0.0033,0.0024
+};
+
+TGraphErrors*  BCRATIOEHEAO= new TGraphErrors(heaobcnb,HEAOBCENX,HEAOBCENY,HEAOBCENXE,HEAOBCENYE);
+
+//#  Nitrogen Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaonnb=14;
+
+double HEAONENX[heaonnb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAONENXE[heaonnb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAONENY[heaonnb]={
+0.843535,0.693913,0.534995,0.452403,0.330464,0.219575,0.140666,0.0916225,0.059268,0.0333036,0.0171404,0.00719523,0.0021359,0.00022607,
+};
+
+double HEAONENYE[heaonnb]={
+0.0225535,0.0162202,0.0129491,0.00982102,0.00647418,0.00441285,0.00226044,0.0014631,0.00101619,0.000617772,0.000506506,0.000156639,8.74467e-05,3.50127e-05,
+};
+
+TGraphErrors*  NFLUXEHEAO= new TGraphErrors(heaonnb,HEAONENX,HEAONENY,HEAONENXE,HEAONENYE);
+
+
+//#  Oxygen Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaoonb=14;
+
+double HEAOOENX[heaoonb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOOENXE[heaoonb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOOENY[heaoonb]={
+2.695,2.205,1.675,1.504,1.091,0.753,0.496,0.335,0.22,0.132,0.073,0.0329,0.0106,0.0013,
+};
+
+double HEAOOENYE[heaoonb]={
+0.042,0.035,0.03,0.025,0.018,0.013,0.006,0.004,0.003,0.002,0.002,0.0006,0.0004,0.0002
+};
+
+TGraphErrors*  OFLUXEHEAO= new TGraphErrors(heaoonb,HEAOOENX,HEAOOENY,HEAOOENXE,HEAOOENYE);
+
+
+//#  Carbon/Oxygen ratio in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaoconb=14;
+
+double HEAOCOENX[heaoconb]={
+0.62,0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOCOENXE[heaoconb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOCOENY[heaoconb]={
+1.104,1.1087,1.0896,1.0921,1.1154,1.0733,1.0764,1.0847,1.0398,1.049,1.0374,0.986301,0.957802,0.9585
+};
+
+double HEAOCOENYE[heaoconb]={
+0.0277998,0.0272601,0.0295439,0.0272427,0.0271229,0.0271805,0.0198101,0.0206308,0.0220053,0.0242776,0.0412008,0.0272158,0.052171,0.208814
+};
+
+TGraphErrors*  CORATIOEHEAO= new TGraphErrors(heaoconb,HEAOCOENX,HEAOCOENY,HEAOCOENXE,HEAOCOENYE);
+
+
+//#  Silicon Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaosinb=13;
+
+double HEAOSIENX[heaosinb]={
+0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35,
+};
+
+double HEAOSIENXE[heaosinb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+
+double HEAOSIENY[heaosinb]={
+0.336483,0.26532,0.233722,0.168669,0.11423,0.077376,0.0530975,0.035266,0.0215028,0.0117676,0.00537586,0.00185818,0.00022841,
+};
+
+double HEAOSIENYE[heaosinb]={
+0.00833162,0.00667665,0.00520185,0.00334423,0.002311,0.00125979,0.000830212,0.00059596,0.000381247,0.000340488,0.000111278,7.35685e-05,3.52782e-05,
+};
+
+TGraphErrors*  SIFLUXEHEAO= new TGraphErrors(heaosinb,HEAOSIENX,HEAOSIENY,HEAOSIENXE,HEAOSIENYE);
+
+//#  Iron(Fe) Flux in Ekin/N[GeV/n] HEAO3-C2(1979/10-1980/06)
+const int heaofenb=13;
+
+double HEAOFEENX[heaofenb]={
+0.8,1,1.25,1.6,2.1,2.65,3.35,4.3,5.6,7.5,10.6,16.2,35
+};
+
+double HEAOFEENXE[heaofenb]={
+0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+double HEAOFEENY[heaofenb]={
+0.191174,0.159293,0.152355,0.110409,0.073041,0.0524272,0.0352085,0.023958,0.0148632,0.0078256,0.003619,0.00133136,0.00017615
+};
+
+double HEAOFEENYE[heaofenb]={
+0.00610028,0.0049295,0.00393213,0.00244875,0.00169289,0.000977622,0.000629839,0.000448995,0.000291318,0.000237513,8.24101e-05,5.41265e-05,2.72644e-05
+};
+
+TGraphErrors*  FEFLUXEHEAO= new TGraphErrors(heaofenb,HEAOFEENX,HEAOFEENY,HEAOFEENXE,HEAOFEENYE);
+
+#endif

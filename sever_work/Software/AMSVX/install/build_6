@@ -1,0 +1,24 @@
+#!/bin/tcsh
+#source /afs/cern.ch/sw/lcg/external/gcc/4.8.1/x86_64-slc6/setup.csh  /afs/cern.ch/sw/lcg/external
+
+# do not modify anything under and above this line
+#
+unsetenv DEBUGFLAG
+setenv VERBOSE 1
+source $Offline/vdev/install/amsvar.root6 
+setenv PGTRACK 1
+setenv AMSP 1
+unsetenv G4AMS
+unsetenv G4MULTITHREADED
+setenv GENFIT 1
+setenv AMSWD ..
+gmake -j 40
+gmake lib -j 40
+gmake gxint
+gmake producer 
+gmake producer6
+cd ../display
+gmake osdepend -j
+gmake dynamic 
+cd ../install
+gmake -f Makefastntrd64

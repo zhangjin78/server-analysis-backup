@@ -1,0 +1,48 @@
+#suitable datacards 
+#AMS/examples/g4.root.vis.job
+#http://geant4.cern.ch/G4UsersDocuments/UsersGuides/ForApplicationDeveloper/html70/Visualization/interactive.html
+
+/run/beamOn 1
+/control/verbose 2
+/run/verbose 2
+#
+/run/initialize
+/vis/open OGLSX
+/vis/ogl/set/displayListLimit 500000
+/vis/viewer/set/culling  coveredDaughters 1
+/vis/viewer/set/culling density 1 0.000000001  
+/vis/drawVolume AMSG
+/vis/viewer/set/sectionPlane  on  0.0  0.0  0.0  cm  1.0  0.0  0.0
+#/vis/viewer/set/viewpointThetaPhi 90. 0.
+#
+# Specify zoom value:
+/vis/viewer/zoom 1.4
+vis/scene/add/trajectories
+/run/beamOn 1
+
+/control/matScan/theta 1 -90 0
+/control/matScan/phi 1 0 0
+/control/matScan/eyePosition  -10 65 180 cm
+/control/matScan/scan
+/control/matScan/eyePosition  -10 65 181 cm
+/control/matScan/scan
+/geometry/test/position -10 65 180 cm
+/geometry/test/direction 0 0 -1
+/geometry/test/line_test
+
+
+#to scan/cut specific volume
+
+
+
+/run/initialize
+/vis/open OGLIX
+
+/vis/drawVolume volumename copyno
+
+/vis/scene/add/volume volumename2 copyno2
+
+# x y z cm  nx ny nz
+/vis/viewer/set/sectionPlane  on  0.0  0.0  0.0  cm  1.0  0.0  0.0    
+
+/vis/viewer/zoom xyz

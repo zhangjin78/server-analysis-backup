@@ -1,0 +1,76 @@
+//  $Id: linkdef1.h,v 1.6 2018/04/23 12:54:31 huliu Exp $
+#ifdef __CINT__
+#pragma link off all globals;
+#pragma link off all classes;
+#pragma link off all functions;
+#pragma link C++ class AMSSetupR::JGCR+;
+#ifdef _PGTRACK_
+#pragma link C++ class MTF1+;
+#pragma link C++ class TkObject+;
+#pragma link C++ class TkPlane+;
+#pragma link C++ class MonoSpline+;
+//#pragma link C++ class TkPlaneExt+;
+#pragma link C++ class TkLadder+;
+#pragma link C++ class TkFeet+;
+#pragma link C++ class TkCoo+;
+#pragma link C++ class TkDBc+;
+#pragma link C++ class TkSens+;
+#pragma link C++ class TrCalDB+;
+#pragma link C++ class TrLadCal+;
+#pragma link C++ class TrParDB+;
+#pragma link C++ class TrLadPar+;
+#pragma link C++ class TrGainDB+;
+#pragma link C++ class TrLadGain+;
+#pragma link C++ class TrSimSignalDB+;
+#pragma link C++ class TrChargeLossDB+;
+#pragma link C++ class TrChargeLossTable+;
+#pragma link C++ class TrOccDB+;
+#pragma link C++ class TrLadOcc+;
+#pragma link C++ class TrEDepDB+;
+#pragma link C++ class TrEDepTableI+;
+#pragma link C++ class TrEDepTable+;
+#pragma link C++ class TrEDepTableSpline+;
+#pragma link C++ class TrMipDB+;
+#pragma link C++ class TrMipElem+;
+#pragma link C++ class TrLinearDB+;
+#pragma link C++ class TrLinearElem+;
+#pragma link C++ class TrLinearEtaDB+;
+#pragma link C++ class TrLinearXEtaDB+;
+#pragma link C++ class TrLikeDB+;
+#pragma link C++ class tkpatt;
+#pragma link C++ class TrRecon;
+#pragma link C++ class TrReconQ;
+#pragma link C++ class TrReconPar;
+#pragma link C++ class TrReconR+;
+#pragma link C++ class TrTree+;
+#pragma link C++ class TrSim;
+#pragma link C++ class TrSimSensor;
+#pragma link C++ class TrSimCluster;
+#pragma link C++ class TrCharge;
+#pragma link C++ class TrMass;
+#pragma link C++ class TrPdfDB+;
+#pragma link C++ class mean_t;
+#pragma link C++ class MIPQ;
+#pragma link C++ class like_t;
+#pragma link C++ class magserv;
+#pragma link C++ class MSplineH+;
+#pragma link C++ class MSplineFitSamplingH+;
+#pragma link C++ class Fit2DH+;
+#pragma link C++ class TrAsymmDBH+;
+#pragma link C++ class TrChargeLossDBH+;
+#pragma link C++ class TrGainCHDBH+;
+#pragma link C++ class TrGainDBH+;
+#pragma link C++ class TrThetaDBH+;
+#pragma link C++ class TrTempDBH+;
+#pragma link C++ class TrBetaDBH+;
+#pragma link C++ class TrRigidityDBH+;
+#pragma link C++ class TrChargeDBH+;
+#pragma link C++ class TrClusterChargeLightH+;
+#pragma link C++ class TrClusterChargeH+;
+#pragma link C++ class TrRecHitChargeLightH+;
+#pragma link C++ class TrRecHitChargeH+;
+#pragma link C++ class TrTrackChargeLightH+;
+#pragma link C++ class TrTrackChargeH+;
+#endif
+#endif
+

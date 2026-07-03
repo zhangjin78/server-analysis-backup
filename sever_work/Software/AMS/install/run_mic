@@ -1,0 +1,6 @@
+export AMSDataDir=/fc02dat0/prodtest/AMSDataDir
+export ROOTSYS=$AMSDataDir/mic/rootmic
+export LD_LIBRARY_PATH=$ROOTSYS/lib:$AMSDataDir/mic/lib:$AMSDataDir/mic/ORBit2.2.14.mic-gcc64-47/lib64\
+:$AMSDataDir/mic/xrootd.mic-icc64-13/lib64:$AMSDataDir/mic/xrootd.mic-icc64-13/lib
+
+

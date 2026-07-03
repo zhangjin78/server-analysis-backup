@@ -1,0 +1,77 @@
+#
+# Makefile configuration for Linux
+#
+
+SHELL=/bin/sh
+
+# orbit debug mode, very special with CORBA tracing
+#ORBIT2DIR=/afs/cern.ch/work/a/aegorov2/Tools/ORBit2-2.14.17.gcc64-41
+
+ORBIT2DIR=$(AMSDEPLIB)/ORBit2-2.14.17.gcc64-41
+ORBIT_IDL=/usr/bin/orbit-idl-2
+ORBIT_CPP=$(ORBIT_IDL) --backenddir=$(ORBIT2DIR)/lib64/idl-compiler
+ORBITLIB=-Wl,-rpath,$(ORBIT2DIR)/lib64 -L$(ORBIT2DIR)/lib64 -lORBit-2 -lORBit-2-cpp
+#ORBITLIB=$(ORBIT2DIR)/lib64/libORBit-2.a $(ORBIT2DIR)/lib64/libORBit-2-cpp.a \
+#         $(ORBIT2DIR)/lib64/libgobject-2.0.a \
+#         $(ORBIT2DIR)/lib64/libgthread-2.0.a \
+#         $(ORBIT2DIR)/lib64/libgmodule-2.0.a \
+#         $(ORBIT2DIR)/lib64/libglib-2.0.a
+ORBITLIB += -L$(AMSDEPLIB)/lib64 -lgobject-2.0 -lgthread-2.0 -lgmodule-2.0 -lglib-2.0
+
+# IDL specs we use
+idlname = $(BIN)/server
+idl_lib = $(idlname)-common.o $(idlname)-cpp-common.o \
+		  $(idlname)-stubs.o $(idlname)-cpp-stubs.o \
+		  $(idlname)-skels.o $(idlname)-cpp-skels.o
+
+INCLUDE = -I/$(ORBIT2DIR)/include/orbitcpp-2.0 -I/usr/include/orbit-2.0 \
+	-I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include \
+	-I$(BIN) 
+vpath %.c $(BIN)
+vpath %.cc $(BIN)
+
+LIBS = -L/usr/lib64 -lstdc++ -pthread $(ORBITLIB) 
+	
+# Use OTHER_CXXFLAGS for project specific settings
+# Use OTHER_LDFLAGS for additional libraries
+#
+FP_SUPPORT = -mtune=generic -msse -msse2 -msse3 -mssse3 -mfpmath=sse -mmmx -ffast-math
+_DEBUG = -O3 -g -ggdb
+_RELEASE = -O3
+
+# C compiler
+CC = gcc
+CCFLAGS = -Wall -pthread -pipe -DLINUX -D_NONE_PVSS_API $(FP_SUPPORT) $(INCLUDE)
+CC_CMD = $(CC) $(CCFLAGS) $(OTHER_CCFLAGS) -c $< -o $(BIN)/`basename $@`
+
+# C++ compiler
+CXX = g++
+CXXFLAGS = -Wall -fPIC -finline -pthread -DLINUX -D_NONE_PVSS_API $(FP_SUPPORT) $(INCLUDE) 
+CXX_CMD = $(CXX) $(CXXFLAGS) $(OTHER_CXXFLAGS) -c $< -o $(BIN)/`basename $@`
+
+# linking
+LD = ld -r
+LINK = g++
+LDFLAGS = -Wall -D_NONE_PVSS_API
+LINK_CMD = $(LINK) $(LDFLAGS) $(OTHER_LDFLAGS)
+MATHLIB = -lm
+
+$(BIN)/%.o:	%.c
+	@echo Making .c target $@
+	$(CC_CMD)
+ 
+$(BIN)/%.o:	%.C
+	@echo Making .C target $@
+	$(CXX_CMD)
+ 
+$(BIN)/%.o:	%.cc
+	@echo Making .cc target $@
+	$(CXX_CMD)
+ 
+$(BIN)/%.o:	%.cxx
+	@echo Making .cxx target $@
+	$(CXX_CMD)
+ 
+$(BIN)/%.o:	%.cpp
+	@echo Making .cpp target $@
+	$(CXX_CMD)

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+export SRC=$1
+
+export CLEAN=""
+if [ "$2" == "clean" ] ; then
+ export CLEAN=$2
+fi
+
+export EXEAPP=$3
+
+
+#make -f /afs/cern.ch/user/q/qyan/public/DSTvdev/QTool2/subjobcondor/Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN
+make -f /afs/cern.ch/user/c/chenyam/analisi/script/Makefile534_2SL6 SRC_U=$SRC EXEAPP_U=$EXEAPP $CLEAN

@@ -1,0 +1,41 @@
+#!/bin/tcsh
+source /cvmfs/sft.cern.ch/lcg/contrib/gcc/4.9.3/x86_64-slc6/setup.csh  /afs/cern.ch/sw/lcg/external 
+
+
+# do not modify anything under and above this line
+#
+setenv LANGUAGE US
+setenv LANG C
+setenv GENFIT 1
+setenv LC_ALL en_US
+unsetenv DEBUGFLAG
+setenv VERBOSE 1
+source $ROOTSYS/../root-v5-34-9-icc64.17-slc6/amsvar
+setenv PGTRACK 1
+unsetenv G4MULTITHREADED
+unsetenv G4AMS
+unsetenv G4MULTITHREADED
+setenv AMSWD ..
+setenv LANGUAGE US
+touch $AMSWD/CC/commonsi.C
+gmake -j 40
+rm $AMSWD/lib/linuxx8664icc5.34/*slc6*
+gmake lib -j 4
+gmake gxint
+gmake producer 
+#gmake producer6
+cd ../online
+gmake osdepend -j 4
+cd ../display
+gmake osdepend -j
+gmake dynamic 
+cd ../install
+gmake -f Makefastntrd64
+source $ROOTSYS/../root-v5-34-9-gcc64-slc6/amsvar
+setenv PGTRACK 1
+unsetenv G4AMS
+setenv AMSWD ..
+gmake -j 4
+rm $AMSWD/lib/linuxx8664gcc5.34/*slc6*
+gmake lib -j 4
+gmake -f Makefastntrd64 

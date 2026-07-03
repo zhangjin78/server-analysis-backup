@@ -1,0 +1,13 @@
+#!/bin/tcsh
+setenv ROOTSYS $Offline/root5.34/linux-ppcbgxlc-try
+setenv LD_LIBRARY_PATH $ROOTSYS/lib:$ROOTSYS/lib/32
+unsetenv G4AMS 
+unsetenv G4MULTITHREADED 
+setenv AMSP 1
+setenv PGTRACK 1
+setenv VERBOSE 1
+setenv NOOSTLS 1
+unsetenv DEBUGFLAG 
+make -j 24
+make lib -j 24
+make -f Makefastntrd64

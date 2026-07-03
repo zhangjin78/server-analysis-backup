@@ -1,0 +1,310 @@
+//  $Id: commonsi.C,v 1.496 2025/05/29 14:36:01 choutko Exp $
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include "system_bg.h"
+#include "commonsi.h"
+#include "amsdbc.h"
+#include <fstream>
+#include <cstdlib>
+#ifdef __G4AMS__
+#include "G4Version.hh"
+#endif
+
+
+AMSDATADIR_DEF AMSDATADIR;
+
+#ifdef __ROOTSHAREDLIBRARY__
+int AMSCommonsI::pri=0;
+int AMSCommonsI::prierr=0;
+#else
+int AMSCommonsI::pri=1;
+int AMSCommonsI::prierr=1;
+#endif
+
+jmp_buf  AMSCommonsI::AB_buf;
+int  AMSCommonsI::AB_catch=-1;
+
+uinteger AMSCommonsI::_MaxMem=1400000000;
+
+#ifndef _PGTRACK_
+char AMSCommonsI::_version[]="v4.00";
+#else
+char AMSCommonsI::_version[]="v6.00";
+#endif
+integer AMSCommonsI::_g4version=-1;
+uinteger AMSCommonsI::_build=1414;
+uinteger AMSCommonsI::_buildtime=0;
+float AMSCommonsI::_mips=1000;
+uinteger AMSCommonsI::_os=0;
+char AMSCommonsI::_osname[255];
+char AMSCommonsI::_osversion[255];
+char AMSCommonsI::_tmp_log_path[L_tmpnam];
+pid_t AMSCommonsI::_pid=0;
+bool AMSCommonsI::_remote=false;
+AMSCommonsI::AMSCommonsI(){
+  init();
+}
+#include <sys/utsname.h>
+int AMSCommonsI::getCPUInfo(int os_num, float& freq, string& model)
+{
+    const char path_cpuinfo[] = "/proc/cpuinfo";
+    freq = -1;
+    model = "";
+    ifstream cpuinfo (path_cpuinfo);
+    string line;
+    if (!cpuinfo.is_open()) {
+        cerr << "getCPUInfo: cannot open file " << path_cpuinfo << endl;
+        return -1;
+    }
+    string patt_freq, patt_model;
+    if (os_num % 10 != 5 && os_num % 10 != 6) {
+        patt_freq = "cpu mhz";
+        patt_model = "name";
+    }
+    else {
+        patt_freq = "clock";
+        patt_model = "cpu";
+    }
+    while ( getline (cpuinfo, line) ) {
+        string tocompare = line;
+        std::transform(tocompare.begin(), tocompare.end(), tocompare.begin(), ::tolower);
+        if (tocompare.find(patt_freq) != std::string::npos) {
+            std::size_t pos = line.find(":");
+            if (pos == string::npos)
+                continue;
+            stringstream ss(line.substr(pos+1));
+            ss >> freq;
+        }
+        else if (tocompare.find(patt_model) != std::string::npos) {
+            std::size_t pos = line.find(":");
+            if (pos == string::npos)
+                continue;
+            model = line.substr(pos+1);
+        }
+        if (freq > 0 && model.length() > 0)
+            break;
+    }
+    return 0;
+}
+
+void AMSCommonsI::init(){ 
+  if(_Count++==0){
+#ifdef __FASTNTRD__
+  cout.setstate(ios_base::failbit);
+  cerr.setstate(ios_base::failbit);
+#endif
+   struct utsname u;
+   uname(&u);
+   strcpy(_osversion,"0.0");
+     if(strstr(u.sysname,"OSF1")){
+      strcpy(_osname,"osf1");
+      _os=1;
+     }
+     else if(strstr(u.machine,"ppc64")){
+       strcpy(_osname,"ppc64");
+       _os=5;
+       strcpy(_osversion,u.release); 
+    }
+     else if(strstr(u.sysname,"CNK")){
+       strcpy(_osname,"CNK BGQ");
+       _os=6;
+    }
+     else if(strstr(u.sysname,"Linux")){
+      strcpy(_osname,"linux");
+      _os=2;
+      strcpy(_osversion,u.release);  
+     }
+     else if(strstr(u.sysname,"SunOS")){
+      strcpy(_osname,"sunos");
+      _os=3;
+     }
+     else if(strstr(u.sysname,"Darwin")){
+      strcpy(_osname,"Darwin");
+      _os=4;
+     }
+     else {
+      _os=0;
+      _osname[0]='\0';
+     }
+     if ( _os == 6){
+      char *lr=getenv("LogRedirection");
+       if(lr &&  strlen(lr) && strstr(lr,"commonsi.C")){
+         tmpnam (_tmp_log_path);
+         cout <<" unsetenv LogRedirection  "<<"to suppress redirection here "<<endl; 
+         cout << "AMSCommonsI::init-I-RedirectLogTo: " << _tmp_log_path << endl;
+         freopen(_tmp_log_path, "w", stdout);
+         dup2(fileno(stdout), fileno(stderr));
+         cout << "AMSCommonsI::init-I-RedirectLogTo: " << _tmp_log_path << endl;
+     }
+      }
+     if(_os){
+      if(pri)cout <<"AMSCommonsI-I-SystemIdentifiedAs "<< u.sysname<<" "<<u.release<<" "<<u.machine<<" "<<_os<<endl;
+     }
+     else{
+      if(prierr)cerr<<"AMSCommonsI-E-CouldNotMap "<<u.sysname<<" "<<u.machine<<endl;
+      if(prierr)cerr<<"Production Job Will Be Aborted"<<endl;
+     }
+   char dt[128];
+   strcpy(dt,"/afs/cern.ch/exp/ams/Offline/AMSDataDir");
+   //char dt[128]="/afs/cern.ch/exp/ams/Offline/AMSDataDir";
+   char* gtv=getenv("AMSDataDir");
+   if(gtv && strlen(gtv)>0){
+    AMSDATADIR.amsdlength=strlen(gtv)+strlen(getversion())+2+8;
+    if(AMSDATADIR.amsdlength>127){
+      if(prierr)cerr <<"AMSCommonsI::init-F-AMSDataDirLength>127 "<<
+        AMSDATADIR.amsdlength<<endl;
+       exit(1);  
+    }
+      strcpy(AMSDATADIR.amsdatadir,gtv);
+      strcat(AMSDATADIR.amsdatadir,"/");
+      strcat(AMSDATADIR.amsdatadir,getversion());
+      strcat(AMSDATADIR.amsdatadir,"/");
+      AMSDATADIR.amsdlength=strlen(AMSDATADIR.amsdatadir);
+      strcpy(AMSDATADIR.amsdatabase,gtv);
+      strcat(AMSDATADIR.amsdatabase,"/");
+      strcat(AMSDATADIR.amsdatabase,"DataBase");
+       if(getenv("AMSDataBaseEnv")){
+          cout<<"AMSCommonsi-I-AMASDataBaseRedefined "<<getenv("AMSDataBaseEnv")<<endl;
+        strcpy(AMSDATADIR.amsdatabase,getenv("AMSDataBaseEnv"));
+      } 
+      strcat(AMSDATADIR.amsdatabase,"/");
+ 
+      AMSDATADIR.amsdblength=strlen(AMSDATADIR.amsdatabase);
+     
+   }
+   else {
+     if(pri)cout<<"AMSCommonsI-W-AMSDataDir variable is not defined."<<endl;
+     if(pri)cout <<"AMSCommonsI-W-Default value "<<
+        dt<< " will be used."<<endl;
+      strcpy(AMSDATADIR.amsdatadir,dt);
+      strcat(AMSDATADIR.amsdatadir,"/");
+      strcat(AMSDATADIR.amsdatadir,getversion());
+      strcat(AMSDATADIR.amsdatadir,"/");
+      AMSDATADIR.amsdlength=strlen(AMSDATADIR.amsdatadir);
+      strcpy(AMSDATADIR.amsdatabase,dt);
+      strcat(AMSDATADIR.amsdatabase,"/");
+      strcat(AMSDATADIR.amsdatabase,"DataBase");
+      strcat(AMSDATADIR.amsdatabase,"/");
+      AMSDATADIR.amsdblength=strlen(AMSDATADIR.amsdatabase);
+      
+   }
+          if(sizeof(int) <= sizeof(short int)){
+         if(prierr)cerr<<"AMSCommonsI-F-16 bit machine is not supported."<<endl;
+         exit(1);
+       }
+       integer b64=0;
+       if(sizeof(ulong)>sizeof(uinteger))b64=1;
+       uinteger test1,test2;
+       test1=1;
+       test1+=2<<8;
+       test1+=4<<16;
+       test1+=8<<24;
+       unsigned char *pt= (unsigned char*)&test1;
+       test2=pt[0];
+       test2+=pt[1]<<8;
+       test2+=pt[2]<<16;
+       test2+=pt[3]<<24;
+       integer lend = test1==test2;
+       if(lend) { if(pri)cout <<"AMSCommonsI-I-Identified as LittleEndian"; }
+       else {
+         if(pri)cout <<"AMSCommonsI-I-Identified as BigEndian";
+         AMSDBc::BigEndian=1;
+       }
+       if(b64){
+         _os+=10;
+         _MaxMem=4294967295;
+         if(pri)cout <<" 64 bit machine. "<<_MaxMem<<endl;
+       }
+       else {
+        if(strstr(u.machine,"_64"))_MaxMem=3000000000;
+        else if(strstr(u.release,"hugemem"))_MaxMem=2300000000;
+        if(pri)cout <<" 32 bit machine. "<<_MaxMem<<endl;
+       }
+        
+       AMSDBc dummy; (void)dummy;
+       AMSDBc::amsdatabase=new char[strlen(AMSDATADIR.amsdatabase)+1];
+       strcpy(AMSDBc::amsdatabase,AMSDATADIR.amsdatabase);
+       cout <<"AMSCommonsI-I-amsdatabase "<<AMSDBc::amsdatabase<<endl;
+       _pid=getpid();
+#ifndef __DARWIN__
+       //  get mips
+       char syscom[255];
+       string sysmodel;
+       getCPUInfo(_os, _mips, sysmodel);
+       cout <<"AMSCommonsI-I-MipsFromCPUInfo: "<< _mips <<endl;
+       strcpy(syscom, sysmodel.c_str());
+       
+//       char *fname = tempnam("/tmp",NULL);
+{
+//       if(_os%10!=5)strcpy(syscom,"cat /proc/cpuinfo | grep -i -e 'cpu mhz'  > ");
+//       else strcpy(syscom,"cat /proc/cpuinfo | grep -i -e 'clock'  > ");
+       
+//       strcat(syscom,fname);
+//       int i=system(syscom);
+//       if(i==0){
+//        ifstream fbin;
+//        fbin.open(fname);
+//        if(fbin){
+//          fbin.ignore(255,':');
+//          fbin>>_mips;
+          if(_mips<100)_mips=100;
+//          fbin.close();
+//        }
+//       }  
+//}
+//{
+//       if(_os%10!=5)strcpy(syscom,"cat /proc/cpuinfo | grep -i -e name  > ");
+//       else strcpy(syscom,"cat /proc/cpuinfo | grep -i -e cpu > ");
+//       strcat(syscom,fname);
+//       int i=system(syscom);
+//       if(i==0){
+//        ifstream fbin;
+//        fbin.open(fname);
+//        if(fbin){
+//          fbin.ignore(255,':');
+//          fbin.getline(syscom,254);
+//          fbin.close();
+
+          float _cor=1.1;
+          if(pri)cout <<"AMSCommonsI-I-HardwareIdentified as "<<syscom<<endl;
+          if(strstr(syscom,"Pentium II"))_cor=1.07;
+          else if(strstr(syscom,"Pentium III"))_cor=1.0;
+           else if(strstr(syscom,"Pentium(R) III"))_cor=1.0;
+          else if(strstr(syscom,"Pentium(R) 4")){
+           if(_mips<2400) _cor=0.7;
+           else _cor=0.85;
+          }
+          else if(strstr(syscom,"Pentium(R) M"))_cor=1.07;
+          else if(strstr(syscom,"E55") or strstr(syscom,"X55"))_cor=1.81;
+          else if(strstr(syscom,"E5") or strstr(syscom,"X5"))_cor=1.6;
+          else if(strstr(syscom,"Xeon"))_cor=1.6*0.56/0.46;
+          else if(strstr(syscom,"Athlon"))_cor=1.15;
+          else if(strstr(syscom,"Opteron"))_cor=1.15;
+          else if(strstr(syscom,"Core(TM)2 Duo"))_cor=1.35;
+          else if(strstr(syscom,"Haswell"))_cor=1.5;
+          else if(strstr(syscom,"Phenom"))_cor=1.3;
+          else if(strstr(syscom,"i7"))_cor=1.6;
+          else if(strstr(syscom,"POWER7"))_cor=0.67;
+          else if(strstr(syscom,"Blue Gene/Q"))_cor=0.25;
+          else if(strstr(syscom,"EPYC 9"))_cor=0.83/0.46*1.6;
+	  else if(strstr(syscom,"EPYC"))_cor=0.65/0.46*1.6;
+          else if(prierr)cerr<<"AMSCommonsI-E-UnableToMatchName "<<syscom<<endl;
+          _mips*=_cor;
+//        }
+//       }
+       if(pri)cout <<"AMSCommonsI-I-ComputerEvaluatedAsMips "<<getmips()<<endl; 
+#ifdef __TEST26__
+       if(strstr(syscom,"Athlon")){
+        _remote=true;
+      } 
+#endif 
+}
+#endif
+  cout <<"AMS Software version "<<AMSCommonsI::getversion()<<"/"<<AMSCommonsI::getbuildno()<<"/"<<AMSCommonsI::getosno()<<" built "<<AMSCommonsI::getbuildctime()<< endl;
+#ifdef __G4AMS__
+cout <<"Geant4  Version "<<G4VERSION_NUMBER<<endl; 
+#endif
+  }
+}
+integer AMSCommonsI::_Count=0;

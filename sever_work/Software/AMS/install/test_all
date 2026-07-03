@@ -1,0 +1,32 @@
+#!/bin/tcsh
+
+if ( "$1" != "" )  then
+setenv AMSWD $1
+endif
+
+if ( "$2" != "" )  then
+setenv ADDBUILDNO 1
+else
+unsetenv ADDBUILDNO
+endif
+
+foreach PG ("" "PG")
+    foreach COMP ("gcc" "icc")
+
+	source ./amsvar.${COMP}64
+	setenv ARCH linuxx8664$COMP
+	echo "Testing $PG$ARCH"
+#	echo "$AMSWD/exe/$ARCH/fastntrd64.exe g3v1g3$PG$ARCH.root 10 1 10"
+	$AMSWD/exe/$ARCH/fastntrd64.exe g3v1g3$PG$ARCH.root 10 1 10
+	set i=$?
+	if ( "$i" < 0 ) then
+	echo "$ARCH failed $i"
+	endif
+
+	unsetenv ARCH
+    end
+end
+
+
+
+

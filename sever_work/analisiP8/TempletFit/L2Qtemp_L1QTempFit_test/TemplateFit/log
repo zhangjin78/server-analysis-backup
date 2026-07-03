@@ -1,0 +1,393 @@
+
+Processing KeysPdfRead_AfterShift.C...
+
+[1mRooFit v3.60 -- Developed by Wouter Verkerke and David Kirkby[0m 
+                Copyright (C) 2000-2013 NIKHEF, University of California & Stanford University
+                All rights reserved, please read http://roofit.sourceforge.net/license.txt
+
+OK set fit bin
+OK set temp bin
+ *** Fit ibin=17 temp ibin=17 *** 
+iSelRig=17 dLRig=10.1 dURig=12 iRigTemp=17
+[#1] INFO:Eval -- RooRealVar::setRange(L1QXY) new range named 'Integral' created with bounds [13.5,14.5]
+Span=1
+Create pic directory  for L1QTempFit 0
+Create draw pic 0
+Create draw root pic 0
+TFile**		/afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/TemplateFit/r1_xy2_NVar5_rebin5_q14/L1QTempFit_L2QTemp/L1QTempFit_r1_q14_xy2_rig17.root	
+ TFile*		/afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit/L2Qtemp_L1QTempFit_test/TemplateFit/r1_xy2_NVar5_rebin5_q14/L1QTempFit_L2QTemp/L1QTempFit_r1_q14_xy2_rig17.root	
+  TDirectoryFile*		Inefficiency	Inefficiency
+   OBJ: TH1F	Inefficiency_r1_q14_xy2	Inefficiency_r1_q14_xy2 : 0 at: 0x309b500
+  TDirectoryFile*		Inefficiency_FixRelativeAbundance	Inefficiency_FixRelativeAbundance
+   OBJ: TH1F	Inefficiency_r1_q14_xy2	Inefficiency_r1_q14_xy2 : 0 at: 0x309eec0
+  TDirectoryFile*		Impurity	Impurity
+   OBJ: TH1F	Impurity_r1_q12_xy2	Impurity_r1_q12_xy2 : 0 at: 0x30a0390
+   OBJ: TH1F	Impurity_r1_q13_xy2	Impurity_r1_q13_xy2 : 0 at: 0x30a0bc0
+   OBJ: TH1F	Impurity_r1_q14_xy2	Impurity_r1_q14_xy2 : 0 at: 0x30a1380
+   OBJ: TH1F	Impurity_r1_q15_xy2	Impurity_r1_q15_xy2 : 0 at: 0x30a1b40
+   OBJ: TH1F	Impurity_r1_q16_xy2	Impurity_r1_q16_xy2 : 0 at: 0x30a2300
+  TDirectoryFile*		Impurity_err1	Impurity_err1
+   OBJ: TH1F	Impurity_err1_r1_q12_xy2	Impurity_err1_r1_q12_xy2 : 0 at: 0x30a3680
+   OBJ: TH1F	Impurity_err1_r1_q13_xy2	Impurity_err1_r1_q13_xy2 : 0 at: 0x30a3e20
+   OBJ: TH1F	Impurity_err1_r1_q14_xy2	Impurity_err1_r1_q14_xy2 : 0 at: 0x30a45e0
+   OBJ: TH1F	Impurity_err1_r1_q15_xy2	Impurity_err1_r1_q15_xy2 : 0 at: 0x30a4da0
+   OBJ: TH1F	Impurity_err1_r1_q16_xy2	Impurity_err1_r1_q16_xy2 : 0 at: 0x30a5560
+  TDirectoryFile*		Impurity_err2	Impurity_err2
+   OBJ: TH1F	Impurity_err2_r1_q12_xy2	Impurity_err2_r1_q12_xy2 : 0 at: 0x30a6910
+   OBJ: TH1F	Impurity_err2_r1_q13_xy2	Impurity_err2_r1_q13_xy2 : 0 at: 0x30a70d0
+   OBJ: TH1F	Impurity_err2_r1_q14_xy2	Impurity_err2_r1_q14_xy2 : 0 at: 0x30a7890
+   OBJ: TH1F	Impurity_err2_r1_q15_xy2	Impurity_err2_r1_q15_xy2 : 0 at: 0x30a8050
+   OBJ: TH1F	Impurity_err2_r1_q16_xy2	Impurity_err2_r1_q16_xy2 : 0 at: 0x30a8810
+  TDirectoryFile*		Chisquare	Chisquare
+   OBJ: TH1F	Chisquare_r1_xy2_sum	Chisquare_r1_xy2_sum : 0 at: 0x30a9dc0
+  TDirectoryFile*		FitParaError	FitParaError
+   OBJ: TH1F	FitParaError_r1_q12_xy2	FitParaError_r1_q12_xy2 : 0 at: 0x30ab200
+   OBJ: TH1F	FitParaError_r1_q13_xy2	FitParaError_r1_q13_xy2 : 0 at: 0x30aba00
+   OBJ: TH1F	FitParaError_r1_q14_xy2	FitParaError_r1_q14_xy2 : 0 at: 0x30ac1c0
+   OBJ: TH1F	FitParaError_r1_q15_xy2	FitParaError_r1_q15_xy2 : 0 at: 0x30ac980
+   OBJ: TH1F	FitParaError_r1_q16_xy2	FitParaError_r1_q16_xy2 : 0 at: 0x30ad140
+  TDirectoryFile*		FitShift	FitShift
+   OBJ: TH1F	FitShift_r1_q12_xy2	FitShift_r1_q12_xy2 : 0 at: 0x30ae6f0
+   OBJ: TH1F	FitShift_r1_q13_xy2	FitShift_r1_q13_xy2 : 0 at: 0x30aef20
+   OBJ: TH1F	FitShift_r1_q14_xy2	FitShift_r1_q14_xy2 : 0 at: 0x30af6e0
+   OBJ: TH1F	FitShift_r1_q15_xy2	FitShift_r1_q15_xy2 : 0 at: 0x30afea0
+   OBJ: TH1F	FitShift_r1_q16_xy2	FitShift_r1_q16_xy2 : 0 at: 0x30b0660
+  KEY: TDirectoryFile	Inefficiency;1	Inefficiency
+  KEY: TDirectoryFile	Inefficiency_FixRelativeAbundance;1	Inefficiency_FixRelativeAbundance
+  KEY: TDirectoryFile	Impurity;1	Impurity
+  KEY: TDirectoryFile	Impurity_err1;1	Impurity_err1
+  KEY: TDirectoryFile	Impurity_err2;1	Impurity_err2
+  KEY: TDirectoryFile	Chisquare;1	Chisquare
+  KEY: TDirectoryFile	FitParaError;1	FitParaError
+  KEY: TDirectoryFile	FitShift;1	FitShift
+****** Performing L1Q template fit ******
+17  [10.1,12]
+24 to 25
+******Finish plotting L1Q******
+[#1] INFO:Eval -- RooRealVar::setRange(L1QXY) new range named 'Fit' created with bounds [11.5,16.6]
+[#1] INFO:Eval -- RooRealVar::setRange(L1QXY) new range named 'Norm' created with bounds [0,35]
+[#1] INFO:Eval -- RooRealVar::setRange(L1QXY) new range named 'draw' created with bounds [9,19.5]
+start performing fit, fit range: [11.5,16.6]
+[#1] INFO:Fitting -- RooAbsOptTestStatistic::ctor(nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17) constructing test statistic for sub-range named Fit
+[#1] INFO:Eval -- RooRealVar::setRange(L1QXY) new range named 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17' created with bounds [11.5,16.6]
+[#1] INFO:Fitting -- RooAbsOptTestStatistic::ctor(nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17) fixing interpretation of coefficients of any RooAddPdf component to range Fit
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Minization -- RooMinimizer::optimizeConst: activating const optimization
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Minization --  The following expressions have been identified as constant and will be precalculated and cached: (L2Q_r1_q12_xy2_sel1_rig17_KeysPdf,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf)
+ **********
+ **    1 **SET PRINT           1
+ **********
+ **********
+ **    2 **SET NOGRAD
+ **********
+ PARAMETER DEFINITIONS:
+    NO.   NAME         VALUE      STEP SIZE      LIMITS
+     1 n0           3.00000e-01  4.50000e-02    0.00000e+00  4.50000e-01
+     2 n1           1.00000e-02  5.00000e-03    0.00000e+00  1.50000e-01
+     3 n2           3.00000e-01  3.50000e-02    1.00000e-01  4.50000e-01
+     4 n3           1.00000e-02  5.00000e-03    0.00000e+00  1.50000e-01
+ **********
+ **    3 **SET ERR         0.5
+ **********
+ **********
+ **    4 **SET PRINT           1
+ **********
+ **********
+ **    5 **SET STR           1
+ **********
+ NOW USING STRATEGY  1: TRY TO BALANCE SPEED AGAINST RELIABILITY
+ **********
+ **    6 **MIGRAD        2000           1
+ **********
+ FIRST CALL TO USER FUNCTION AT NEW START POINT, WITH IFLAG=4.
+ START MIGRAD MINIMIZATION.  STRATEGY  1.  CONVERGENCE WHEN EDM .LT. 1.00e-03
+ FCN=651407 FROM MIGRAD    STATUS=INITIATE       49 CALLS          50 TOTAL
+                     EDM= unknown      STRATEGY= 1      NO ERROR MATRIX       
+  EXT PARAMETER               CURRENT GUESS       STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  n0           3.00000e-01   4.50000e-02   0.00000e+00  -8.09954e+04
+   2  n1           1.49914e-01   5.00000e-03   0.00000e+00   6.07982e+02
+   3  n2           3.00000e-01   3.50000e-02   0.00000e+00  -4.09336e+04
+   4  n3           1.39027e-01   5.00000e-03   2.07152e+00   2.87454e+02
+                               ERR DEF= 0.5
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469
+[#0] WARNING:Eval -- RooAddPdf::updateCoefCache(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum WARNING: sum of PDF coefficients not in range [0-1], value=1.03469 (no more will be printed)
+RooMinimizerFcn: Minimized function has error status.
+Returning maximum FCN so far (746172) to force MIGRAD to back out of this region. Error log follows.
+Parameter values: 	n0=0.380973	n1=0.15	n2=0.370657	n3=0.133064
+RooNLLVar::nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17[ paramSet=(n0,n1,n2,n3,r1_q12_xy2_shift_L2QTemp,r1_q13_xy2_shift_L2QTemp,r1_q14_xy2_shift_L2QTemp,r1_q15_xy2_shift_L2QTemp,r1_q16_xy2_shift_L2QTemp) ]
+     function value is NAN @ paramSet=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064,r1_q12_xy2_shift_L2QTemp = -0.0268772,r1_q13_xy2_shift_L2QTemp = -0.0580327,r1_q14_xy2_shift_L2QTemp = -0.0289767,r1_q15_xy2_shift_L2QTemp = 0.000247789,r1_q16_xy2_shift_L2QTemp = -0.00097595)
+RooAddPdf::L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum[ n0 * L2Q_r1_q12_xy2_sel1_rig17_KeysPdf + n1 * L2Q_r1_q13_xy2_sel1_rig17_KeysPdf + n2 * L2Q_r1_q14_xy2_sel1_rig17_KeysPdf + n3 * L2Q_r1_q15_xy2_sel1_rig17_KeysPdf + [%] * L2Q_r1_q16_xy2_sel1_rig17_KeysPdf ]
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.380973,n1 = 0.15,n2 = 0.370657,n3 = 0.133064)
+    ... (remaining 194 messages suppressed)
+
+RooMinimizerFcn: Minimized function has error status.
+Returning maximum FCN so far (746172) to force MIGRAD to back out of this region. Error log follows.
+Parameter values: 	n0=0.421441	n1=0.14999	n2=0.394032	n3=0.0862675
+RooNLLVar::nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17[ paramSet=(n0,n1,n2,n3,r1_q12_xy2_shift_L2QTemp,r1_q13_xy2_shift_L2QTemp,r1_q14_xy2_shift_L2QTemp,r1_q15_xy2_shift_L2QTemp,r1_q16_xy2_shift_L2QTemp) ]
+     function value is NAN @ paramSet=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675,r1_q12_xy2_shift_L2QTemp = -0.0268772,r1_q13_xy2_shift_L2QTemp = -0.0580327,r1_q14_xy2_shift_L2QTemp = -0.0289767,r1_q15_xy2_shift_L2QTemp = 0.000247789,r1_q16_xy2_shift_L2QTemp = -0.00097595)
+RooAddPdf::L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum[ n0 * L2Q_r1_q12_xy2_sel1_rig17_KeysPdf + n1 * L2Q_r1_q13_xy2_sel1_rig17_KeysPdf + n2 * L2Q_r1_q14_xy2_sel1_rig17_KeysPdf + n3 * L2Q_r1_q15_xy2_sel1_rig17_KeysPdf + [%] * L2Q_r1_q16_xy2_sel1_rig17_KeysPdf ]
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.421441,n1 = 0.14999,n2 = 0.394032,n3 = 0.0862675)
+    ... (remaining 194 messages suppressed)
+
+RooMinimizerFcn: Minimized function has error status.
+Returning maximum FCN so far (746172) to force MIGRAD to back out of this region. Error log follows.
+Parameter values: 	n0=0.413524	n1=0.149974	n2=0.390022	n3=0.0900944
+RooNLLVar::nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17[ paramSet=(n0,n1,n2,n3,r1_q12_xy2_shift_L2QTemp,r1_q13_xy2_shift_L2QTemp,r1_q14_xy2_shift_L2QTemp,r1_q15_xy2_shift_L2QTemp,r1_q16_xy2_shift_L2QTemp) ]
+     function value is NAN @ paramSet=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944,r1_q12_xy2_shift_L2QTemp = -0.0268772,r1_q13_xy2_shift_L2QTemp = -0.0580327,r1_q14_xy2_shift_L2QTemp = -0.0289767,r1_q15_xy2_shift_L2QTemp = 0.000247789,r1_q16_xy2_shift_L2QTemp = -0.00097595)
+RooAddPdf::L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum[ n0 * L2Q_r1_q12_xy2_sel1_rig17_KeysPdf + n1 * L2Q_r1_q13_xy2_sel1_rig17_KeysPdf + n2 * L2Q_r1_q14_xy2_sel1_rig17_KeysPdf + n3 * L2Q_r1_q15_xy2_sel1_rig17_KeysPdf + [%] * L2Q_r1_q16_xy2_sel1_rig17_KeysPdf ]
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.525), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.481733/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00516846/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000870156/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 7.70412e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000177743/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.575), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.574097/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00617382/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.000934019/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 9.10975e-05/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000181291/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.625), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.668692/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0074785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00100331/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000107188/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000184897/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.675), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.769051/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.00909669/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00107814/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000125788/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000188576/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.725), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.860309/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.0111783/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00116007/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000147161/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000192329/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     p.d.f value is Not-a-Number @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+     getLogVal() top-level p.d.f evaluates to NaN @ !refCoefNorm=(L1QXY = 11.775), !pdfs=(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf = 0.935252/0.908784,L2Q_r1_q13_xy2_sel1_rig17_KeysPdf = 0.013785/0.997517,L2Q_r1_q14_xy2_sel1_rig17_KeysPdf = 0.00124865/0.998891,L2Q_r1_q15_xy2_sel1_rig17_KeysPdf = 0.000171474/0.98938,L2Q_r1_q16_xy2_sel1_rig17_KeysPdf = 0.000196161/0.840581), !coefficients=(n0 = 0.413524,n1 = 0.149974,n2 = 0.390022,n3 = 0.0900944)
+    ... (remaining 194 messages suppressed)
+
+ MIGRAD MINIMIZATION HAS CONVERGED.
+ MIGRAD WILL VERIFY CONVERGENCE AND ERROR MATRIX.
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=617128 FROM MIGRAD    STATUS=CONVERGED     293 CALLS         294 TOTAL
+                     EDM=1.49711e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  n0           4.37715e-01   8.04208e-04   2.92263e-03  -3.76754e-01
+   2  n1           9.54999e-02   6.78338e-04   2.72026e-03   1.43212e-01
+   3  n2           3.75200e-01   8.72113e-04   1.50212e-03  -1.97368e-01
+   4  n3           1.92298e-02   5.25041e-04   4.31009e-03  -1.67272e-01
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  25    NPAR=  4    ERR DEF=0.5
+  6.468e-07  2.228e-07 -3.339e-07  2.078e-08 
+  2.228e-07  4.602e-07  2.324e-07  1.628e-08 
+ -3.339e-07  2.324e-07  7.606e-07  1.759e-07 
+  2.078e-08  1.628e-08  1.759e-07  2.757e-07 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4
+        1  0.87036   1.000  0.408 -0.476  0.049
+        2  0.84597   0.408  1.000  0.393  0.046
+        3  0.89039  -0.476  0.393  1.000  0.384
+        4  0.65227   0.049  0.046  0.384  1.000
+ **********
+ **    7 **SET ERR         0.5
+ **********
+ **********
+ **    8 **SET PRINT           1
+ **********
+ **********
+ **    9 **HESSE        2000
+ **********
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=617128 FROM HESSE     STATUS=OK             23 CALLS         317 TOTAL
+                     EDM=1.50596e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                INTERNAL      INTERNAL  
+  NO.   NAME      VALUE            ERROR       STEP SIZE       VALUE   
+   1  n0           4.37715e-01   8.07125e-04   1.16905e-04   1.23882e+00
+   2  n1           9.54999e-02   6.81441e-04   1.08811e-04   2.86474e+00
+   3  n2           3.75200e-01   8.68153e-04   6.00849e-05   6.09638e-01
+   4  n3           1.92298e-02   5.26092e-04   1.72404e-04  -2.30315e+00
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  25    NPAR=  4    ERR DEF=0.5
+  6.515e-07  2.300e-07 -3.297e-07  2.289e-08 
+  2.300e-07  4.644e-07  2.295e-07  1.535e-08 
+ -3.297e-07  2.295e-07  7.537e-07  1.745e-07 
+  2.289e-08  1.535e-08  1.745e-07  2.768e-07 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4
+        1  0.87137   1.000  0.418 -0.471  0.054
+        2  0.84749   0.418  1.000  0.388  0.043
+        3  0.88932  -0.471  0.388  1.000  0.382
+        4  0.65402   0.054  0.043  0.382  1.000
+[#1] INFO:Minization -- RooMinimizer::optimizeConst: deactivating const optimization
+Finish performing fit
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) directly selected PDF components: (L2Q_r1_q12_xy2_sel1_rig17_KeysPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) indirectly selected PDF components: (r1_q12_xy2_with_shift_L2QTemp)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) directly selected PDF components: (L2Q_r1_q14_xy2_sel1_rig17_KeysPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) indirectly selected PDF components: (r1_q14_xy2_with_shift_L2QTemp)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) directly selected PDF components: (L2Q_r1_q16_xy2_sel1_rig17_KeysPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) indirectly selected PDF components: (r1_q16_xy2_with_shift_L2QTemp)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) directly selected PDF components: (L2Q_r1_q13_xy2_sel1_rig17_KeysPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) indirectly selected PDF components: (r1_q13_xy2_with_shift_L2QTemp)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f was fitted in a subrange and no explicit NormRange() was specified. Plotting / normalising in fit range. To override, do one of the following
+	- Clear the automatic fit range attribute: <pdf>.setStringAttribute("fitrange", nullptr);
+	- Explicitly specify the plotting range: Range("<rangeName>").
+	- Explicitly specify where to compute the normalisation: NormRange("<rangeName>").
+	The default (full) range can be denoted with Range("") / NormRange("").
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) only plotting range 'draw'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) p.d.f. curve is normalized using explicit choice of ranges 'fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17'
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) directly selected PDF components: (L2Q_r1_q15_xy2_sel1_rig17_KeysPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum) indirectly selected PDF components: (r1_q15_xy2_with_shift_L2QTemp)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|fit_nll_L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_L1Q_r1_q14_xy2_L1QSam2.0sigma_rig17]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+****** calculating containmination ******
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+0 0.437715
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q12_xy2_sel1_rig17_KeysPdf_sum_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+1 0.0954999
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q13_xy2_sel1_rig17_KeysPdf_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+2 0.3752
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q14_xy2_sel1_rig17_KeysPdf_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+3 0.0192298
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q15_xy2_sel1_rig17_KeysPdf_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+4 0.072355
+[#1] INFO:NumericIntegration -- RooRealIntegral::init(L2Q_r1_q16_xy2_sel1_rig17_KeysPdf_Int[L1QXY|Integral]_Norm[L1QXY]) using numeric integrator RooIntegrator1D to calculate Int(L1QXY)
+start storing impurity
+0 0.437715+/-0.000807125
+1 0.0954999+/-0.000681441
+2 0.3752+/-0.000868153
+3 0.0192298+/-0.000526092
+4 0.072355+/-0.00146502
+ ****** 
+0 0.00188617 1.44855e-05 0.302131 3.15126e+07
+ ****** 
+ ****** 
+1 0.0302538 0.000222899 0.302131 3.15126e+07
+ ****** 
+ ****** 
+2 0.959881 0.00222192 0.302131 3.15126e+07
+ ****** 
+ ****** 
+3 0.00735488 0.000203112 0.302131 3.15126e+07
+ ****** 
+ ****** 
+4 0.000653011 1.56e-05 0.302131 3.15126e+07
+ ****** 
+Impurity/Impurity_r1_q12_xy2
+Impurity/Impurity_r1_q13_xy2
+Impurity/Impurity_r1_q14_xy2
+Impurity/Impurity_r1_q15_xy2
+Impurity/Impurity_r1_q16_xy2
+Impurity_err1/Impurity_err1_r1_q12_xy2
+Impurity_err1/Impurity_err1_r1_q13_xy2
+Impurity_err1/Impurity_err1_r1_q14_xy2
+Impurity_err1/Impurity_err1_r1_q15_xy2
+Impurity_err1/Impurity_err1_r1_q16_xy2
+Impurity_err2/Impurity_err2_r1_q12_xy2
+Impurity_err2/Impurity_err2_r1_q13_xy2
+Impurity_err2/Impurity_err2_r1_q14_xy2
+Impurity_err2/Impurity_err2_r1_q15_xy2
+Impurity_err2/Impurity_err2_r1_q16_xy2
+	 q_12 	-0.0268772
+	 q_13 	-0.0580327
+	 q_14 	-0.0289767
+	 q_15 	0.000247789
+	 q_16 	-0.00097595
+(int) 0

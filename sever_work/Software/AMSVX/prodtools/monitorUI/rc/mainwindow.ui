@@ -1,0 +1,2352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1134</width>
+    <height>728</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout_4">
+    <property name="margin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QStackedWidget" name="stackedWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>200</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>DejaVu LGC Serif Condensed</family>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="page">
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="QTreeWidget" name="treeWidget">
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="textElideMode">
+           <enum>Qt::ElideMiddle</enum>
+          </property>
+          <column>
+           <property name="text">
+            <string>Data</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="page_2">
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="QTreeWidget" name="treeWidget2">
+          <column>
+           <property name="text">
+            <string>Forms</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="font">
+       <font>
+        <family>DejaVu LGC Sans</family>
+        <pointsize>9</pointsize>
+       </font>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::North</enum>
+      </property>
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Producer processes</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Producer_ActiveHosts</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QTableWidget" name="qtwActiveHosts">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>280</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <property name="gridStyle">
+           <enum>Qt::SolidLine</enum>
+          </property>
+          <column>
+           <property name="text">
+            <string>Serv</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>HostName</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Clients</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>RunningPr</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>AllowedPr</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Clock</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>CliProcessed</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>CliFailed</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>NTuples</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>EventTags</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Events</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>%ofTotal</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Warnings</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Errors</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>CPU/Event</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Efficiency</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Producer_ActiveClients</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QTableWidget" name="qtwActiveClients">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>320</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <property name="gridStyle">
+           <enum>Qt::SolidLine</enum>
+          </property>
+          <column>
+           <property name="text">
+            <string>Serv</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ID</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>HostName</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Mips</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Threads</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ProcessID</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>StartTime</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LastUpdate</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>TimeOut</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>EvLeft</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>FinishIn</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>FileName</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Producer i/o</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_7">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Producer_Runs</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QTableWidget" name="qtwProducerRuns">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>320</height>
+           </size>
+          </property>
+          <property name="sizeIncrement">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>Serv</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Uid</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Time</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>FirstEvent</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LastEvent</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Priority</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>History</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Fails</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>DataMC</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Host</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QTableWidget" name="qtwProducerNTuples">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>300</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="sizeIncrement">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>Serv</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Time</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>FirstEvent</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LastEvent</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>CRC</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Size(MB)</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Producer_NTuples</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>Service</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_12">
+        <item row="4" column="0">
+         <layout class="QGridLayout" name="gridLayout_11">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <item row="5" column="0">
+           <widget class="QTableWidget" name="qtwDiskUsage">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>300</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Serif Condensed</family>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="showGrid">
+             <bool>false</bool>
+            </property>
+            <column>
+             <property name="text">
+              <string>Serv</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>FileSystem</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Total(MB)</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Free(MB)</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>%Free</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Sans</family>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>DiskUsage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QTableWidget" name="qtwDBServActClients">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Serif Condensed</family>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="showGrid">
+             <bool>false</bool>
+            </property>
+            <column>
+             <property name="text">
+              <string>Serv</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>ID</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>HostName</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Mips</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>ProcessID</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>StartTime</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>LastUpdate</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>TimeOut</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Status</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QTableWidget" name="qtwServActClients">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Serif Condensed</family>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="showGrid">
+             <bool>false</bool>
+            </property>
+            <column>
+             <property name="text">
+              <string>Serv</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>ID</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>HostName</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Mips</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>ProcessID</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>StartTime</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>LastUpdate</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>TimeOut</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Status</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Sans</family>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>DBServer_ActiveClients</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>DejaVu LGC Sans</family>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Server_ActiveClients</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Control</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QStackedWidget" name="stackedWidget2">
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="page_4">
+           <layout class="QGridLayout" name="gridLayout_23">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="font">
+               <font>
+                <pointsize>20</pointsize>
+               </font>
+              </property>
+              <property name="lineWidth">
+               <number>0</number>
+              </property>
+              <property name="midLineWidth">
+               <number>-2</number>
+              </property>
+              <property name="text">
+               <string>... select form to edit</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_3">
+           <layout class="QGridLayout" name="gridLayout_13">
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_sNC">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>MaxClients</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CPU</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Memory</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>ScriptPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LogPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Submit</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LoginTheEnd</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Server::NominalClient</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_5">
+           <layout class="QGridLayout" name="gridLayout_14">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_12">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Server::NominalHost</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_sNH">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Interface</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>OS</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CPUNumb</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Memory</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Clock</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>ClientsAllowed</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Status</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_6">
+           <layout class="QGridLayout" name="gridLayout_15">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Server::NominalKiller</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_sNK">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>MaxClients</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CPU</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Memory</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>ScriptPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LogPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Submit</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LoginTheEnd</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_7">
+           <layout class="QGridLayout" name="gridLayout_16">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Server::SetEnvironment</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_sSE">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>EnvironmentVar</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Path</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_8">
+           <layout class="QGridLayout" name="gridLayout_17">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_15">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Producer::NominalClient</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pNC">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>MaxClients</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CPU</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Memory</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>ScriptPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LogPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Submit</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LoginTheEnd</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_9">
+           <layout class="QGridLayout" name="gridLayout_18">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_16">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Producer::ActiveClient</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pAC">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Mips</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Pid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Status</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Type</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>TimeOut</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>RunTable::FilePath</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_10">
+           <layout class="QGridLayout" name="gridLayout_19">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Producer::NominalHost</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pNH">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Interface</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>OS</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CPUNumb</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Memory</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Clock</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>AllowedPr</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CliProcessed</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CliFailed</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Status</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_11">
+           <layout class="QGridLayout" name="gridLayout_20">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_18">
+              <property name="text">
+               <string>Producer::NominalNTuple</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pNNT">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>OutputDirPath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>RunMode</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>UpdFreq</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>DstType</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_12">
+           <layout class="QGridLayout" name="gridLayout_21">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>Producer::ProducedNTuple</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pPNT">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Run</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Time</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>FirstEvent</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LastEvent</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Path</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Version</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Size</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Status</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Type</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="page_13">
+           <layout class="QGridLayout" name="gridLayout_22">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_20">
+              <property name="text">
+               <string>Producer::RunTable</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QTableWidget" name="qtw_pRT">
+              <property name="font">
+               <font>
+                <family>DejaVu LGC Serif Condensed</family>
+                <pointsize>9</pointsize>
+               </font>
+              </property>
+              <column>
+               <property name="text">
+                <string>Serv</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Uid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>CUid</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>HostName</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Run</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>FirstEvent</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>LastEvent</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Priority</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>FilePath</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Status</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>History</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>StType</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Fails</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>DataMC</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>TEvent</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>TLEvent</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QWidget" name="widget_2" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QPushButton" name="pbtReplace">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="whatsThis">
+              <string/>
+             </property>
+             <property name="text">
+              <string>Upd &lt;ctrl&gt;u</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtAdd">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Add &lt;ctrl&gt;a</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtRemove">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Rm &lt;ctrl&gt;r</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtReplaceAll">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>UpdAll</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtDummy2">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtNew">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>New</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtMoveUp">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>MvUp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pbtMoveDown">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>MvDn</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_5">
+       <attribute name="title">
+        <string>Logs</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_8">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Vrd log file info</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QTableWidget" name="qtwVrdLog">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>92</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>92</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>Serv</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>VrdLog file</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LastUpd time</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Size</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_21">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Other log file info</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QPlainTextEdit" name="qtwMyLogging">
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans Mono</family>
+           </font>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_9">
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Sans</family>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>My logging</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QTableWidget" name="qtwOtherLog">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>92</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>113</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>DejaVu LGC Serif Condensed</family>
+           </font>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>Log file</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>LastUpd time</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Size</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Comment</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1134</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFiles">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuResetFailedRuns">
+     <property name="title">
+      <string>Reset Failed Runs</string>
+     </property>
+     <addaction name="actOnlyReset"/>
+     <addaction name="actResetRemoveDST"/>
+    </widget>
+    <addaction name="actUpdateStatus"/>
+    <addaction name="separator"/>
+    <addaction name="menuResetFailedRuns"/>
+    <addaction name="actResetHosts"/>
+    <addaction name="actResetFailedHosts"/>
+    <addaction name="actDeleteActiveClients"/>
+    <addaction name="actDeleteRuns"/>
+    <addaction name="actDeleteFailedDST"/>
+    <addaction name="actDeleteValidatedDST"/>
+    <addaction name="actFinishFailedRuns"/>
+    <addaction name="actUpdateAFSToken"/>
+    <addaction name="actResetHistory"/>
+    <addaction name="separator"/>
+    <addaction name="actQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuPreferences">
+    <property name="title">
+     <string>Preferences</string>
+    </property>
+    <addaction name="actActiveHosts"/>
+    <addaction name="actLogToCout"/>
+    <addaction name="separator"/>
+    <addaction name="actZoomIn"/>
+    <addaction name="actZoomOut"/>
+    <addaction name="actClearMyLogging"/>
+    <addaction name="separator"/>
+    <addaction name="actLockUpdate"/>
+    <addaction name="actUseFilter"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actExportDB"/>
+    <addaction name="actExportDBMerged"/>
+    <addaction name="actImportDB"/>
+    <addaction name="separator"/>
+    <addaction name="actSetFilter"/>
+   </widget>
+   <addaction name="menuFiles"/>
+   <addaction name="menuPreferences"/>
+   <addaction name="menuTools"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="font">
+    <font>
+     <family>DejaVu LGC Serif Condensed</family>
+     <pointsize>9</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="font">
+    <font>
+     <family>DejaVu LGC Sans</family>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actUpdateStatus"/>
+   <addaction name="separator"/>
+   <addaction name="actActiveHosts"/>
+   <addaction name="separator"/>
+   <addaction name="actLockUpdate"/>
+   <addaction name="actUseFilter"/>
+  </widget>
+  <action name="actActiveHosts">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show only active hosts</string>
+   </property>
+   <property name="iconText">
+    <string>OnlyActHosts</string>
+   </property>
+  </action>
+  <action name="actUpdateStatus">
+   <property name="text">
+    <string>Update Status            &lt;alt&gt;u</string>
+   </property>
+   <property name="iconText">
+    <string>UpdStatus</string>
+   </property>
+   <property name="toolTip">
+    <string>Update Status</string>
+   </property>
+  </action>
+  <action name="actQuit">
+   <property name="text">
+    <string>Quit                           &lt;alt&gt;q</string>
+   </property>
+  </action>
+  <action name="actResetHosts">
+   <property name="text">
+    <string>Reset Hosts               &lt;alt&gt;h</string>
+   </property>
+   <property name="iconText">
+    <string>Reset Hosts</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset Hosts</string>
+   </property>
+  </action>
+  <action name="actDeleteValidatedDST">
+   <property name="text">
+    <string>Delete Validated DST &lt;alt&gt;v</string>
+   </property>
+   <property name="iconText">
+    <string>Delete Validated DST</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Validated DST</string>
+   </property>
+  </action>
+  <action name="actDeleteFailedDST">
+   <property name="text">
+    <string>Delete Failed DST</string>
+   </property>
+  </action>
+  <action name="actZoomIn">
+   <property name="text">
+    <string>Zoom In               &lt;ctrl&gt;+</string>
+   </property>
+   <property name="iconText">
+    <string>Zoom In</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom In</string>
+   </property>
+  </action>
+  <action name="actZoomOut">
+   <property name="text">
+    <string>Zoom Out            &lt;ctrl&gt;-</string>
+   </property>
+   <property name="iconText">
+    <string>Zoom Out</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom Out</string>
+   </property>
+  </action>
+  <action name="actDeleteRuns">
+   <property name="text">
+    <string>Delete Runs</string>
+   </property>
+  </action>
+  <action name="actFinishFailedRuns">
+   <property name="text">
+    <string>Finish Failed Runs</string>
+   </property>
+  </action>
+  <action name="actResetHistory">
+   <property name="text">
+    <string>Reset History</string>
+   </property>
+  </action>
+  <action name="actLogToCout">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Log to cout</string>
+   </property>
+  </action>
+  <action name="actClearMyLogging">
+   <property name="text">
+    <string>Clear my logging  &lt;ctrl&gt;x</string>
+   </property>
+   <property name="iconText">
+    <string>Clear my logging</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear my logging</string>
+   </property>
+  </action>
+  <action name="actLockUpdate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Lock update</string>
+   </property>
+   <property name="iconText">
+    <string>LockUpd</string>
+   </property>
+  </action>
+  <action name="actExportDB">
+   <property name="text">
+    <string>Export to c++ BDB</string>
+   </property>
+  </action>
+  <action name="actExportDBMerged">
+   <property name="text">
+    <string>Export to perl BDB</string>
+   </property>
+  </action>
+  <action name="actResetFailedHosts">
+   <property name="text">
+    <string>Reset InActive Hosts  &lt;alt&gt;g</string>
+   </property>
+   <property name="iconText">
+    <string>Reset InActive Hosts</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset InActive Hosts</string>
+   </property>
+  </action>
+  <action name="actUpdateAFSToken">
+   <property name="text">
+    <string>Update AFS Token</string>
+   </property>
+  </action>
+  <action name="actUseFilter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use filter</string>
+   </property>
+   <property name="iconText">
+    <string>UseFilter</string>
+   </property>
+  </action>
+  <action name="actSetFilter">
+   <property name="text">
+    <string>Set filter    &lt;ctrl&gt;f</string>
+   </property>
+   <property name="iconText">
+    <string>Set filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Set filter</string>
+   </property>
+  </action>
+  <action name="actLockFreeHost">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Lock ::getFreeHost</string>
+   </property>
+   <property name="iconText">
+    <string>LockFreeHost</string>
+   </property>
+  </action>
+  <action name="actDeleteActiveClients">
+   <property name="text">
+    <string>Delete ActiveClients</string>
+   </property>
+  </action>
+  <action name="actOnlyReset">
+   <property name="text">
+    <string>Only Reset</string>
+   </property>
+  </action>
+  <action name="actResetRemoveDST">
+   <property name="text">
+    <string>Reset and Remove DST</string>
+   </property>
+  </action>
+  <action name="actImportDB">
+   <property name="text">
+    <string>Import from text file</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

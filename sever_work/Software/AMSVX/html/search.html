@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>ht://Dig WWW Search</title>
+</head>
+     <body bgcolor=cornsilk text=black link=navy vlink=maroon alink=tomato>
+     <table border=0   cellpadding=5 cellspacing=0 width="100%">
+        <tr bgcolor="#ffdc9f">
+        <td align=left width="30%"> <font size="-1">
+        <A href="http://ams.cern.ch/AMS"> AMS </a>
+        <A href="http://ams.cern.ch/AMS/Computing/computing.html">Computing</a>
+        </td>
+       <td align=center><b><font color=green> AMS HyperNews</font></b></td>
+       <td align=right width="30%"> <font size="-1">
+    &nbsp;
+        <!-- top right corner  --> </font></td>
+        </tr>
+<tr bgcolor="#ffffcc"><td colspan=3 align=right> <font size="-1"> 
+<center>
+   <A HREF="/cgi-bin/HyperNews/getindex.cgi">
+     Forums</a>
+   - <A HREF="/cgi-bin/HyperNews/view-members.pl">
+     Membership</a>
+   - <A HREF="/cgi-bin/HyperNews/edit-subscribe.pl">
+     Subscriptions</a>
+   - <A HREF="/cgi-bin/HyperNews/login.pl">
+     Login</a>
+   - <A HREF="/cgi-bin/HyperNews/search">
+     Search</a>
+   - <A HREF="mailto:alexei\@mail.cern.ch">
+     Feedback</A>
+   - <A HREF="/cgi-bin/HyperNews/Admin/top.pl">Admin</a>
+  - <A HREF="/cgi-bin/HyperNews/top.pl">
+     Help</a>
+</center>
+</font></td></tr></table>
+
+<H2><img src="/icons/icon.note.gif" height=32 width=32>
+<font color=blue> Welcome to AMS WWW site search</font></H2>
+<HR>
+<p>
+You may search the contents of
+all the publicly available documents on the AMS World Wide Web site.
+<p>
+
+<br>
+<p>
+<form method="post" action="/cgi-bin/htdig/htsearch">
+<font size="-1">
+Match: <select name="method">
+<option value="and">All
+<option value="or">Any
+<option value="boolean">Boolean
+</select>
+Format: <select name="format">
+<option value="builtin-long">Long
+<option value="builtin-short">Short
+</select>
+Sort by: <select name="sort">
+<option value="score">Score
+<option value="time">Time
+<option value="title">Title
+<option value="revscore">Reverse Score
+<option value="revtime">Reverse Time
+<option value="revtitle">Reverse Title
+</select>
+</font>
+<input type="hidden" name="config" value="htdig">
+<input type="hidden" name="restrict" value="">
+<input type="hidden" name="exclude" value="">
+<br>
+Search:
+<input type="text" size="30" name="words" value="">
+<input type="submit" value="Search">
+</form>
+<hr noshade size="4">
+
+<H3>General Notes</H3>
+<UL>
+<LI>This search facility is built upon the <A HREF="http://www.htdig.org/">
+    ht/Dig</A> indexing facility. 
+<LI>The index is built on a nightly basis.  Therefore, 
+    posts to HyperNews in the past 24 hours may not be searched.
+<LI>All searches are case insensitive.
+</UL>
+
+<p><hr>
+<font size="-1">
+Extensions over base HyperNews for <a href="/cgi-bin/HyperNews/getindex.cgi"> AMS by A.Klimentov</a>.
+Pages design by T.Wenaus from BNL/CERN.
+</font>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,23 @@
+Reference calibrations: 
+1204374329 Mar  1 2008 Pre-integration
+1209054818 Apr 24 2008 Pre-integration
+1213377129 Jun 13 2008 Pre-integration
+1204217781 Feb 28 2008 Pre-integration
+1256806708 Oct 29 2009 SCM Full Cabling
+1261145156 Dec 18 2009 SCM Magnetic Field On (first time)
+1265518094 Feb  7 2010 SCM Test Beam  
+1266930520 Feb 24 2010 SCM EMI Test 
+1271419633 Apr 16 2010 SCM Just after thermo-vacuum test (T0 is in)
+1279201272 Jul 15 2010 PM Full Cabling (9 planes)
+1281610085 Aug 12 2010 PM Beam test (after replacing one board)
+1282132748 Aug 18 2010 PM Beam test (new DSP code)
+1284918006 Sep 19 2010 PM KSC 
+1286687693 Oct 10 2010 PM KSC (muons data taking) 
+1299751471 Mar  9 2010 PM KSC (with second pass)
+1302257285 Apr  8 2011 PM on launch pad 
+1305811704 May 19 2011 First calibration on ISS
+1311280189 Jul 21 2011 2nd step calibration optimization 
+1314163153 Aug 24 2011 2nd step calibration with Δt = 220 μs and 235 μs
+1322757335 Dec 01 2011 6 K-side ladders dead (Problem with S9051 in crate T3 (K-side of #12,13,16,17,20,21) broken)
+1328720709 Feb 08 2012 K-side of T3-12,13,16,17,20,21) tagged as permanently bad
+1329271885 Feb 15 2012 All bad K-side's (8 ladders -> 3200 strips) tagged as permanently bad. One VA (64 strips) tagged on S-side

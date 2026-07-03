@@ -47,4 +47,41 @@ __pycache__/
 *.csv
 runlog/
 testoutput/
-sever_work/
+
+# data / results
+*.root
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.csv
+*.cvs
+*.zip
+*.tar
+*.tar.gz
+
+# logs
+*.log
+*.out
+*.err
+*.job
+
+# common output dirs
+runlog/
+testoutput/
+output/
+results/
+cache/
+tmp/
+InputFile/
+OutputFile/
+
+**/subjob/
+**/SubJob/
+**/submit/arg/
+**/submit/log/
+**/submit/out/
+**/submit/err/
+*.out
+*.err
+*.log

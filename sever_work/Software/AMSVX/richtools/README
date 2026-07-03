@@ -1,0 +1,11 @@
+Set of tools to analyse RICH data. 
+----------------------------------
+
+The main directory contains a standalone reconstruction, which works
+directly on AMSRoot trees.
+
+The directory contrib should contain utilities using this library.
+
+
+directory maintenance contains a simple tool to xtract and retrieve the
+infernan machine in case of failure of the root interfaces

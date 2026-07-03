@@ -1,0 +1,27 @@
+#!/bin/bash
+#Building tool for AMS analysis executable using makefile, created by Qi Yan
+
+export SRC="$1"
+SRC="${SRC%.C}"
+SRC="${SRC%.exe}"
+
+export EXEAP=""
+export FLAGAP=""
+export CLEAN=""
+for arg in "$2" "$3" "$4"; do
+  if [[ "${arg}" == "clean" ]]; then
+    CLEAN="${arg}"
+  elif [[ "${arg}" == *-D* ]]; then
+    FLAGAP+=" ${arg}"
+  else
+    EXEAP+="${arg}"
+  fi
+done
+
+
+#export VICC=2019
+#-----(please change to yours)
+source /afs/cern.ch/user/q/qyan/public/DSTvdev/amsvar_all.sh
+
+
+make -f /afs/cern.ch/user/q/qyan/public/DSTvdev/QTool2/subjobcondor/Makefile534_2SL6 SRC_U="${SRC}" EXEAP_U="${EXEAP}" FLAGAP_U="${FLAGAP}" ${CLEAN}

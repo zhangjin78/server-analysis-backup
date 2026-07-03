@@ -1,0 +1,117 @@
+executable	= protest_KeysPdfRead5_sdiat.sh
+output		= output/$(file).out
+error		= error/$(file).err
+log		= log/$(file).log
+MY.WantOS = "el7"
+
+initialdir = /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1
+
++JobFlavour = "testmatch"
+
+file=R0_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R1_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R2_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R3_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R4_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R5_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R6_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R7_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R8_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R9_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R10_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R11_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R12_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R13_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R14_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R15_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R16_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R17_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R18_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R19_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R20_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R21_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R22_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R23_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R24_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R25_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R26_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R27_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R28_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R29_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R30_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R31_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R32_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R33_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R34_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)
+
+file=R35_q16_amsd68n_KeysPdfRead_AfterShift_NVar5_xy2_layer2_L1Q-1
+queue arguments from /afs/cern.ch/work/j/jzhang2/AMS/analisiP8/TempletFit2_Nfit/amsd68n_B1130_q16_NVar5_L2_L1Q-1/submit/arg/$(file)

@@ -1,0 +1,21 @@
+#  $Id: Makexprocess,v 1.5 2001/01/22 17:32:54 choutko Exp $
+
+CFLAGS=-I/usr/local/include  -g
+
+#CLFLAGS = -g1
+LDFLAGS=-L/usr/local/lib
+
+LOADLIBES=-lforms -lX11 -lm 
+
+CC= gcc
+
+OBJS =	xprocess_10comp.c
+
+xprocess: 
+	$(CC) $(CFLAGS) -o xprocess xprocess_10comp.c $(LDFLAGS) $(LOADLIBES)
+
+
+
+
+
+

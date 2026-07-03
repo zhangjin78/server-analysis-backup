@@ -1,0 +1,483 @@
+#
+SHELL=/bin/sh
+#
+ifndef AMSWD
+  AMSWD := ..
+endif
+
+ifndef AMSDEPLIB
+  AMSDEPLIB := /cvmfs/ams.cern.ch/opt/
+endif
+
+ifndef SLC6system
+  ifneq ("$(wildcard /etc/redhat-release)","")
+    RH_Version := $(shell cat /etc/redhat-release|awk -F'[^0-9]+' '{ print $$2 }')
+  else ifneq ("$(wildcard /etc/os-release)","")
+    RH_Version := $(shell grep ^VERSION= /etc/os-release|awk -F'[^0-9]+' '{ print $$2 }')
+  endif
+  ifeq ($(RH_Version), $(filter $(RH_Version), 6 7 8 9))
+    SLC6system := $(RH_Version)
+  endif
+endif
+
+ARCH         := $(shell $(ROOTSYS)/bin/root-config --arch )
+VERSION      := $(shell $(ROOTSYS)/bin/root-config --version | cut -b1-4)
+ifeq ($(VERSION),5.27)
+  VERSIONP=
+else
+  VERSIONP = $(VERSION)_$(SLC6system)
+endif
+
+XRDLIB        :=
+XRDLIBP       :=
+PLATFORM      =  Linux
+PREFIX        = $(AMSWD)/bin/$(ARCH)$(VERSIONP)/crc/
+DEPDIR        = $(PREFIX)/dep
+AMSPRG        = $(AMSWD)/exe/$(ARCH)$(VERSIONP)/crc
+AMSPRGS       = $(AMSWD)/exe/$(ARCH)$(VERSIONP)/crc
+AMSPRGD       = $(AMSWD)/exe/$(ARCH)$(VERSIONP)/crc
+
+ifeq ($(wildcard $(ROOTSYS)/include/Compression.h),)
+  LZMAL =
+else
+  DEFINES += -D__LZMA__
+  LZMAL = -llzma
+endif
+
+ifeq ($(VERSION),5.27)
+  ifndef SLC6system
+    XRDLIB += -lXrdClient -lXrd -lXrdNet -lXrdOuc -lXrdSys -lXrdNetUtil
+  else
+    XRDLIB += -lXrdClient -lXrd -lXrdNet -lXrdOuc -lXrdSys
+  endif
+endif
+
+ifeq ($(VERSION),5.34)
+  XRDLIB += -lXrdClient   -lXrdUtils
+endif
+
+
+ifeq ($(ARCH),linuxx8664gcc)
+  ifeq ($(VERSION),5.34)
+    ifndef SLC6system
+      XRDLIBP += -Bdynamic -L$(AMSDEPLIB)/xrootd-gcc64-41/lib64
+    else
+      XRDLIBP += -Bdynamic -L$(AMSDEPLIB)/xrootd-gcc64-44/lib64
+    endif
+  endif
+
+  # DEFAULTS
+  RH9add =- pthread
+  ifndef SLC6system
+    CERNDIRLIB = /cvmfs/ams.cern.ch/Offline/CERN/2005.gcc64/lib
+  else
+    CERNDIRLIB = /cvmfs/ams.cern.ch/Offline/CERN/2005.gcc64.44/lib
+  endif
+
+  GCC_VER_MAJOR=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c1 )
+  GCC_VER_MIDDLE=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c3 )
+  GCC_VER_MINOR=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c5 )
+
+  ifeq ($(GCC_VER_MAJOR),4)
+    VERGCC := 1
+    ifeq ($(GCC_VER_MIDDLE),4)
+      VERGCCHi := 1
+    else ifeq ($(GCC_VER_MIDDLE),5)
+      VERGCCH := 1
+    else ifeq ($(GCC_VER_MIDDLE),6)
+      VERGCCH := 1
+    else ifeq ($(GCC_VER_MIDDLE),7)
+      VERGCCH := 1
+    else ifeq ($(GCC_VER_MIDDLE),8)
+      VERGCCH := 1
+    endif
+  endif
+
+  ifdef SLC6system
+    DEFINES += -D__LINUXSLC6__
+  else ifdef VERGCCH
+    DEFINES += -D__LINUXNEW__
+  else
+    DEFINES += -D__LINUXGNU__
+  endif
+
+  CFLAGS = -D__BATCH__  -I../include   -D__WRITEROOT__ -D__ROOTPOINTERS__ -I$(ROOTSYS)/include -g
+  FFLAGS = -g -I../include
+  DFLAGS = -g -I/usr/include  -I$(AMSWD)/include -I../include/stl
+  #LDFLAGS =  -static     -lnsl -L/usr/local/lib    -lm  -lg2c
+  LDFLAGSA = -O -static -static-libgcc -L$(ROOTSYS)/lib -L$(AMSWD)/lib/$(ARCH)$(VERSIONP)  -lRoot  $(LZMAL) -lcrypt -lcrypto -L$(CERNDIRLIB)    -lpacklib -lmathlib -lkernlib -lgfortran  -Wl,-whole-archive,--allow-multiple-definition -lshift -Wl,-no-whole-archive  -ldl  -Bstatic -lc -lfreetype -lpcre -lncurses -pthread  $(XRDLIBP) $(XRDLIB)   -lrt
+  LDFLAGS = -g -rdynamic -static-libgcc -L$(ROOTSYS)/lib -L$(AMSWD)/lib/$(ARCH)$(VERSIONP)  -Bstatic -lRoot  $(LZMAL) -lcrypt -lcrypto -L$(CERNDIRLIB)    -lpacklib -lmathlib -lkernlib -lgfortran -Bdynamic -lshift -ldl  -Bstatic -lc -lfreetype -lpcre -lncurses -pthread   $(XRDLIBP) $(XRDLIB)   -lrt
+  CC = g++
+  FF = gfortran
+  LD = g++
+  BIN = $(AMSWD)/bin/$(ARCH)$(VERSIONP)/crc/
+  EXE = $(AMSWD)/exe/$(ARCH)$(VERSIONP)
+  TIMEL =
+endif
+
+ifeq ($(ARCH),$(filter $(ARCH), linuxx8664icc linuxx8664icx))
+ifndef IFORTDIR
+  IFORTDIR=$(INTELDIR)
+endif
+
+ifndef IFORTVER
+  IFORTVER=$(INTELVER)
+endif
+
+########################################################################
+# Try to find INTELBIN
+########################################################################
+ICV:=icc
+ICPV:=icpc
+IFORV:=ifort
+ifndef NOICX
+  ifneq ("$(findstring oneAPI,$(INTELDIR))","")
+    ICV:=icx
+#    ICV:=icpx
+    ICPV:=icpx
+    IFORV:=ifx
+  endif
+endif
+
+ifeq ("$(INTELBIN)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/bin/$(ICPV))","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/bin
+  else ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/linux/bin/intel64/$(ICPV))","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/linux/bin/intel64
+  else ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/compiler/bin/intel64/$(ICPV))","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/compiler/bin/intel64
+  else ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/bin/intel64/$(ICPV))","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/bin/intel64
+  endif
+endif
+
+########################################################################
+# Try to find IFORTBIN
+########################################################################
+
+ifeq ("$(IFORTBIN)", "")
+  ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/bin/$(IFORV))","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/bin
+  else ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/linux/bin/intel64/$(IFORV))","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/linux/bin/intel64
+  else ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/compiler/bin/intel64/$(IFORV))","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/compiler/bin/intel64
+  else ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/bin/intel64/$(IFORV))","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/bin/intel64
+  endif
+endif
+
+########################################################################
+# Manual overrides for compilers
+########################################################################
+
+ifndef ICC
+  ifeq ("$(INTELBIN)", "")
+    $(error Could not find Intel C++ compiler!  $(INTELDIR)/$(INTELVER))
+  endif
+  ICC:=$(INTELBIN)/$(ICV)
+  $(ICC set to $(INTELDIR)/$(ICV))
+else
+  ICV:=$(notdir $(ICC))
+endif
+
+ifndef ICPC
+  ifeq ("$(INTELBIN)", "")
+    $(error Could not find Intel C compiler!  $(INTELDIR)/$(INTELVER))
+  endif
+  ICPC:=$(INTELBIN)/$(ICPV)
+else
+  ICPV:=$(notdir $(ICPC))
+endif
+
+ifndef IFORT
+  ifeq ("$(IFORTBIN)", "")
+    $(error Could not find Intel Fortran compiler!)
+  endif
+  IFORT:=$(IFORTBIN)/$(IFORV)
+else
+  IFORV:=$(notdir $(IFORT))
+endif
+
+########################################################################
+# Compiler flags
+########################################################################
+
+# [ae]-icc23.el9 find compiler versions
+ifneq ("$(findstring icpx,$(ICPV))", "")
+   ICC_VERSION:=$(shell $(ICC) --version | head -1 | cut '-d ' -f5 | cut -b3-4)
+else
+   ICC_VERSION:=$(shell $(ICC) --version | head -1 | cut '-d ' -f4 | cut -b3-4)
+endif
+GCC_MAJOR_VERSION=$(shell gcc --version | head -1 |  cut '-d ' -f3 | cut -d '.' -f1)
+GCC_MIDDLE_VERSION=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -d '.' -f2)
+ifneq ("$(findstring icpx,$(ICPV))", "")
+  INTELOPT:=-axSSE4.2,SSE4.1,SSSE3,AVX,CORE-AVX2,CORE-AVX512 -fp-model precise
+else
+  INTELOPT:=-axsse4.2,ssse3,AVX,CORE-AVX2 -fp-model source -fast-transcendentals
+endif
+
+# set NOCXXSTD if GCC backend is older than GCC 4.8
+ifeq ($(GCC_MAJOR_VERSION),4)
+ifneq ($(GCC_MIDDLE_VERSION),$(filter $(GCC_MIDDLE_VERSION),8 9))
+  NOCXXSTD=1
+endif
+endif
+
+# omp
+ifeq ($(shell echo "$$(( $(ICC_VERSION) > 15 ))"), 1)
+  OPENMP_FLAG = -qopenmp
+else
+  OPENMP_FLAG = -openmp
+endif
+ifdef AMSPARALLEL
+  PARALLEL=$(OPENMP_FLAG) -D__AMSPARALLEL__
+else
+  PARALLEL=
+endif
+ifdef AMSP
+  PARALLEL+= $(OPENMP_FLAG)
+endif
+
+# set NOCXXSTD if ICC version is older than ICC 14
+#ifneq ($(ICC_VERSION),$(filter $(ICC_VERSION),14 15 16 17 18 19 20 21))
+ifeq ($(shell echo "$$(( $(ICC_VERSION) < 14 ))"), 1)
+  NOCXXSTD=1
+endif
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),111))
+  CXX00=1
+endif
+
+ifndef NOCXXSTD
+  CXXSTD=-std=c++11
+else
+ifdef CXX00
+  CXXSTD=-std=c++0x
+else
+  CXXSTD=
+endif
+endif
+
+########################################################################
+# Setup compiler variables
+########################################################################
+
+ifneq ("$(findstring icpx,$(ICPV))","")
+  FF=$(IFORT) $(INTELOPT) $(PARALLEL)
+  CXX=$(ICC) $(INTELOPT) $(CXXSTD) $(PARALLEL)
+else
+  FF=$(IFORT) -W0 $(INTELOPT) -diag-disable cpu-dispatch $(PARALLEL)
+  CXX=$(ICC) $(INTELOPT) $(CXXSTD) -diag-disable cpu-dispatch $(PARALLEL)
+endif
+CC=$(ICC) $(INTELOPT) $(PARALLEL)
+LD=$(ICPC) $(INTELOPT) $(PARALLEL)
+
+########################################################################
+# Libraries
+########################################################################
+
+#ifeq ($(VERSION),5.34)
+ifeq ($(VERSION),$(filter $(VERSION), 5.27 5.34 6.04 6.14))
+ifeq ($(shell echo "$$(( $(RH_Version) < 8 ))"), 1)
+  XRDLIBP += -Bdynamic -L$(AMSDEPLIB)/xrootd-icc64-17/lib64
+  PNGLIB= -lpng
+else
+  XRDLIBP += -Bdynamic -L$(AMSDEPLIB)/xrootd-4.8.2.el9/lib64
+  PNGLIB= -lpng16
+endif
+endif
+
+########################################################################
+# Compilers FLAGS
+########################################################################
+
+CFLAGSB= -Wno-deprecated -fPIC
+# Disable warnings triggered by ROOT
+
+ifneq ("$(findstring icpx,$(ICPV))","")
+CFLAGSB += -Wabi -Wunknown-pragmas -Wno-writable-strings
+#-Wno-unknown-pragmas -Werror=unknown-pragmas
+else
+CFLAGSB += -Wabi-tag
+
+# remark #383: value copied to temporary, reference to temporary used
+CFLAGSB += -wd383
+
+# remark #444: destructor for base class "std::iterator<... (declared at line 104 of "/usr/include/c++/4.4.7/bits/stl_iterator_base_types.h") is not virtual
+CFLAGSB += -wd444
+
+# remark #1418: external function definition with no prior declaration
+CFLAGSB += -wd1418
+
+# remark #522: function "TArrayD::At" redeclared "inline" after being called
+CFLAGSB += -wd522
+
+# remark #2259: non-pointer conversion from "int" to "Short_t={short}" may lose significant bits
+CFLAGSB += -wd2259
+
+# remark #981: operands are evaluated in unspecified order
+CFLAGSB += -wd981
+
+# remark #869: parameter "o" was never referenced
+CFLAGBS += -wd869
+
+# remark #193: zero used for undefined preprocessing identifier "_FILE_OFFSET_BITS"
+CFLAGSB += -wd193
+
+# Disable warnings triggered by us.
+
+# remark #177: variable "charge" was declared but never referenced
+# Similar to Wunused-function in GCC (needed for cfortran.h static functions)
+CFLAGSB += -wd177
+
+# remark #174: expression has no effect
+CFLAGSB += -wd174
+
+# remark #869: parameter "i" was never referenced
+CFLAGSB += -wd869
+
+# remark #185: dynamic initialization in unreachable code
+CFLAGSB += -wd185
+
+# remark #310: old-style parameter list (anachronism)
+CFLAGSB += -wd310
+
+# remark #271: trailing comma is nonstandard
+CFLAGSB += -wd271
+
+# remark #1572: floating-point equality and inequality comparisons are unreliable
+CFLAGSB += -wd1572
+
+# remark #111: statement is unreachable
+CFLAGSB += -wd111
+
+# remark #181: argument is incompatible with corresponding format string conversion
+CFLAGSB += -wd181
+
+# remark #82: storage class is not first
+CFLAGSB += -wd82
+
+# remark #424: extra ";" ignored
+CFLAGSB += -wd424
+
+# remark #1419: external declaration in primary source file
+CFLAGSB += -wd1419
+
+# remark #1599: declaration hides variable "f1" (declared at line 669)
+CFLAGSB += -wd1599
+
+# remark #593: variable "S5totL" was set but never used
+CFLAGSB += -wd593
+endif
+# end of ifneq ("$(findstring icpx,$(ICPV))","")
+
+  # DEFAULTS
+  RH9add = -pthread
+
+  CFLAGS = -D__ICC__ -D__BATCH__  -I../include -D__WRITEROOT__ -D__ROOTPOINTERS__ -I$(ROOTSYS)/include -O
+
+  ifdef SLC6system
+    CFLAGS += -D__LINUXSLC6__
+  else
+    CFLAGS += -D__LINUXGNU__
+  endif
+
+  FFLAGS = -O -I../include
+  DFLAGS = -g -I/usr/include  -I$(AMSWD)/include -I../include/stl
+  #LDFLAGS = -static     -lnsl -L/usr/local/lib    -lm  -lg2c
+ROOTLIBS      =  $(shell $(ROOTSYS)/bin/root-config --glibs) -lMinuit -lTMVA -lASImage -lXMLIO -lMLP -lTreePlayer -lGeom -lVMC  -lEG -lGX11 -lGX11TTF
+ifndef NOXROOTD
+  ROOTLIBS     += -lNetx
+endif
+
+  LDFLAGSA = -static -L$(ROOTSYS)/lib  -L$(AMSWD)/lib/$(ARCH)$(VERSIONP)  -Bstatic -lRoot $(LZMAL) -L/cvmfs/ams.cern.ch/opt/lib64 -lcrypt -lcrypto -L/cvmfs/ams.cern.ch/Offline/CERN/2005/lib    -lpacklib -lmathlib -lkernlib   -Wl,-whole-archive,--allow-multiple-definition -lshift -Wl,-no-whole-archive -ldl -lrt  -Bstatic  -lfreetype -lpcre  -lncurses -pthread   $(XRDLIBP) $(XRDLIB) -L$(INTELDIR)/$(INTELVER)/lib/intel64/ -lifport -lifcoremt -limf  -lipgo -lirc_s -limf -lirc
+
+  LDFLAGS = -rdynamic -static-intel -L$(ROOTSYS)/lib  -L$(AMSWD)/lib/$(ARCH)$(VERSIONP) -Bstatic -lRootgf $(LZMAL) -L/cvmfs/ams.cern.ch/opt/lib64 -lcrypt -lcrypto -L/cvmfs/ams.cern.ch/Offline/CERN/2005/lib    -lpacklib -lmathlib -lkernlib  -Bdynamic -lshift -ldl -lrt  -Bstatic  -lfreetype -lpcre  -lncurses -pthread   -Bstatic $(XRDLIBP) $(XRDLIB) -Bstatic -L$(INTELDIR)/$(INTELVER)/lib/intel64/ -lifport -lifcoremt -limf  -lipgo -lirc_s -limf -lirc
+
+  LDFLAGSI = -rdynamic -static-intel -static-libgcc -static-libstdc++ -L$(ROOTSYS)/lib  -L$(AMSWD)/lib/$(ARCH)$(VERSIONP) $(ROOTLIBS) -Bstatic -lRootgf $(LZMAL) -L/cvmfs/ams.cern.ch/opt/lib64 -lcrypt -lcrypto -L/cvmfs/ams.cern.ch/Offline/CERN/2005/lib    -lpacklib -lmathlib -lkernlib  -Bdynamic -lshift -ldl -lrt  -Bstatic  -lfreetype -lpcre  -lncurses -pthread   -Bstatic $(XRDLIBP) $(XRDLIB) -Bstatic -L$(INTELDIR)/$(INTELVER)/lib/intel64/ -lifport -lifcoremt -limf  -lipgo -lirc_s -limf -lirc
+
+  BIN = $(AMSWD)/bin/$(ARCH)$(VERSIONP)/crc/
+  EXE = $(AMSWD)/exe/$(ARCH)$(VERSIONP)
+  TIMEL =
+endif
+
+ifeq ($(ARCH),linuxx8664k1omicc)
+  # DEFAULTS
+  RH9add = -pthread
+  CERNDIRLIB = /cvmfs/ams.cern.ch/Offline/CERN/2005.mic/lib
+
+  #
+  XRDLIBP += -Bdynamic -L$(AMSDEPLIB)/xrootd.mic-icc64-13/lib64
+  #
+  CFLAGS = -D__BATCH__  -I../include   -DNORFIOD -D__WRITEROOT__ -D__ROOTPOINTERS__ -I$(ROOTSYS)/include -O
+  FFLAGS = -O -I../include
+  DFLAGS = -g   -I/usr/include  -I$(AMSWD)/include -I../include/stl
+  #LDFLAGS =  -static     -lnsl -L/usr/local/lib    -lm  -lg2c
+  INTELDIR = /cvmfs/ams.cern.ch/opt/intel
+  INTELVER = composer_xe_2013_sp1.1.106/compiler
+  LDFLAGSA = -static -L$(ROOTSYS)/lib  -L$(AMSWD)/lib/$(ARCH)$(VERSIONP)  -Bstatic -lRoot $(LZMAL) -lcrypt  -L/cvmfs/ams.cern.ch/Offline/CERN/2005.mic/lib    -lpacklib -lmathlib -lkernlib   -Wl,-whole-archive,--allow-multiple-definition -lshift -Wl,-no-whole-archive -ldl -lrt  -Bstatic  -lfreetype -lpcre   -pthread   $(XRDLIBP) $(XRDLIB) -L$(INTELDIR)/$(INTELVER)/lib/mic/ -lifport -lifcoremt -limf  -lipgo -lirc_s -limf -lirc
+  LDFLAGS = -rdynamic -static-intel -static-libgcc -static-libstdc++ -L$(ROOTSYS)/lib  -L$(AMSWD)/lib/$(ARCH)$(VERSIONP)  -Bstatic -lRoot $(LZMAL) -lcrypt  -L/cvmfs/ams.cern.ch/Offline/CERN/2005.mic/lib    -lpacklib -lmathlib -lkernlib  -Bdynamic  -ldl -lrt  -Bstatic  -lfreetype -lpcre   -pthread   -Bstatic $(XRDLIBP) $(XRDLIB)  -L$(INTELDIR)/$(INTELVER)/lib/mic/ -lifport -lifcoremt -lintlc -lirng -lsvml -limf  -lipgo -lirc_s  -lirc
+
+  CC = $(INTELDIR)/$(INTELVER)/bin/intel64/icc  -openmp -mmic
+  FF = $(INTELDIR)/$(INTELVER)/bin/intel64/ifort  -openmp -mmic
+  LD = $(INTELDIR)/$(INTELVER)/bin/intel64/icpc  -openmp -mmic
+  BIN = $(AMSWD)/bin/$(ARCH)$(VERSIONP)/crc/
+  EXE = $(AMSWD)/exe/$(ARCH)$(VERSIONP)
+  TIMEL =
+endif
+
+
+#
+#
+#
+#
+SCC     = ../CC/
+FILES   = $(SCC)crc.C $(SCC)astring.C $(SCC)CC/crclib.C
+OBJECTS = $(BIN)crc.o $(BIN)astring.o $(BIN)crclib.o
+
+osdepend: $(AMSPRG)
+static: $(AMSPRGS)
+        CFLAGS +=  -D__FASTSTATIC__
+dynamic: $(AMSPRGD)
+        CFLAGS +=  -D_PGTRACK_ -D__FASTSTATIC__
+
+$(AMSPRGS): $(BIN)crc.o  $(BIN)astring.o  $(BIN)crclib.o
+	@if ! [ -d $(EXE) ] ; then mkdir -p $(EXE); fi
+	$(LD) -v -o $(AMSPRGS) $(OBJECTS) $(TIMEL) $(LDFLAGSA)
+	chmod +x  $(EXE)/crc
+
+$(AMSPRG): $(BIN)crc.o  $(BIN)astring.o $(BIN)crclib.o
+	@if ! [ -d $(EXE) ] ; then mkdir -p $(EXE); fi
+	$(LD) -v -o $(AMSPRG) $(OBJECTS) $(TIMEL) $(LDFLAGS)
+	chmod +x  $(EXE)/crc
+
+$(AMSPRGD): $(BIN)crc.o  $(BIN)astring.o $(BIN)crclib.o
+	@if ! [ -d $(EXE) ] ; then mkdir -p $(EXE); fi
+	$(LD) -v -o $(AMSPRGD) $(OBJECTS) $(TIMEL) $(LDFLAGSI)
+	chmod +x  $(EXE)/crc
+
+$(BIN)crc.o: $(SCC)crc.C
+	@if ! [ -d $(BIN) ] ; then mkdir -p $(BIN); fi
+	$(CC) -c $(CFLAGS) $(SCC)crc.C -o $(BIN)crc.o
+
+$(BIN)crclib.o: $(SCC)crclib.C
+	$(CC) -c $(CFLAGS) $(SCC)crclib.C -o $(BIN)crclib.o
+
+$(BIN)astring.o: $(SCC)astring.C
+	$(CC) -c $(CFLAGS) $(SCC)astring.C -o $(BIN)astring.o
+
+depend: 	
+	makedepend -f Mopt -- $(DFLAGS) -- $(FILES) -p$(BIN)
+
+clean:
+	rm -Rf $(BIN)astring.o
+	rm -Rf $(BIN)crclib.o
+	rm -Rf $(BIN)crc.o
+	rm -Rf $(EXE)/crc
+
+print-%:
+	@echo $* is $($*)
+
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+

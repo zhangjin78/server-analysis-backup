@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#Building tool for AMS analysis executable using makefile, created by Qi Yan
+
+export SRC="$1"
+SRC="${SRC%.C}"
+SRC="${SRC%.exe}"
+
+export EXEAP=""
+export FLAGAP=""
+export CLEAN=""
+for arg in "$2" "$3" "$4"; do
+  if [[ "${arg}" == "clean" ]]; then
+    CLEAN="${arg}"
+  elif [[ "${arg}" == *-D* ]]; then
+    FLAGAP+=" ${arg}"
+  else
+    EXEAP+="${arg}"
+  fi
+done
+
+
+if [[ -z "$AMSWD" ]]; then
+    export AMSWD=`cd ../.. && pwd`
+    echo $AMSWD
+fi
+source $AMSWD/install/amsroot.sh
+
+
+echo "make -f Makefile534_2SL6 SRC_U=${SRC} EXEAP_U=${EXEAP} FLAGAP_U=${FLAGAP} ${CLEAN}"
+make -f Makefile534_2SL6 SRC_U="${SRC}" EXEAP_U="${EXEAP}" FLAGAP_U="${FLAGAP}" ${CLEAN}

@@ -1,0 +1,83 @@
+/*! \mainpage AMS Data Access Manual
+
+The standard AMS reconstruction output is a 
+  <a href="http://root.cern.ch"> ROOT </a> file, in which
+  <a href="http://root.cern.ch/root/html/TTree.html#TTree:description"> 
+TTree </a>
+
+ We have identified several possible ways to analyze these data:
+
+<ul>
+      <li> A compiled analysis with static or shared  libraries.
+      You can find more at  \subpage  compsha 
+</ul>
+
+<ul>      <li> An interpreted analysis with the <a href="http://root.cern.ch/root/Cint.html">
+           CINT </a> is also possible as depicted in \subpage cintana
+</ul>
+<ul>
+      <li> A compiled/interactive  analysis with the TSelector mode. You can find more at \subpage stlv
+                      
+</ul>
+
+<ul>
+      <li> (New) A compiled analysis with static libraries in a parallel mode  You can find more information in the link
+\include link.csh
+\include link_gcc.csh
+</ul>
+
+*/
+
+//-----------------------------------------------------------
+
+/*! \page intro Introduction
+This page introduces the user to the topic.
+Now you can proceed to the \ref advanced "advanced section".
+*/
+
+
+/*! \page compsha "Compiled Shared or Static"
+Here there is an example of a simple looper that scans the data
+it can be compiled versus static or dynamic AMS libraries
+The files are in the GBATCH source in the directory examples/analy_example1
+
+This is an example of the code.
+\include analyze_CINT.C
+
+\include run_analyze_CINT.C
+
+This is a general Makefile to compile with icc
+\include Makefile534_2SL6
+
+This is a simple script to build or clean executable using Makefile
+\include build_amsd2sh
+*/
+//-----------------------------------------------------------
+/*! \page cintana "Interactive analysis (CINT)"
+Here there is an example of a simple looper that scans the data
+it can be run from the ROOT propmt.
+The files are in the GBATCH source in the directory examples/analy_example1
+
+This is the macro to pre-load the AMS libraries
+\include rootlogon.C
+
+This is an example of the code.
+\include analyze_CINT.C
+
+This is the macro that shows how to run it
+\include run_analyze_CINT.C
+*/
+
+/*! \page stlv TSelector Analysis 
+This page is devoted to an analysis example using the TSelector approach 
+
+This is an example of the code
+\include daqePG_simple.C
+
+and of a macro to run it
+
+
+This is an example of the code
+\include r.daqePG_simple.C
+
+*/

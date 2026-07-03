@@ -1,0 +1,602 @@
+#  $Id: Makefile.linuxx8664iccknl,v 1.11 2024/01/04 08:19:07 qyan Exp $
+
+# General clean up and reorganization
+#
+#   LINUX intel64 architecture ICC compiler
+#
+# List of SLC6 changes
+#
+
+#
+#[ae-2012.08.02] - some static libs we need take from slc5, initially we have there only those ones: 
+#    libcrypt.a  libexpat.a  libfontconfig.a  libshift.a      
+#
+IMPORTS_SLC5_LIBS=
+ifdef SLC6system
+  IMPORTS_SLC5_LIBS= -L$(AMSDEPLIB)/lib64
+endif
+ifndef 
+  IMPORTS_X11R6= $(AMSDEPLIB)/X11R6
+endif
+#
+
+VER          := $(shell $(ROOTSYS)/bin/root-config --version | grep 5.14)
+
+VERGCC       := $(shell gcc --version | grep 4.1)
+
+ifdef VER
+NEW = 
+else
+ifndef VERSION65
+NEW = _new
+endif
+endif
+
+
+SLC4system=
+ifneq ("$(wildcard /etc/redhat-release)","")
+ SLC4system := $(shell cat /etc/redhat-release | grep "Scientific Linux CERN SLC release 4")
+endif
+
+ifdef SLC4system
+else
+ifneq ("$(wildcard /etc/redhat-release)","")
+ SLC4system := $(shell cat /etc/redhat-release | grep "Scientific Linux SL release 4")
+endif
+endif
+
+SLC4system=1
+RH9=1
+RH9add=
+ifdef RH9
+ RH9add=-pthread  -lnsl /usr/lib/nsswitch.o -Wl,--start-group -lnss_files -lnss_dns -lresolv -Wl,--end-group -ldl
+endif
+
+
+RH9add=-pthread -ldl
+ifdef DEBUGFLAG
+RH9add+= -g -O0 -debug 
+endif
+ifdef RELWITHDEBUGFLAG
+RH9add+= -g -fno-omit-frame-pointer 
+endif
+
+
+ifdef AMSPARALLEL
+  PARALLEL= -D__X8664__ -D__AMSPARALLEL__ $(OPENMP_FLAG) 
+else
+  PARALLEL= -D__X8664__ 
+endif
+ifdef AMSP
+ PARALLEL+=-D__AMSP__ $(OPENMP_FLAG) 
+endif
+
+
+
+
+########################################################################
+# Compilers
+########################################################################
+
+ifndef INTELDIR
+  INTELDIR=/cvmfs/ams.cern.ch/opt/intel/
+endif
+
+INTELVER_DEFAULT=Compiler/11.1/073
+INTELVER_SLC6=composer_xe_2011_sp1.9.293
+INTELVER_SLC64=composer_xe_2013_sp1.3.174
+INTELVER_ROOT6=compilers_and_libraries_2016.2.181
+ifndef INTELVER
+  INTELVER=$(INTELVER_DEFAULT)
+  ifdef SLC6system
+    INTELVER=$(INTELVER_SLC6)
+  endif
+  ifdef SLC64system
+    INTELVER=$(INTELVER_SLC64)
+  endif
+  ifdef SLC64ROOT6system
+    INTELVER=$(INTELVER_ROOT6)
+  endif
+endif
+
+ifndef IFORTDIR
+  IFORTDIR=$(INTELDIR)
+endif
+
+ifndef IFORTVER
+  IFORTVER=$(INTELVER)
+endif
+
+########################################################################
+# Try to find INTELBIN
+########################################################################
+
+ifeq ("$(INTELBIN)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/compiler/bin/intel64/icc)","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/compiler/bin/intel64
+  endif
+endif
+
+ifeq ("$(INTELBIN)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/bin/intel64/icc)","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/bin/intel64
+  endif
+endif
+
+ifeq ("$(INTELBIN)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/bin/icc)","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/bin
+  endif
+endif
+ifeq ("$(INTELBIN)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/linux/bin/intel64/icc)","")
+    INTELBIN = $(INTELDIR)/$(INTELVER)/linux/bin/intel64
+  endif
+endif
+
+########################################################################
+# Try to find IFORTBIN
+########################################################################
+
+ifeq ("$(IFORTBIN)", "")
+  ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/compiler/bin/intel64/ifort)","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/compiler/bin/intel64
+  endif
+endif
+ifeq ("$(IFORTBIN)", "")
+  ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/linux/bin/intel64/ifort)","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/linux/bin/intel64
+  endif
+endif
+
+ifeq ("$(IFORTBIN)", "")
+  ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/bin/intel64/ifort)","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/bin/intel64
+  endif
+endif
+
+ifeq ("$(IFORTBIN)", "")
+  ifneq ("$(wildcard $(IFORTDIR)/$(IFORTVER)/bin/ifort)","")
+    IFORTBIN = $(IFORTDIR)/$(IFORTVER)/bin
+  endif
+endif
+
+########################################################################
+# Try to find INTELLIB
+########################################################################
+
+ifeq ("$(INTELLIB)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/compiler/lib/intel64/libimf*)","")
+    INTELLIB = $(INTELDIR)/$(INTELVER)/compiler/lib/intel64
+  endif
+endif
+
+ifeq ("$(INTELLIB)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/linux/compiler/lib/intel64/libimf*)","")
+    INTELLIB = $(INTELDIR)/$(INTELVER)/linux/compiler/lib/intel64
+  endif
+endif
+
+ifeq ("$(INTELLIB)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/lib/intel64/libimf*)","")
+    INTELLIB = $(INTELDIR)/$(INTELVER)/lib/intel64
+  endif
+endif
+
+ifeq ("$(INTELLIB)", "")
+  ifneq ("$(wildcard $(INTELDIR)/$(INTELVER)/lib/libimf*)","")
+    INTELLIB = $(INTELDIR)/$(INTELVER)/lib
+  endif
+endif
+
+ifeq ("$(INTELLIB)", "")
+  $(error Could not find intel compiler!)
+endif
+
+########################################################################
+# Manual overrides for compilers
+########################################################################
+
+ifndef IFORT
+  ifeq ("$(IFORTBIN)", "")
+    $(error Could not find Intel Fortran compiler!)
+  endif
+  IFORT=$(IFORTBIN)/ifort
+endif
+
+ifndef ICC
+  ifeq ("$(INTELBIN)", "")
+    $(error Could not find Intel C++ compiler!  $(INTELDIR)/$(INTELVER))
+  endif
+  ICC=$(INTELBIN)/icc
+endif
+
+ifndef ICPC
+  ifeq ("$(INTELBIN)", "")
+    $(error Could not find Intel C compiler!  $(INTELDIR)/$(INTELVER))
+  endif
+  ICPC=$(INTELBIN)/icpc
+endif
+
+########################################################################
+# Compiler flags
+########################################################################
+
+# find compiler versions
+ICC_VERSION=$(shell $(ICC) --version | head -1 | cut '-d ' -f3 | cut -b1-2)
+GCC_MAJOR_VERSION=$(shell gcc --version | head -1 |  cut '-d ' -f3 | cut -c1)
+GCC_MIDDLE_VERSION=$(shell gcc --version | head -1 | cut '-d ' -f3 | cut -c3)
+
+INTELOPT=-xmic-avx512  -fp-model source -fast-transcendentals
+
+# set NOCXXSTD if GCC backend is older than GCC 4.8
+ifeq ($(GCC_MAJOR_VERSION),4)
+ifneq ($(GCC_MIDDLE_VERSION),$(filter $(GCC_MIDDLE_VERSION),8 9))
+  NOCXXSTD=1
+endif
+endif
+
+# set NOCXXSTD if ICC version is older than ICC 14
+ifneq ($(ICC_VERSION),$(filter $(ICC_VERSION),14 15 16 17 18 19))
+  NOCXXSTD=1
+endif
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),16 17 18 19))
+     OPENMP_FLAG = -qopenmp
+     CXXFLAGS=$(CXXFLAGS:-openmp:-qopenmp)
+     FCFLAGS=$(FCFLAGS:-openmp:-qopenmp)
+     CCFLAGS=$(CCFLAGS:-openmp:-qopenmp)
+     LDFLAGS=$(LDFLAGS:-openmp:-qopenmp)
+else
+     OPENMP_FLAG = -openmp
+endif
+
+# special settings for AMSMIC on SLC 6.4
+ifdef AMSMIC
+  ifeq ("$(INTELVER)", "$(INTELVER_SLC64)")
+    INTELOPT=-mmic
+    NOCXXSTD=1
+  endif
+endif
+
+ifndef NOCXXSTD
+  CXXSTD=-std=c++11
+else
+  CXXSTD=
+endif
+
+########################################################################
+# Setup compiler variables
+########################################################################
+
+FF=$(IFORT) -W0  $(INTELOPT)  -diag-disable cpu-dispatch $(PARALLEL)
+CXX=$(ICC) $(INTELOPT) $(CXXSTD) -diag-disable cpu-dispatch $(PARALLEL)
+CC=$(ICC) $(INTELOPT) $(PARALLEL)
+LD=$(ICPC) $(INTELOPT) $(PARALLEL)
+FFOLD=$(FF)  -save
+FFLAGSSAVE= -save
+FORTRAN_LIBS=
+FORTRAN2_LIBS= -Wl,--allow-multiple-definition -L$(INTELLIB) -lifport -lifcoremt -limf  -lipgo -lirc_s
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),16 17 18))
+FORTRAN2_LIBS= -Wl,--allow-multiple-definition -L$(INTELLIB) -lifport -lifcoremt
+ifdef ICC16FBUG
+FORTRAN2_LIBS= -Wl,--allow-multiple-definition -L/afs/cern.ch/sw/IntelSoftware/linux/x86_64/xe2015/composer_xe_2015.3.187/compiler/lib/intel64 -lifport -lifcoremt
+endif
+endif
+ifndef IS_CORBA64
+  ORBIT2DIR=$(AMSDEPLIB)/Orbit2
+  IDL=$(ORBIT2DIR)/bin/orbit-idl-2
+  IDLCPP=$(ORBIT2DIR)/bin/orbit-idl-2 --backenddir=$(AMSDEPLIB)/lib/orbit-2.0/idl-backends -l cpp
+else
+  ORBIT2DIR=$(AMSDEPLIB)/ORBit2-2.14.17.gcc64-41
+  IDL=/usr/bin/orbit-idl-2
+  IDLCPP=/usr/bin/orbit-idl-2 -l cpp --backenddir=$(ORBIT2DIR)/lib64/idl-compiler
+  DEFINES+= -D_IS_CORBA64_
+endif
+
+
+########################################################################
+# Libraries
+########################################################################
+
+# change defaults if intel compiler 
+CERN_LEVEL =2005
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),16))
+CERN_LEVEL=2005.icc64.14
+endif
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),17 18))
+CERN_LEVEL=2005.icc64.17
+endif
+CERNLIBS= -lgeant321 -lminuit -lpacklib -lmathlib -lkernlib 
+
+ifndef CERNDIR
+  CERNDIR =$(Offline)/CERN/$(CERN_LEVEL)
+  ifdef DEBUGFLAG
+#    CERNDIR =/f2users/choutko/cernlib_64g/$(CERN_LEVEL)
+  endif
+  ifdef SLC64system
+    #CERNDIR=$(Offline)/CERN/$(CERN_LEVEL).icc16
+  endif
+
+endif
+
+CERNSRCDIR = $(CERNDIR)
+
+ifndef AMSLIB
+  AMSLIB = $(Offline)/lib/linux/icc64
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),17 18))
+  AMSLIB = $(Offline)/lib/linux/icc64-17
+endif
+endif
+ifndef NAGDIR
+  NAGDIR  = $(Offline)/CERN/NagLib
+ifeq ($(ICC_VERSION),$(filter $(ICC_VERSION),17 18))
+  NAGDIR =  $(Offline)/CERN/Naglib.icc64-17
+endif
+endif
+
+########################################################################
+# Compilers FLAGS
+########################################################################
+
+ifdef AMSDEBUG
+DEFINES+=  -D__AMSDEBUG__
+endif
+
+ifdef TFADBW
+DEFINES+=  -D__TFADBW__
+endif
+
+ifdef TFAPEDC
+DEFINES+=  -D__TFAPEDC__
+endif
+
+
+CFLAGSB= -Wno-deprecated -fPIC  
+# Disable warnings triggered by ROOT
+
+# remark #383: value copied to temporary, reference to temporary used
+CFLAGSB += -wd383
+
+# remark #444: destructor for base class "std::iterator<... (declared at line 104 of "/usr/include/c++/4.4.7/bits/stl_iterator_base_types.h") is not virtual
+CFLAGSB += -wd444
+
+# remark #1418: external function definition with no prior declaration
+CFLAGSB += -wd1418
+
+# remark #522: function "TArrayD::At" redeclared "inline" after being called
+CFLAGSB += -wd522
+
+# remark #2259: non-pointer conversion from "int" to "Short_t={short}" may lose significant bits
+CFLAGSB += -wd2259
+
+# remark #981: operands are evaluated in unspecified order
+CFLAGSB += -wd981
+
+# remark #869: parameter "o" was never referenced
+CFLAGBS += -wd869
+
+# remark #193: zero used for undefined preprocessing identifier "_FILE_OFFSET_BITS"
+CFLAGSB += -wd193
+
+# Disable warnings triggered by us.
+
+# remark #177: variable "charge" was declared but never referenced
+# Similar to Wunused-function in GCC (needed for cfortran.h static functions)
+CFLAGSB += -wd177
+
+# remark #174: expression has no effect
+CFLAGSB += -wd174
+
+# remark #869: parameter "i" was never referenced
+CFLAGSB += -wd869
+
+# remark #185: dynamic initialization in unreachable code
+CFLAGSB += -wd185
+
+# remark #310: old-style parameter list (anachronism)
+CFLAGSB += -wd310
+
+# remark #271: trailing comma is nonstandard
+CFLAGSB += -wd271
+
+# remark #1572: floating-point equality and inequality comparisons are unreliable
+CFLAGSB += -wd1572
+
+# remark #111: statement is unreachable
+CFLAGSB += -wd111
+
+# remark #181: argument is incompatible with corresponding format string conversion
+CFLAGSB += -wd181
+
+# remark #82: storage class is not first
+CFLAGSB += -wd82
+
+# remark #424: extra ";" ignored
+CFLAGSB += -wd424
+
+# remark #1419: external declaration in primary source file
+CFLAGSB += -wd1419
+
+# remark #1599: declaration hides variable "f1" (declared at line 669)
+CFLAGSB += -wd1599
+
+# remark #593: variable "S5totL" was set but never used
+CFLAGSB += -wd593
+
+DEFINES += -D__root_$(NEW) -D__ICC__
+ifdef SLC6system
+  DEFINES += -D__LINUXSLC6__ -D__LINUXGNU__
+else
+  DEFINES += -D__LINUXGNU__
+endif
+
+ifdef AMSPROFILE
+  CFLAGSB+=-pg
+endif
+
+CFLAGS=       $(CFLAGSB)   
+CFLAGSTOFSIM= $(CFLAGSB) 
+CFLAGSn=      $(CFLAGSB)
+CFLAGSDAQ=    $(CFLAGSB) 
+
+
+#FFLAGS=    -D__ICC__  -mp1    -fPIC -fp-port
+#FFLAGSn=   -D__ICC__  -mp1   -fp-port
+
+FFLAGS=    -D__ICC__  -mp1    -fPIC
+FFLAGSn=   -D__ICC__  -mp1   
+
+ifdef NO_NAG
+  DEFINES += -DNO_NAG
+  FFLAGS  += -DNO_NAG
+  FFLAGSn += -DNO_NAG
+endif
+
+ifdef AMSPROFILE 
+  FFLAGS+=-pg
+  FFLAGSn+=-pg
+endif
+
+ifdef DEBUGFLAG
+    CFLAGS       += -g -O0 -debug 
+    CFLAGSTOFSIM += -g -O0 -debug 
+    CFLAGSn      += -g -O0 -debug 
+    CFLAGSDAQ    += -g -O0 -debug 
+    FFLAGS       += -g -O0 -debug 
+    FFLAGSn      += -g -O0 -debug 
+else
+    CFLAGS       += -O2
+    CFLAGSTOFSIM += -O1
+    CFLAGSn      += -O2
+    CFLAGSDAQ    += -O2
+    FFLAGS       += -O2
+    FFLAGSn      += -O2
+ifdef RELWITHDEBUGFLAG
+    CFLAGS       += -g -fno-omit-frame-pointer 
+    CFLAGSTOFSIM += -g -fno-omit-frame-pointer 
+    CFLAGSn      += -g -fno-omit-frame-pointer 
+    CFLAGSDAQ    += -g -fno-omit-frame-pointer 
+    FFLAGS       += -g -fno-omit-frame-pointer 
+    FFLAGSn      += -g -fno-omit-frame-pointer 
+endif
+endif
+FFLAGSUS3=$(FFLAGS)
+FFLAGSUS3+= -assume nounderscore
+
+
+
+SOFLAGS = -shared
+
+
+ifdef SLC4system
+ifdef VER
+else
+ SOFLAGS+= $(INTELLIB)/libimf.a
+ifndef NO_STATIC_LIBSTD
+ SOFLAGS+= -static-libgcc -static-libstdc++
+endif
+ SOFLAGS+= -L$(ROOTLIBDIR)   -lRIO -lTree -lThread -lGpad   -lNet -lHist -lMinuit -lHistPainter -lGraf -lMatrix   -lTMVA -lMLP -lXMLIO -lTreePlayer
+ifndef NO_NAG
+ SOFLAGS+=  -L$(NAGDIR) -lnag64 $(FORTRAN2_LIBS)
+endif
+ifndef NOXROOTD
+SOFLAGS += -lNetx
+endif
+#ifndef NORFIOD
+#SOFLAGS += -lRFIO
+#endif
+ifdef MINUIT2
+ SOFLAGS+= -lMinuit2
+endif
+ifdef GENFIT
+SOFLAGS += -lGeom -lEG -lPhysics
+endif
+endif
+endif
+
+ SHLDFLAGS=   
+
+########################################################################
+# Output dirs
+########################################################################
+
+#----------------------------------------------------
+
+
+# Library list 
+STATIC=-static-intel -static-libgcc -static-libstdc++  -Bstatic
+TIMEL=
+LDFLAGSI=      $(G4LIBSI) $(FORTRAN2_LIBS) \
+-L$(NAGDIR) -lnag64 \
+-L$(AMSLIB) -lamsut \
+-L$(CERNDIR)/lib     $(CERNLIBS) -lpawlib   -llapack3 -lblas -lgraflib  -lgrafX11 $(CERNLIBS)  \
+-L$(ROOTLIBDIR) $(LROOT)  $(LCLANG) -lfreetype -lncurses\
+-L$(IMPORTS_X11R6)/lib64   -lXm -lXmu -lXt -lSM -lICE  -lXp -lXxf86vm -lXext -lX11 \
+$(IMPORTS_SLC5_LIBS) -lcrypt -lcrypto -ldl -lpcre  $(LZMAL)    \
+$(FORTRAN2_LIBS) $(FORTRAN_LIBS) $(RH9add) 
+
+LDFLAGS=     $(G4LIBS)  $(FORTRAN2_LIBS) \
+-L$(NAGDIR) -lnag64   \
+-L$(AMSLIB)  -lamsut   \
+-L$(CERNDIR)/lib   $(CERNLIBS) \
+-lcrypto $(IMPORTS_SLC5_LIBS) -lcrypt -lcrypto -lfreetype -lncurses    -lpcre  $(LZMAL) \
+$(FORTRAN2_LIBS) $(FORTRAN_LIBS)  $(PFLAGS)  
+
+ifdef AMSPROFILE
+  LDFLAGS+=-pg
+endif
+
+LDFLAGSDYNAMIC:=  $(shell root-config --libs) -lTMVA -lMinuit -lGeom -lEG -lMathMore $(LCLANGD) $(LDFLAGS) $(RH9add)
+LDFLAGSSTATIC:=  $(STATIC) -L$(ROOTLIBDIR) $(LROOT) $(LCLANG) $(LDFLAGS) $(RH9add)
+#LDFLAGSDYNAMIC:=  $(STATIC) -L$(ROOTLIBDIR) $(LROOT) $(LCLANGD) $(LDFLAGS) -Bdynamic $(RH9add)
+
+LDFLAGS+= -lcxa -lcprts
+
+
+#--------------------------------------------------------------------------------------------------
+#------- Client/server ORbIt/CORBA part
+#--------------------------------------------------------------------------------------------------
+
+TIMEL=
+
+ifndef __CORBA_LIGHT__
+LDFLAGSIDL= -L$(ORBIT2DIR)/lib64 -pthread -lORBit-2-cpp -lORBit-2 -lORBit-imodule-2
+endif
+
+ifndef __CORBA_LIGHT__
+LDFLAGSSTATICIDL= $(STATIC) $(LDFLAGSIDL) -lgobject-2.0 -lgthread-2.0 -lgmodule-2.0 -ldl -lglib-2.0 -lrt -lnsl 
+else
+LDFLAGSSTATICIDL= $(STATIC) $(LDFLAGSIDL) -ldl -lrt -lnsl 
+endif
+
+ifndef IS_CORBA64
+  CXX_ORBIT=$(CXX) -Wno-deprecated  -fpermissive -I$(ORBIT2DIR)/include/orbit-2.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I$(ORBIT2DIR)/include/orbitcpp-2.0 -I$(BIN)
+  CC_ORBIT=$(CC) -I$(ORBIT2DIR)/include/orbit-2.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I$(BIN)
+else
+ ifndef __CORBA_LIGHT__
+  CXX_ORBIT=$(CXX) -Wno-deprecated -fpermissive -I/usr/include/orbit-2.0 -I/$(ORBIT2DIR)/include/orbitcpp-2.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I$(BIN)
+  CC_ORBIT=$(CC) -I/usr/include/orbit-2.0 -I/$(ORBIT2DIR)/include/orbitcpp-2.0 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I$(BIN)
+ else
+  CXX_ORBIT=$(CXX) -Wno-deprecated -fpermissive -I$(BIN)
+  CC_ORBIT=$(CC) -I$(BIN)
+ endif
+endif
+
+ifdef DEBUGFLAG
+CXX_ORBIT+= -g -O0 -debug 
+CCC_ORBIT+= -g -O0 -debug 
+else
+CXX_ORBIT+= -O3
+CCC_ORBIT+= -O3
+ifdef RELWITHDEBUGFLAG
+CXX_ORBIT+= -g 
+CCC_ORBIT+= -g 
+endif
+endif
+
+
+#endif
+
+# end of Linux icc case
+
+#########################################################
