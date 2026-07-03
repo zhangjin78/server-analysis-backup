@@ -1,0 +1,50 @@
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+__pycache__/
+*.pyc
+
+output/
+results/
+tmp/
+cache/
+
+*.zip
+*.tar
+*.tar.gz
+
+*.root
+
+# logs / outputs
+runlog/
+testoutput/
+output/
+results/
+tmp/
+cache/
+
+# data tables
+*.csv
+*.cvs
+*.txt
+
+# python / system
+__pycache__/
+*.pyc
+.DS_Store
+
+# compressed / binaries
+*.zip
+*.tar
+*.tar.gz
+*.root
+*.pdf
+*.png
+*.jpg
+*.cvs
+*.csv
+runlog/
+testoutput/
+sever_work/
